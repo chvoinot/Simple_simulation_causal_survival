@@ -1,25 +1,290 @@
-@Preamble{ " \newcommand{\noop}[1]{} " }
 
-@Manual{R-reticulate,
-  title = {reticulate: Interface to Python},
-  author = {Kevin Ushey and JJ Allaire and Yuan Tang},
-  year = {2020},
-  note = {R package version 1.18},
-  url = {https://github.com/rstudio/reticulate},
+
+@article{Multiplyrobust,
+    title={Multiply robust estimators of causal effects for survival outcomes},
+    author={Lan Wen, Miguel A Hernan, and James M Robins},
+    journal={Scand Stat Theory Appl.},
+    year={2022},
+    doi={10.1111/sjos.12561}
 }
 
-@article{computo,
-  title = {Computo: reproducible computational/algorithmic contributions in statistics and machine learning},
-  author = {{Computo Team}},
-  year = {2020},
+
+@article{rubin_estimating_1974,
+	title = {Estimating causal effects of treatments in randomized and nonrandomized studies.},
+	volume = {66},
+	issn = {1939-2176, 0022-0663},
+	url = {http://doi.apa.org/getdoi.cfm?doi=10.1037/h0037350},
+	doi = {10.1037/h0037350},
+	language = {en},
+	number = {5},
+	urldate = {2023-09-26},
+	journal = {Journal of Educational Psychology},
+	author = {Rubin, Donald B.},
+	month = oct,
+	year = {1974},
+	pages = {688--701},
 }
 
-@Manual{R-base,
-  title = {R: A Language and Environment for Statistical Computing},
-  author = {{R Core Team}},
-  organization = {R Foundation for Statistical Computing},
-  address = {Vienna, Austria},
-  year = {2020},
-  url = {https://www.R-project.org/},
+@article{censoring_effect,
+author = {Turkson, Anthony and ayiah-mensah, Francis and Nimoh, Vivian},
+year = {2021},
+month = {09},
+pages = {1-16},
+title = {Handling Censoring and Censored Data in Survival Analysis: A Standalone Systematic Literature Review},
+volume = {2021},
+journal = {International Journal of Mathematics and Mathematical Sciences},
+doi = {10.1155/2021/9307475}
+}
+
+@article{RMST,
+author = {Chen, Pei-Yun and Tsiatis, Anastasios A.},
+title = {Causal Inference on the Difference of the Restricted Mean Lifetime Between Two Groups},
+journal = {Biometrics},
+volume = {57},
+number = {4},
+pages = {1030-1038},
+keywords = {Causal inference, Cox's proportional hazard model, Martingale process, Observational study, Restricted lifetime, Stochastic integral, Survival analysis},
+doi = {https://doi.org/10.1111/j.0006-341X.2001.01030.x},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/j.0006-341X.2001.01030.x},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.0006-341X.2001.01030.x},
+abstract = {Summary. When comparing survival times between two treatment groups, it may be more appropriate to compare the restricted mean lifetime, i.e., the expectation of lifetime restricted to a time L, rather than mean lifetime in order to accommodate censoring. When the treatments are not assigned to patients randomly, as in observational studies, we also need to account for treatment imbalances in confounding factors. In this article, we propose estimators for the difference of the restricted mean lifetime between two groups that account for treatment imbalances in prognostic factors assuming a proportional hazards relationship. Large-sample properties of our estimators based on martingale theory for counting processes are also derived. Simulation studies were conducted to compare these estimators and to assess the adequacy of the large-sample approximations. Our methods are also applied to an observational database of acute coronary syndrome patients from Duke University Medical Center to estimate the treatment effect on the restricted mean lifetime over 5 years.},
+year = {2001}
+}
+
+@misc{hernan2010causal,
+  title={Causal inference},
+  author={Hern{\'a}n, Miguel A and Robins, James M},
+  year={2010},
+  publisher={CRC Boca Raton, FL}
+}
+
+@article{HR_alternative,
+author = {Royston, Patrick and Parmar, Mahesh},
+year = {2013},
+month = {12},
+pages = {152},
+title = {Restricted mean survival time: An alternative to the hazard ratio for the design and analysis of randomized trials with a time-to-event outcome},
+volume = {13},
+journal = {BMC medical research methodology},
+doi = {10.1186/1471-2288-13-152}
+}
+
+@article{propensity_survival,
+    author = {Anstrom, Kevin J. and Tsiatis, Anastasios A.},
+    title = "{Utilizing Propensity Scores to Estimate Causal Treatment Effects with Censored Time-Lagged Data}",
+    journal = {Biometrics},
+    volume = {57},
+    number = {4},
+    pages = {1207-1218},
+    year = {2004},
+    month = {05},
+    abstract = "{Observational studies frequently are conducted to compare long-term effects of treatments. Without randomization, patients receiving one treatment are not guaranteed to be prognostically comparable to those receiving another treatment. Furthermore, the response of interest may be right-censored because of incomplete follow-up. Statistical methods that do not account for censoring and confounding may lead to biased estimates. This article presents a method for estimating treatment effects in nonrandomized studies with right-censored responses. We review the assumptions required to estimate average causal effects and derive an estimator for comparing two treatments by applying inverse weights to the complete cases. The weights are determined according to the estimated probability of receiving treatment conditional on covariates and the estimated treatment-specific censoring distribution. By utilizing martingale representations, the estimator is shown to be asymptotically normal and an estimator for the asymptotic variance is derived. Simulation results are presented to evaluate the properties of the estimator. These methods are applied to an observational data set of acute coronary syndrome patients from Duke University Medical Center to estimate the effect of a treatment strategy on the mean 5-year medical cost.}",
+    issn = {0006-341X},
+    doi = {10.1111/j.0006-341X.2001.01207.x},
+    url = {https://doi.org/10.1111/j.0006-341X.2001.01207.x},
+    eprint = {https://academic.oup.com/biometrics/article-pdf/57/4/1207/51655483/biometrics\_57\_4\_1207.pdf},
+}
+
+@article{RMST_estimator,
+	Title = {Improved precision in the analysis of randomized trials with survival outcomes, without assuming proportional hazards},
+	Author = {Díaz, Iván and Colantuoni, Elizabeth and Hanley, Daniel F and Rosenblum, Michael},
+	DOI = {10.1007/s10985-018-9428-5},
+	Number = {3},
+	Volume = {25},
+	Month = {July},
+	Year = {2019},
+	Journal = {Lifetime data analysis},
+	ISSN = {1380-7870},
+	Pages = {439—468},
+	URL = {https://arxiv.org/pdf/1511.08404},
+}
+
+@article{RMST_estimator2,
+author = {Ozenne, Brice Maxime Hugues and Scheike, Thomas Harder and Stærk, Laila and Gerds, Thomas Alexander},
+title = {On the estimation of average treatment effects with right-censored time to event outcome and competing risks},
+journal = {Biometrical Journal},
+volume = {62},
+number = {3},
+pages = {751-763},
+keywords = {Cox regression model, hazard ratio, probabilistic index, relative risk, survival analysis},
+doi = {https://doi.org/10.1002/bimj.201800298},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/bimj.201800298},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/bimj.201800298},
+abstract = {Abstract We are interested in the estimation of average treatment effects based on right-censored data of an observational study. We focus on causal inference of differences between t-year absolute event risks in a situation with competing risks. We derive doubly robust estimation equations and implement estimators for the nuisance parameters based on working regression models for the outcome, censoring, and treatment distribution conditional on auxiliary baseline covariates. We use the functional delta method to show that these estimators are regular asymptotically linear estimators and estimate their variances based on estimates of their influence functions. In empirical studies, we assess the robustness of the estimators and the coverage of confidence intervals. The methods are further illustrated using data from a Danish registry study.},
+year = {2020}
+}
+
+
+@article{kaplan,
+author = {E. L. Kaplan and Paul Meier},
+title = {Nonparametric Estimation from Incomplete Observations},
+journal = {Journal of the American Statistical Association},
+volume = {53},
+number = {282},
+pages = {457-481},
+year = {1958},
+publisher = {Taylor & Francis},
+doi = {10.1080/01621459.1958.10501452},
+
+
+URL = { 
+    
+    
+        https://www.tandfonline.com/doi/abs/10.1080/01621459.1958.10501452
+    
+
+},
+eprint = { 
+    
+    
+        https://www.tandfonline.com/doi/pdf/10.1080/01621459.1958.10501452
+    
+
+}
+
+}
+
+
+@article{IPCWrobins,
+author = {Robins, James M. and Finkelstein, Dianne M.},
+title = {Correcting for Noncompliance and Dependent Censoring in an AIDS Clinical Trial with Inverse Probability of Censoring Weighted (IPCW) Log-Rank Tests},
+journal = {Biometrics},
+volume = {56},
+number = {3},
+pages = {779-788},
+keywords = {AIDS, Causal inference, Cox proportional hazards model, Informative censoring, Survival analysis, Time-dependent covariates},
+doi = {https://doi.org/10.1111/j.0006-341X.2000.00779.x},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/j.0006-341X.2000.00779.x},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.0006-341X.2000.00779.x},
+abstract = {Summary. AIDS Clinical Trial Group (ACTG) randomized trial 021 compared the effect of bactrim versus aerosolized pentamidine (AP) as prophylaxis therapy for pneumocystis pneumonia (POP) in AIDS patients. Although patients randomized to the bactrim arm experienced a significant delay in time to POP, the survival experience in the two arms was not significantly different (p= .32). In this paper, we present evidence that bactrim therapy improves survival but that the standard intent-to-treat comparison failed to detect this survival advantage because a large fraction of the subjects either crossed over to the other therapy or stopped therapy altogether. We obtain our evidence of a beneficial bactrim effect on survival by artificially regarding the subjects as dependently censored at the first time the subject either stops or switches therapy; we then analyze the data with the inverse probability of censoring weighted Kaplan-Meier and Cox partial likelihood estimators of Robins (1993, Proceedings of the Biopharmaceutical Section, American Statistical Association, pp. 24–33) that adjust for dependent censoring by utilizing data collected on time-dependent prognostic factors.},
+year = {2000}
+}
+
+@article{IPTW,
+author = {Xie, Jun and Liu, Chaofeng},
+title = {Adjusted Kaplan–Meier estimator and log-rank test with inverse probability of treatment weighting for survival data},
+journal = {Statistics in Medicine},
+volume = {24},
+number = {20},
+pages = {3089-3110},
+keywords = {adjusted Kaplan–Meier estimator, IPTW, survival function, weighted log-rank test},
+doi = {https://doi.org/10.1002/sim.2174},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/sim.2174},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.2174},
+abstract = {Abstract Estimation and group comparison of survival curves are two very common issues in survival analysis. In practice, the Kaplan–Meier estimates of survival functions may be biased due to unbalanced distribution of confounders. Here we develop an adjusted Kaplan–Meier estimator (AKME) to reduce confounding effects using inverse probability of treatment weighting (IPTW). Each observation is weighted by its inverse probability of being in a certain group. The AKME is shown to be a consistent estimate of the survival function, and the variance of the AKME is derived. A weighted log-rank test is proposed for comparing group differences of survival functions. Simulation studies are used to illustrate the performance of AKME and the weighted log-rank test. The method proposed here outperforms the Kaplan–Meier estimate, and it does better than or as well as other estimators based on stratification. The AKME and the weighted log-rank test are applied to two real examples: one is the study of times to reinfection of sexually transmitted diseases, and the other is the primary biliary cirrhosis (PBC) study. Copyright © 2005 John Wiley \& Sons, Ltd.},
+year = {2005}
+}
+
+@article{Doubleweight,
+    author = {Anstrom, Kevin J. and Tsiatis, Anastasios A.},
+    title = "{Utilizing Propensity Scores to Estimate Causal Treatment Effects with Censored Time-Lagged Data}",
+    journal = {Biometrics},
+    volume = {57},
+    number = {4},
+    pages = {1207-1218},
+    year = {2004},
+    month = {05},
+    abstract = "{Observational studies frequently are conducted to compare long-term effects of treatments. Without randomization, patients receiving one treatment are not guaranteed to be prognostically comparable to those receiving another treatment. Furthermore, the response of interest may be right-censored because of incomplete follow-up. Statistical methods that do not account for censoring and confounding may lead to biased estimates. This article presents a method for estimating treatment effects in nonrandomized studies with right-censored responses. We review the assumptions required to estimate average causal effects and derive an estimator for comparing two treatments by applying inverse weights to the complete cases. The weights are determined according to the estimated probability of receiving treatment conditional on covariates and the estimated treatment-specific censoring distribution. By utilizing martingale representations, the estimator is shown to be asymptotically normal and an estimator for the asymptotic variance is derived. Simulation results are presented to evaluate the properties of the estimator. These methods are applied to an observational data set of acute coronary syndrome patients from Duke University Medical Center to estimate the effect of a treatment strategy on the mean 5-year medical cost.}",
+    issn = {0006-341X},
+    doi = {10.1111/j.0006-341X.2001.01207.x},
+    url = {https://doi.org/10.1111/j.0006-341X.2001.01207.x},
+    eprint = {https://academic.oup.com/biometrics/article-pdf/57/4/1207/51655483/biometrics\_57\_4\_1207.pdf},
+}
+
+@article{ROBINS1986,
+title = {A new approach to causal inference in mortality studies with a sustained exposure period—application to control of the healthy worker survivor effect},
+journal = {Mathematical Modelling},
+volume = {7},
+number = {9},
+pages = {1393-1512},
+year = {1986},
+issn = {0270-0255},
+doi = {https://doi.org/10.1016/0270-0255(86)90088-6},
+url = {https://www.sciencedirect.com/science/article/pii/0270025586900886},
+author = {James Robins},
+abstract = {In observational cohort mortality studies with prolonged periods of exposure to the agent under study, it is not uncommon for risk factors for death to be determinants of subsequent exposure. For instance, in occupational mortality studies date of termination of employment is both a determinant of future exposure (since terminated individuals receive no further exposure) and an independent risk factor for death (since disabled individuals tend to leave employment). When current risk factor status determines subsequent exposure and is determined by previous exposure, standard analyses that estimate age-specific mortality rates as a function of cumulative exposure may underestimate the true effect of exposure on mortality whether or not one adjusts for the risk factor in the analysis. This observation raises the question, which if any population parameters can be given a causal interpretation in observational mortality studies? In answer, we offer a graphical approach to the identification and computation of causal parameters in mortality studies with sustained exposure periods. This approach is shown to be equivalent to an approach in which the observational study is identified with a hypothetical double-blind randomized trial in which data on each subject's assigned treatment protocol has been erased from the data file. Causal inferences can then be made by comparing mortality as a function of treatment protocol, since, in a double-blind randomized trial missing data on treatment protocol, the association of mortality with treatment protocol can still be estimated. We reanalyze the mortality experience of a cohort of arsenic-exposed copper smelter workers with our method and compare our results with those obtained using standard methods. We find an adverse effect of arsenic exposure on all-cause and lung cancer mortality which standard methods fail to detect.}
+}
+
+@article{Kaplan_consistency,
+author = {Richard Gill},
+title = {{Large Sample Behaviour of the Product-Limit Estimator on the Whole Line}},
+volume = {11},
+journal = {The Annals of Statistics},
+number = {1},
+publisher = {Institute of Mathematical Statistics},
+pages = {49 -- 58},
+keywords = {$q$-functions, Censored data, confidence bands, counting processes, in probability linear bounds, Kaplan-Meier estimator, Martingales, mean life-time, product-limit estimator, random censorship, stochastic integrals, survival data, weak convergence},
+year = {1983},
+doi = {10.1214/aos/1176346055},
+URL = {https://doi.org/10.1214/aos/1176346055}
+}
+
+@article{akm_consistency,
+author = {Xie, Jun and Liu, Chaofeng},
+title = {Adjusted Kaplan–Meier estimator and log-rank test with inverse probability of treatment weighting for survival data},
+journal = {Statistics in Medicine},
+volume = {24},
+number = {20},
+pages = {3089-3110},
+keywords = {adjusted Kaplan–Meier estimator, IPTW, survival function, weighted log-rank test},
+doi = {https://doi.org/10.1002/sim.2174},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/sim.2174},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.2174},
+abstract = {Abstract Estimation and group comparison of survival curves are two very common issues in survival analysis. In practice, the Kaplan–Meier estimates of survival functions may be biased due to unbalanced distribution of confounders. Here we develop an adjusted Kaplan–Meier estimator (AKME) to reduce confounding effects using inverse probability of treatment weighting (IPTW). Each observation is weighted by its inverse probability of being in a certain group. The AKME is shown to be a consistent estimate of the survival function, and the variance of the AKME is derived. A weighted log-rank test is proposed for comparing group differences of survival functions. Simulation studies are used to illustrate the performance of AKME and the weighted log-rank test. The method proposed here outperforms the Kaplan–Meier estimate, and it does better than or as well as other estimators based on stratification. The AKME and the weighted log-rank test are applied to two real examples: one is the study of times to reinfection of sexually transmitted diseases, and the other is the primary biliary cirrhosis (PBC) study. Copyright © 2005 John Wiley \& Sons, Ltd.},
+year = {2005}
+}
+
+
+
+
+
+
+
+@article{IPCW,
+author = {SJW Willems and A Schat and MS van Noorden and M Fiocco},
+title ={Correcting for dependent censoring in routine outcome monitoring data by applying the inverse probability censoring weighted estimator},
+
+journal = {Statistical Methods in Medical Research},
+volume = {27},
+number = {2},
+pages = {323-335},
+year = {2018},
+doi = {10.1177/0962280216628900},
+    note ={PMID: 26988930},
+
+URL = { 
+    
+        https://doi.org/10.1177/0962280216628900
+    
+    
+
+},
+eprint = { 
+    
+        https://doi.org/10.1177/0962280216628900
+    
+    
+
+}
+,
+    abstract = { Censored data make survival analysis more complicated because exact event times are not observed. Statistical methodology developed to account for censored observations assumes that patients’ withdrawal from a study is independent of the event of interest. However, in practice, some covariates might be associated to both lifetime and censoring mechanism, inducing dependent censoring. In this case, standard survival techniques, like Kaplan–Meier estimator, give biased results. The inverse probability censoring weighted estimator was developed to correct for bias due to dependent censoring. In this article, we explore the use of inverse probability censoring weighting methodology and describe why it is effective in removing the bias. Since implementing this method is highly time consuming and requires programming and mathematical skills, we propose a user friendly algorithm in R. Applications to a toy example and to a medical data set illustrate how the algorithm works. A simulation study was carried out to investigate the performance of the inverse probability censoring weighted estimators in situations where dependent censoring is present in the data. In the simulation process, different sample sizes, strengths of the censoring model, and percentages of censored individuals were chosen. Results show that in each scenario inverse probability censoring weighting reduces the bias induced in the traditional Kaplan–Meier approach where dependent censoring is ignored. }
+}
+
+@Inbook{Robins1992,
+author="Robins, James M.
+and Rotnitzky, Andrea",
+editor="Jewell, Nicholas P.
+and Dietz, Klaus
+and Farewell, Vernon T.",
+title="Recovery of Information and Adjustment for Dependent Censoring Using Surrogate Markers",
+bookTitle="AIDS Epidemiology: Methodological Issues",
+year="1992",
+publisher="Birkh{\"a}user Boston",
+address="Boston, MA",
+pages="297--331",
+abstract="A class of tests and estimators for the parameters of the Cox proportional hazards model, the accelerated failure time model, and a model for the effect of treatment on the mean of a response variable of interest are proposed that use surrogate marker data to recover information lost due to independent censoring and to adjust for bias due to dependent censoring in randomized clinical trials. We construct an adaptive test that (i) is asymptotically distribution free under the null hypothesis of no treatment effect on survival, (ii) incorporates surrogate marker data, and (iii) is guaranteed to be locally more powerful than the ordinary log-rank test against proportional hazards alternatives when the baseline failure time distribution is Weibull. The proposed test is shown to outperform the log-rank test in a series of simulation experiments. We also prove the optimal estimator within our class is semiparametric efficient by first showing that our estimation problem is a special case of the general problem of parameter estimation in an arbitrary semiparametric model with data missing at random, and then deriving a representation for the efficient score in this more general problem.",
+isbn="978-1-4757-1229-2",
+doi="10.1007/978-1-4757-1229-2_14",
+url="https://doi.org/10.1007/978-1-4757-1229-2_14"
 }
 
