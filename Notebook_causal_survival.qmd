@@ -1,0 +1,1179 @@
+---
+title: "Causal survival analysis"
+subtitle: "Estimation de l'Effet Moyen du Traitement (ATE) en survie causale: Comparaison, Applications et Recommandations Pratiques"
+author:
+  - name: Charlotte Voinot
+    corresponding: true
+    email: charlotte.voinot@sanofi.com
+    url: https://chvoinot.github.io/
+    affiliations:
+      - name: Sanofi
+        department: CMEI
+        url: https://www.sanofi.fr/fr/
+      - name: INRIA
+        department: Premedical
+        url: https://www.inria.fr/fr/premedical
+date: last-modified
+date-modified: last-modified
+keywords: [Causal survival, Causal inference, ATE, Censoring]
+bibliography: references.bib
+github-user: chvoinot
+repo: "Simple_simulation_causal_survival"
+draft: true # set to false once the build is running
+published: false # will be set to true once accepted
+format:
+  computo-html: default
+  computo-pdf: default
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+# Background
+
+Causal survival analysis can be seen as the combination of causal
+analysis and survival analysis: the aim is to assess the causal effect
+of a treatment or an intervention on a outcome which is a time until an
+event occurs. The objective of this article is to provide a
+comprehensive overview of the different available methods to estimate
+the (average) effect of a treatment on survival.
+
+## Notations
+
+Let's consider a sample of $n$ i.i.d observations that are described by:
+
+-   $X_{i}$: the covariates, $X \in \mathbb{R}^p$.
+
+-   $A_{i}$: the binary treatment, $A \in \{0, 1\}$.
+
+-   $C_{i}$: the time to censoring, $C \in \mathbb{R}^+$.
+
+-   $T_{i}(0)$: the survival time to the event of interest had the
+    patient received control $A_{i}=0$.
+
+-   $T_{i}(1)$: the survival time to the event of interest had the
+    patient received treatment $A_{i}=1$.
+
+-   $T_{i} =A_{i} T_{i}(1)+(1-A_{i}) T_{i}(0)$, $T \in \mathbb{R}^+$:
+    the observed outcome corresponds to the potential outcome under the
+    assigned treatment; this is known as the consistency identifiability
+    assumption in causal inference.
+
+-   $\Delta_{i}=I\{T_{i} \leq C_{i}\}$ the status of censoring, where
+    $I\{\cdot\}$ is the indicator.
+
+-   $\tilde{T_{i}}= T_{i} \wedge C_{i} = \min(T_i,C_i)$, the observed
+    time. When an observation is censured, then its observed time is
+    equal to the censoring time.
+
+The observed data can be summarized as a quadruplet
+($X_{i},A_{i},\Delta_{i},\tilde{T_{i}}$) represented in
+@tbl-exemple_data.
+
+| ID  | Covariates 1 | Covariates 2 | Covariates 3 | Treatment | Censoring | Status   | Outcomes | Outcomes | Outcomes    |
+|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| ID  | $X_{1}$      | $X_{2}$      | $X_{3}$      | A         | C         | $\Delta$ | T(0)     | T(1)     | $\tilde{T}$ |
+| 1   | 1            | 1.5          | 4            | 1         | ?         | 1        | ?        | 200      | 200         |
+| 2   | 5            | 1            | 2            | 0         | ?         | 1        | 100      | ?        | 100         |
+| 3   | 9            | 0.5          | 3            | 1         | 200       | 0        | ?        | ?        | 200         |
+
+: Example of survival data with covariates, treatment, the censoring
+time, the status of censoring and the potential outcomes and observed
+outcomes. {#tbl-exemple_data} 
+
+## Treatment effect
+
+In causal inference, the primary goal is to estimate the individual
+causal effect of the treatment denoted as $\theta_i = T_i(1) - T_i(0)$
+[@rubin_estimating_1974],[@hernan2010causal]. However, this quantity
+cannot be observed because at most one outcome can be observed per
+sample (see @tbl-exemple_data). Furthermore, censoring may also mask
+outcomes [@censoring_effect]. Despite these challenges, certain
+identifiability assumptions enable us for estimating the average
+treatment effect [@RMST_estimator], [@RMST_estimator2] (ATE) which is
+defined as follows:
+
+::: {#def-ATE}
+## Causal effect: Average treatment effect in survival analysis (ATE)
+
+$$
+\theta = \mathbb{E}\left[y(T(1)) - y(T(0))\right] 
+$$
+
+-   $y(T) = I\{T > t\}$ for $t \leq \tau$; then, $E(y(T))$ becomes the
+    survival probability at time t.
+
+-   $y(T) = T \wedge \tau = \min(T,\tau)$ with $\tau$ a fixed time
+    horizon; then, $E(y(T))$ becomes the restricted mean survival time
+    (RMST) at time $\tau$ @RMST.
+:::
+
+::: {#def-causalsurvival}
+## Causal effect: Difference between survival probabilities
+
+$$
+    \theta(t) = E[I\{T(1) > t\} -I\{T(0) > t\} )]
+    = S_1\{t) - S_0(t)
+$$ with $S_a(t) = P(T(a)>t)$, the probability of surviving at time $t$
+when treatment $A=a$.
+:::
+
+::: {#def-causalmin}
+## Causal effect: Difference of restricted mean survival time (RMST) between treated and controls
+
+```{=tex}
+\begin{align*}
+   \theta_{RMST}(\tau)  = \mathbb{E}\left[T(1) \wedge \tau - T(0) \wedge \tau\right]  
+\end{align*}
+```
+Survival probabilities and RMST are linked as follows: 
+$$
+     \theta_{RMST}(\tau) = \int_{0}^{\tau}\left( S_1(t) - S_0(t) \right)dt
+$$
+:::
+
+
+RMST can be interpreted as the average survival time from baseline to a
+pre-specified time $\tau$: a RMST value of $10$ days with $\tau=200$
+means that on average the treatment increases the survival time by 10
+days at 200 days.
+
+In this paper, we focus on $\theta_{RMST}$ as the estimand of interest.\
+The aim is to construct estimators of this average causal effect while
+overcoming potential biases due to confounding factors and to right
+censoring.
+
+## Censoring mechanism
+
+Two different assumptions about the censoring mechanism can be
+considered.
+
+::: {#as-IndependantCensoring .assumption}
+**Assumption 1:Independent/ Non informative censoring**
+
+$$ 
+C \perp\mkern-9.5mu\perp T(0),T(1),X,A 
+$$ {#eq-independantcensoring}
+:::
+
+Under @eq-independantcensoring, subjects censored at time $t$ are
+representative of all subjects who remain at risk at time $t$.
+Therefore, the probability of experiencing an event should be the same
+for both censored subjects and subjects remaining at risk. It is as if
+the censored subjects were randomly selected from all subjects.
+
+::: assumption
+**Assumption 2:Conditionally independent censoring**
+
+$$ 
+ C \perp\mkern-9.5mu\perp T(0),T(1)|X,A 
+$$ {#eq-condindepcensoring}
+:::
+
+Under @eq-condindepcensoring, within subgroups represented by $X=x$,
+subjects censored at time $t$ are representative of all subjects in
+their subgroup who remain at risk at time $t$. It is as if the censored
+subjects were randomly selected inside each subgroup. This assumption is
+also referred to as dependent censoring.
+
+But another assumption for identifiability of RMST is required under
+@eq-condindepcensoring: we need to assume that all subjects have a
+positive probability to remain uncensored at their failure time.
+
+::: assumption
+**Assumption 3:Positivity / Overlap for censoring**
+
+$$ 
+pr( C > t \mid X=x, A=a) > 0, \text{ \quad for the identifiability of RMST: $t\leq \tau$}.
+$$ {#eq-positivitycensoring}
+:::
+
+If for a time $t$, $\mathbb{P}( C > t \mid X=x, A=a) = 0$, then this
+excludes that we have any observed outcomes after time $t$. For example,
+if we consider a clinical trial with administrative censoring after one
+year of study, then the probability of remaining uncensored after one
+year is zero. In that case, the potential outcomes $T(0)$ and $T(1)$ are
+not observed at all after $t=1$ year. One can consider lowering the
+threshold time $\tau$ such that each subject has a probability of
+remaining uncensored at their restricted time. \# Causal survival
+analysis with a Randomized Control Trial
+
+Randomized clinical trials (RCTs) are the gold standard for establishing
+the effect of a treatment on an outcome, because treatment allocation is
+under control, which ensures (asymptotically) the balance of covariates
+between treated and controls, and thus avoids problems of confounding
+between covariables and treatment.
+
+The core assumption in a RCT is the random assignment of the treatment
+[@rubin_estimating_1974].
+
+::: assumption
+**Assumption 4:Random treatment assignment**
+
+$$ 
+A \perp\mkern-9.5mu\perp(T(0),T(1),X)
+$$ {#eq-randomization}
+:::
+
+@eq-randomization implies that the treatment is given at random and is
+independent of both the potential outcomes and the covariates.
+
+
+**Indentifiability**
+
+Under @eq-randomization (random treatment assignment) and
+@eq-independantcensoring (independent censoring), the RMST can be
+identified as follows:
+
+$$
+\begin{aligned}
+    \theta_{RMST} &=  \mathbb{E}[T(1) \wedge \tau - T(0) \wedge \tau] =  \mathbb{E}[\min(T(1),\tau) - \min(T(0),\tau)] \\
+    &= \int_{0}^{\tau}{\mathbb{E}[I\{T(1) > t\} - I\{T(0) > t\}] dt} && \tiny\text{(Independent censoring)} \\
+    &= \int_{0}^{\tau}{\mathbb{E}[I\{T(1) > t|A=1\} - \mathbb{E}[I\{T(0) > t|A=0\} dt} && \tiny\text{(Random treatment assignment)}\\
+    &= \int_{0}^{\tau}{\mathbb{E}[I\{T > t|A=1\} - \mathbb{E}[I\{T > t|A=0\}]dt }&& \tiny\text{(Consistency)} \\
+    &= \int_{0}^{\tau}{S(t|A=1)-S(t|A=0)dt} 
+\end{aligned}
+$$ {#eq-RMSTkm} where $S(t|A=a)$ is the survival function of the
+population with treatment $A=a$.
+
+Under @eq-randomization (random treatment assignment) and
+@eq-condindepcensoring (conditionally independent censoring), the RMST
+can be identified as follows:
+
+$$
+\begin{aligned}
+    \theta_{RMST} &= \int_{0}^{\tau}{\mathbb{E}[I\{T > t|A=1,X\}] - \mathbb{E}[I\{T > t|A=0,X\}]dt }&& \tiny\text{(Consistency)} \\
+    &= \int_{0}^{\tau}{\mathbb{E}\left[\frac{I\{T > t|A=1\}*\Delta}{S_c(t|X,A=1)}- \frac{I\{T > t|A=0\}*\Delta}{S_c(t|X,A=0)} \right]dt } && \tiny\text{(Conditionally independent censoring)} 
+\end{aligned}
+$$ {#eq-RMSTipcw}
+
+where $S_c(t|X,A=a)$ is the survival function of remain uncensored given
+the covariate $X_i$
+
+## Estimation under independent censoring
+
+### Non adjusted Kaplan Meier estimator
+
+::: {#def-km}
+#### Unadjusted kaplan meier estimator
+
+```{=tex}
+\begin{align*}
+    \hat{S}_{KM}(t \mid a) &= \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i I\left\{T_i=t_j, C_i \geq t_j, A_i=a\right\}}{\sum_i I\left\{T_i \geq t_j, C_i \geq t_j, A_i=a\right\}}\right) \\
+    &= \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i I\left\{\tilde{T_i}=t_j, \Delta_i=1, A_i=a\right\}}{\sum_i I\left\{\tilde{T_i} \geq t_j, A_i=a\right\}}\right)
+\end{align*}
+```
+:::
+
+Unadjusted Kaplan Meier which maximizes the likelihood of the
+observations is a uniformly consistent non parametric estimator for
+estimating the survival function [@Kaplan_consistency] and [@kaplan].
+
+The corresponding RMST is obtained in integrating from 0 to $\tau$ the
+difference between non adjusted kaplan meier estimator of the treated
+and controls @eq-RMSTkm.
+
+**Implementation**
+
+```{r}
+# Fonction pour calculer l'intégrale par la méthode des trapèzes pour fonction decroissante 
+trapezoidal_integration <- function(x, y) {
+  sum((x[-1]-x[-length(x)]) * (y[-length(y)]+(y[-1]-y[-length(y)])/2))
+}
+
+#Handmade KM 
+# kaplan meier estimator
+Kaplan_meier_handmade <- function(data,status=data$status,T_obs=data$T_obs){
+  Y.grid <- sort(unique(T_obs))
+  d <- rep(NA,length(Y.grid))
+  n <- rep(NA,length(Y.grid))
+  S <- rep(NA,length(Y.grid))
+  for (i in 1:length(Y.grid)){
+    d[i] <- sum(T_obs==Y.grid[i] & status ==1,na.rm = TRUE)
+    n[i] <- sum(T_obs >= Y.grid[i])
+  }
+  S <- cumprod(1-d/n)
+  df<-data.frame(d=d,n=n,S= S, T = Y.grid)
+  return(df)
+}
+
+
+#Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
+km <- Kaplan_meier_handmade(data)
+plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+
+#Mettre sur le même graph le resultat de survfit 
+fit <- survfit(Surv(data$T_obs, data$status) ~ 1)
+lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
+
+data1 <- data[data$A==1,]
+data0 <- data[data$A==0,]
+
+#Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
+km <- Kaplan_meier_handmade(data1,status=data1$status,T_obs=data1$T_obs)
+km0 <- Kaplan_meier_handmade(data0,status=data0$status,T_obs=data0$T_obs)
+plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+lines(km0$T,km0$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+
+#Mettre sur le même graph le resultat de survfit 
+fit <- survfit(Surv(data$T_obs, data$status) ~ data$A)
+lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
+```
+
+```{r}
+# sur deux graph diff
+par(mfrow=c(1,2))
+km <- Kaplan_meier_handmade(data1,status=data1$status,T_obs=data1$T_obs)
+km0 <- Kaplan_meier_handmade(data0,status=data0$status,T_obs=data0$T_obs)
+plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+lines(km0$T,km0$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+
+#Mettre sur un autre graph le resultat de survfit
+fit <- survfit(Surv(data$T_obs, data$status) ~ data$A)
+plot(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
+
+```
+
+
+
+
+```{r}
+RMST <-function(data,A1=1,A0=0,tau=20){
+  T_obs <- sort(data$T_obs)
+  # Method 1 : Handmade KM with no troncation 
+  data1 <- data[data$A==A1,]
+  data0 <- data[data$A==A0,]
+  Y.grid1 <- data1$T_obs[data1$T_obs <= tau]
+  Y.grid0 <- data0$T_obs[data0$T_obs <= tau]
+  S_A1 <- Kaplan_meier_handmade(data1,status=data1$status,T_obs=data1$T_obs)
+  S_A0 <- Kaplan_meier_handmade(data0,status=data0$status,T_obs=data0$T_obs)
+  S_A1 <- S_A1%>%
+    dplyr::filter(T %in% Y.grid1)
+
+  S_A0 <- S_A0%>%
+    dplyr::filter(T %in% Y.grid0)
+
+  #integral from 0 to tau of S_A1 on Y.grid
+  intA1 <- trapezoidal_integration(S_A1$T, S_A1$S)
+  intA0 <- trapezoidal_integration(S_A0$T, S_A0$S)
+  #mean(S_A1$T)
+  RMST1 <- intA1 - intA0
+  
+  #Method 2 : Troncation
+  data1$T_obs_tau2 <- ifelse(data1$T_obs>=tau,tau,data1$T_obs)
+  data0$T_obs_tau2 <- ifelse(data0$T_obs>=tau,tau,data0$T_obs)
+  data1$status_tau2 <- ifelse(data1$T_obs>=tau | (data1$T_obs < tau & data1$status ==1),1,0)
+  data0$status_tau2 <- ifelse(data0$T_obs>=tau | (data0$T_obs < tau & data0$status ==1),1,0)
+  
+  S_A1 <- Kaplan_meier_handmade(data1,status=data1$status_tau2,T_obs=data1$T_obs_tau2)
+  #plot(S_A1$T,S_A1$S)
+  S_A0 <- Kaplan_meier_handmade(data0,status=data0$status_tau2,T_obs=data0$T_obs_tau2)
+  intA1 <- trapezoidal_integration(S_A1$T, S_A1$S)
+  intA0 <- trapezoidal_integration(S_A0$T, S_A0$S)
+  RMST2 <- intA1 - intA0
+  
+  return(list(RMST1=RMST1,RMST2=RMST2))
+}
+
+RMST(data,tau=20)
+
+# plot des 2 calculs de RMST en fonction de tau : 
+tau <- seq(0,70,by=1)
+res <- sapply(tau,function(x) RMST(data,tau=x))
+matplot(tau,res[1,],type="l",lty=1,col=1:2,ylab="RMST",xlab="tau")
+lines(tau,res[2,],lty=2,col=2)
+legend("topright",legend=c("RMST1","RMST2"),col=1:2,lty=1)
+
+boxplot(res,main="RMST",names=tau)
+```
+
+```{r}
+RMST(data,tau=01)
+
+
+```
+
+
+Il y a une différence entre les deux méthodes 
+
+```{r}
+# kaplan meier estimator with restricted tau
+# fit KM
+Kaplan_meier <- function(data){
+  T_obs_tau <- data$T_obs_tau
+  status_tau <- data$status_tau
+  A <- data$A
+  fit <- survfit(Surv(T_obs_tau, status_tau) ~ A, data = data)
+  # Summarize table 
+  res.sum <- surv_summary(fit, data = data)
+  head(res.sum)
+  res_KM <- attr(res.sum, "table") 
+  head(res_KM)
+
+  # Mean difference of the survival function 
+  mean_naive <- (res_KM$rmean[2] - res_KM$rmean[1])
+  return(mean_naive)
+}
+
+Kaplan_meier(data)
+```
+
+## Estimation under conditional censoring
+
+Under Assumptions @eq-randomization (random treatment assignment),
+@eq-condindepcensoring (conditional censoring) and
+@eq-positivitycensoring (Positivity for censoring), the unadjusted KM
+estimator overestimates the real survival probabilities [@IPCW]. This
+indicates that correction for the presence of dependent censoring is
+important in order to obtain a good estimator. Under these assumptions,
+the adjusted IPCW (inverse probability of censoring weighting) Kaplan
+Meier estimator [@Robins1992],[@IPCWrobins] can be used to estimate the
+causal treatment effect.
+
+### (IPCW) adjusted Kaplan Meier estimator
+
+::: {#def-ipcwkm}
+#### IPCW adjusted kaplan meier estimator
+
+$$\hat{S}_{IPCW-KM}(t \mid a) = \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w}_{i}(t_j,X_i)*I\left\{T_i=t_j, C_i \geq t_j, A_i=a\right\}}{\sum_i \hat{w}_{i}(t_j,X_i)*I\left\{T_i \geq t_j, C_i \geq t_j, A_i=a\right\}}\right)$$
+
+-   $\hat{w_{i}}(t,X_i)=\frac{1}{\hat{S_{c}}(t|X_{i},A_{i})}$ is the
+    inverse of the probability of remain uncensored given the covariates
+    $X_{i}$.
+-   $\hat{S_{c}}(t|X_{i},A_{i})$ is based on the fit of semi-parametric
+    or parametric model for censoring (for example a Cox model) with
+    $X_i$ and $A_i$ the covariates.
+:::
+
+This estimator gives extra weight to subjects who are not censored. At
+every time point $t$, each subject $i$ is given a weight which is
+inversely proportional to the estimated probability of having remained
+uncensored until time $t$.
+
+In the exact same way than before, the corresponding RMST is obtained in
+integrating from 0 to $\tau$ the difference between adjusted kaplan
+meier estimator of the treated and controls @eq-RMSTipcw.
+
+**Implementation**
+
+```{r}
+estimate_survival_function <- function(DATA,X_name,Y.grid,tau,type_of_model="cox"){
+  if (type_of_model == "cox"){
+    outcome <- 'Surv(T_obs,status)'
+    f <- as.formula(paste(outcome, paste(c(X_name,'A'), collapse = " + "), sep = " ~ "))
+    fitS <- suppressWarnings(coxph(f, data=DATA, x=TRUE))
+    fitS$coefficients[is.na(fitS$coefficients)] <- 0
+    DATA.1 <- DATA
+    DATA.1$A <- 1
+    DATA.0 <- DATA
+    DATA.0$A <- 0
+    
+    fit.pred1 <- predictCox(fitS, newdata=DATA.1, times=Y.grid , type = "survival")
+    fit.pred0 <- predictCox(fitS, newdata=DATA.0, times=Y.grid , type = "survival")
+    S_hat1 <- fit.pred1$survival
+    S_hat0 <- fit.pred0$survival
+    
+    if ( length(Y.grid) > 1){
+      S_hat0[,length(Y.grid)] <- S_hat0[,length(Y.grid)-1]
+      S_hat1[,length(Y.grid)] <- S_hat1[,length(Y.grid)-1]
+    }
+    }
+  if (type_of_model == "kaplan_meier"){
+    
+    
+}
+S_hat <- S_hat1*DATA$A + (1-DATA$A)*S_hat0
+return(list('S_hat'=S_hat,"S_hat1"=S_hat1,"S_hat0"=S_hat0))
+}
+
+# IPCW kaplan meier estimator with restricted tau
+# fit IPCW KM
+IPCW_Kaplan_meier <- function(data,A1=1,A0=0,Y.grid){
+    DATA_treated <- data[data$A == A1,]
+    DATA_not_treated <- data[data$A == A0,]
+    status_tau_t <- sapply(Y.grid,function(t) as.numeric((data$T_obs>=t) | (data$T_obs<t &  data$status == 1 )))
+    
+    weights <- status_tau_t/S_C_hat
+    weights_treated <- weights[data$A == 1,]
+    weights_not_treated <- weights[data$A == 0,]
+    
+    S1 <- Kaplan_meier_handmade(DATA_treated$T_obs,DATA_treated$status,Y.grid=Y.grid,weights = weights_treated)
+    S0 <- Kaplan_meier_handmade(DATA_not_treated$T_obs,DATA_not_treated$status,Y.grid=Y.grid,weights = weights_not_treated)
+    
+    grid.diff <- diff(c(0, Y.grid, max(Y.grid)))
+    E_hat1 <- c(c(1, S1) %*% grid.diff)
+    E_hat0 <- c(c(1, S0) %*% grid.diff)
+    theta_t <- S1-S0
+    ATE_treated <- E_hat1
+    ATE_not_treated <- E_hat0
+    ATE <- E_hat1 - E_hat0
+    return(list(ATE = ATE, ATE_treated = ATE_treated, ATE_not_treated = ATE_not_treated, theta_t = theta_t))
+}
+
+S_C_hat <- estimate_survival_kaplan_meier(data$C_obs,data$status,Y.grid=Y.grid,)
+
+IPCW_Kaplan_meier(data,Y.grid=c(1:tau))
+```
+
+
+# Causal survival analysis with an observational study
+
+In the context of observational study, @eq-randomization (randomized
+treatment assignment) is no longer verified. Some additional assumptions
+are required to identify $\theta_{RMST}$. These assumptions are
+classical for causal inference with observational data:
+
+::: assumption
+**Assumption 5:Conditional exchangeability / Uncounfoundedness**
+
+$$ 
+ A \perp\mkern-9.5mu\perp(T(0),T(1)) | X
+$$ {#eq-uncounf} with $X$ the set of covariates that are related both to
+treatment's assignment and outcomes.
+:::
+
+Under Assumption @eq-uncounf, the treatment assignment is randomly
+assigned conditionally on the covariates $X$. It is as if the treatment
+for all subjects were randomly selected inside each subgroup.
+
+::: assumption
+**Assumption 6:Positivity / Overlap for treatment**
+
+$$ 
+1 > P(A=a \mid X=x)>0
+$$ {#eq-positivitytreat} with $X$ the set of covariates that are related
+both to treatment's assignment and outcomes.
+:::
+
+**Indentifiability**
+
+Under @eq-uncounf (Uncounfoundedness) and @eq-independantcensoring
+(Independent censoring), the RMST can be identified as follows:
+
+$$
+\begin{aligned}
+    \theta & =\mathbb{E}[T(1) \wedge \tau-T(0) \wedge \tau] \\
+    & =\mathbb{E}\left[(T(1) \wedge \tau)*\frac{A}{e(X)}-(T(0) \wedge \tau)*\frac{1-A}{1-e(X)}\right] \tiny\text { (Identifiability of the IPTW) } \\
+    & =\int_{0}^{\tau}{\mathbb{E}\left[I\{T(1)>t\}*\frac{A}{e(X)}-I\{T(0)>t\}*\frac{1-A}{1-e(X)}\right]dt }\\
+    & =\int_{0}^{\tau}{\mathbb{E}\left[I\{T>t \mid A=1\}*\frac{A}{e(X)}-I\{T>t\mid A=0\}*\frac{1-A}{1-e(X)}\right]dt } \tiny\text { (By consistency)}
+\end{aligned}
+$$ {#eq-RMST-IPTW}
+
+Under @eq-uncounf (Uncounfoundedness) and @eq-condindepcensoring
+(conditionally independent censoring), the RMST can be identified as
+follows:
+
+$$
+\begin{aligned}
+    \theta & =\mathbb{E}[T(1) \wedge \tau-T(0) \wedge \tau] \\
+    & =\mathbb{E}\left[(T \wedge \tau)\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right)\right] \tiny\text { (Identifiability of the IPTW) }  \\
+    & =\mathbb{E}\left[\mathbb{E}[(T \wedge \tau) \mid A, X]\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right)\right] \\
+    & =\mathbb{E}\left[\frac{\widetilde{T} \wedge \tau \cdot \Delta^\tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)}\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right) \right] &&
+\end{aligned}
+$$ {#eq-RMST-IPTW-IPCW}
+
+Under the same assumptions, it can be identified also as g-formula:
+
+$$
+\begin{aligned}
+    \theta & =\mathbb{E}\left[T(1) \wedge \tau-T(0) \wedge \tau\right] \\
+    & =\mathbb{E}\left[\mathbb{E}\left[T(1) \wedge \tau-T(0) \wedge \tau \mid X\right]\right] \\
+    & =\mathbb{E}\left[\mathbb{E}\left[T(1) \wedge \tau \mid X, A=1\right]-\mathbb{E}\left[T(0) \wedge \tau \mid X=X, A=0\right]\right] \tiny\text { (Uncounfoundedness) } \\
+    & =\mathbb{E}\left[\mathbb{E}\left[T \wedge \tau \mid X, A=1\right]-\mathbb{E}\left[T \wedge \tau \mid X, A=0\right]\right] \tiny\text { (Consistency) }
+\end{aligned}
+$$ {#eq-RMST-gformula}
+
+## Estimation under independent censoring
+
+### IPTW Kaplan Meier estimator
+
+Under Uncounfoundedness and independent censoring @eq-uncounf and
+@eq-independantcensoring, the Kaplan Meier estimator has to include a
+weighting term to take into account that the treated and control groups
+are unbalanced. This weighted estimator is called the inverse
+probability of treatment weighted Kaplan Meier estimator (IPTW-KM)
+[@IPTW].
+
+Based on the identifiability @eq-RMST-IPTW, the IPTW KM is defined as:
+
+::: {#def-iptwkm}
+#### Adjusted IPTW kaplan meier estimator
+
+$$\hat{S}_{IPTW-KM}(t \mid a) = \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w_{i}}*I\left\{T_i=t_j, C_i \geq t_j, A_i=a\right\}}{\sum_i \hat{w_{i}}*I\left\{T_i \geq t_j, C_i \geq t_j, A_i=a\right\}}\right)$$
+
+with
+$\hat{w_{i}}=\frac{A_{i}}{\hat{e}(X_{i})}+ \frac{1-A_{i}}{1-\hat{e}(X_{i})}$
+the inverse of the propensity score.
+:::
+
+In the exact same way than before, the corresponding RMST is obtained in
+integrating from 0 to $\tau$ the difference between IPTW adjusted kaplan
+meier estimator of the treated and controls @eq-RMST-IPTW.
+
+**Implementation**
+
+```{r}
+Adjusted_Kaplan_Meier<- function(dataset,e_hat) {
+  W <- (dataset$A == 1) * (1/e_hat) + (dataset$A==0) * (1)/(1-e_hat)
+  fitipw <- survfit(Surv(T_obs_tau, status_tau) ~ A, data = dataset,weights =W )
+  # Summarize
+  resipw.sum <- surv_summary(fitipw, data = dataset)
+  res_ipw <- attr(resipw.sum, "table")
+  
+  
+  mean_ipw <- (res_ipw$rmean[2] - res_ipw$rmean[1])
+  return(mean_ipw)
+}
+
+library(grf)
+estimate_propensity_score <- function(DATA,treatment_name,type_of_model="reglog"){
+  # ## GLM
+  if (type_of_model == "reglog"){
+    outcome <- 'A'
+    f <- as.formula(paste(outcome, paste(c(treatment_name), collapse = " + "), sep = " ~ "))
+    fitA <- glm(f,data = DATA,family = binomial(link="logit"))
+    e_hat <- predict(fitA,newdata=DATA,type="response")
+    return(e_hat)
+  }
+  if (type_of_model == "forest"){
+    
+    # onehot encode factor variables
+    categorical_name <- names(which(sapply(subset(DATA, select = c(treatment_name)), class) == "factor"))
+    if (length(categorical_name) >0){
+      numerical_name <- setdiff(treatment_name,categorical_name)
+      na.action <- options()$na.action
+      options(na.action='na.pass')
+      X_one_hot <- model.matrix(~ 0 + ., DATA[categorical_name], na.action = "na.pass")
+      categorical_name_one_hot <- names(as.data.frame(X_one_hot))
+      replace_string <- function(string) {return(str_replace_all(string, ' ', '_'))}
+      categorical_name_one_hot <- sapply(categorical_name_one_hot,replace_string)
+      DATA[categorical_name_one_hot] <- X_one_hot
+      treatment_name<- union(categorical_name_one_hot,numerical_name)
+      options(na.action = na.action)
+    }
+    ## Forest
+    
+    Xipw <- as.matrix(DATA[treatment_name])
+    Wipw <- as.matrix(DATA$A)
+    forest.W <- regression_forest(Xipw, Wipw,honesty = FALSE)
+    e_hat <- predict(forest.W)$predictions
+    return(e_hat)
+  }
+}
+```
+
+## Estimation under conditionally independent censoring
+
+### Inverse probability of weighting estimation (IPTW-IPCW)
+
+When the independent censoring assumption is not verified, the IPTW-IPCW
+Kaplan meier estimator can be used to estimate the causal treatment
+effect. The IPTW-IPCW KM estimator is a combination of both estimators
+[@Doubleweight]: IPTW to overcome that the treatment allocation is not
+random and IPCW to overcome the dependent censoring.
+
+Based on the identifiability @eq-RMST-IPTW-IPCW, the IPTW-IPCW is
+defined as:
+
+::: {#def-iptwipcw}
+#### IPTW-IPCW estimator
+
+$$\widehat{\theta}_{\mathrm{IPTW}-\mathrm{IPCW}}(\tau) = \frac{1}{n} \sum_{i=1}^n \frac{\Delta_i^\tau \cdot \tilde{T}_i \wedge \tau}{\hat{S}_C\left(\widetilde{T} \wedge \tau \mid A_i, X_i\right)}\left(\frac{A_i}{\hat{e}\left(X_i\right)}-\frac{1-A_i}{1-\hat{e}\left(X_i\right)}\right) $$
+
+where $\hat{S}_C\left(\widetilde{T} \wedge \tau \mid A_i, X_i\right)$ is
+a semi parametric (or parametric) methodology to estimate the survival
+function of remain uncensored.
+:::
+
+It enables a balance between treatment and control groups and between
+censored and uncensored individuals.
+
+This RMST estimator can be obtained at first in estimating the survival
+function of remain uncensored in using semi-parametric or parametric
+model. Then, the weight for each observation can be computed as:
+
+$$w_i=\frac{\Delta_i^\tau}{\hat{S}_C\left(\widetilde{T} \wedge \tau \mid A_i, X_i\right)}*(\frac{A_i}{\hat{e}\left(X_i\right)}-\frac{1-A_i}{1-\hat{e}(X_i)})$$
+
+An adjusted kaplan estimator (weighted by the previous $w_i$) can be
+fitted for $A=1$ and $A=0$ (see definition @def-iptwipcw).
+
+::: {#def-iptwipcwkm}
+#### Adjusted IPTW-IPCW kaplan meier estimator
+
+$$\hat{S}_{IPTW-IPCW-KM}(t \mid a) = \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w_{i}}(t,X_i)*I\left\{T_i=t_j, C_i \geq t_j, A_i=a\right\}}{\sum_i \hat{w_{i}}(t,X_i)*I\left\{T_i \geq t_j, C_i \geq t_j, A_i=a\right\}}\right)$$
+
+with
+$\hat{w_{i}}(t,X_i)=\frac{1}{\hat{S}_C\left(\widetilde{T} \wedge \tau \mid A_i, X_i\right)}*(\frac{A_{i}}{\hat{e}(X_{i})}+ \frac{1-A_{i}}{1-\hat{e}(X_{i})})$
+the corresponding weight including the inverse of the propensity score
+and the inverse probability of remain uncensored given the covariates.
+:::
+
+Then, the corresponding RMST is the integral of the difference between
+the survival curve with $A=1$ and the $A=0$.
+
+**Implementation**
+
+### G-formula plug-in estimator
+
+Another possible estimator under @eq-uncounf and @eq-condindepcensoring
+is the G-formula plug-in estimator.
+
+It is an alternative of IPCW in leveraging the regression formulation.
+Instead of fitting a model for the censored mechanism and a model for
+the probability of being treated, the corresponding estimators fit a
+model of the conditional outcome mean. Applying these models to the each
+treatment arm, and then marginalizing over the empirical covariates
+distributions of the target population, gives the corresponding expected
+outcome [@ROBINS1986]. Based on the g-formula identifiability
+@eq-RMST-gformula}, this outcome model based estimator is defined as:
+
+::: {#def-gformula}
+#### G-formula plug-in estimator
+
+$$ \widehat{\theta}_{\text {g-formula }}(\tau) =\frac{1}{n} \sum_{i=1}^n\left(\hat{F}\left(X_i, 1\right)-\hat{F}\left(X_i, 0\right)\right) $$
+
+with $F(x, a) \triangleq \mathbb{E}[T \wedge \tau \mid X=x, A=a]$. It
+can be estimated in using semi-parametric or parametric methods.
+:::
+
+Generally, $F(x, a)$ estimator is based on the estimation of the
+conditional survival function. It can be obtained in fitting one
+semi-parametric (or parametric) model (i.e. Cox model) by treatment on
+the corresponding observations and in predicting the results for the all
+observations. Then, the RMST is computed by the integral of the
+difference between the predicted conditional survival curve with A=1 and
+A=0.
+
+**Implementation**
+
+```{r}
+library(dplyr)
+library(rms)
+library(survival)
+library(riskRegression)
+
+# compute the area under the survival curve for each individual :  Trapezoidal rule
+# S.hat : predicted survival function for each individual 
+expected_survival <- function(S.hat, Y.grid) {
+  # Y.grid : vector of time at which to evaluate the survival estimates (same than S.hat)
+  # grid.diff : distance between each timepoint
+  grid.diff <- diff(c(0, Y.grid, max(Y.grid)))
+  # area under each survival curve
+  c(base::cbind(1, S.hat) %*% grid.diff)
+}
+
+g_formula_cox_T_learner <- function(DATA,X_outcome,Y.grid) {
+  outcome <- 'Surv(T_obs,status)'
+  # learn cox regression on two dataset : A|X
+  # A == 0
+  DATA0 <- DATA %>% filter(A == 0)
+  # A == 1
+  DATA1 <- DATA %>% filter(A == 1)
+  
+  # formula T ~ X_outcome
+  f <- as.formula(paste(outcome, paste(c(X_outcome), collapse = " + "), sep = " ~ "))
+  # fit the two models on the vector of time Y.grid 
+  fitS0 <- cph(f,data=DATA0,y=TRUE,x=TRUE,times = Y.grid)
+  fitS1 <- cph(f,data=DATA1,y=TRUE,x=TRUE,times = Y.grid)
+  
+  # predict to all the dataset set to A=1
+  DATA.1 <- DATA
+  DATA.1$A <- 1
+
+  # predict to all the dataset se to A=0
+  DATA.0 <- DATA
+  DATA.0$A <- 0
+  
+  # predict on Y.grid each individual
+  fit.pred1 <- predictCox(fitS1, newdata=DATA.1, times=Y.grid , type = "survival")
+  fit.pred0 <- predictCox(fitS0, newdata=DATA.0, times=Y.grid , type = "survival")
+  # survival probability for each individual at each Y.grid
+  S_hat1 <- fit.pred1$survival
+  S_hat0 <- fit.pred0$survival
+
+  # area under each survival curve until max(Y.grid)=tau 
+  # A =1
+  E_hat1 <- expected_survival(S_hat1,Y.grid)
+  # A =0
+  E_hat0 <- expected_survival(S_hat0,Y.grid)
+  
+  # mean difference 
+  theta_g_formula <- mean(E_hat1 - E_hat0)
+  return(theta_g_formula)
+}
+```
+
+# Simulation
+
+## RCT
+
+## Observationnal study
+
+First, we conducted a simple simulation with a static treatment
+assignment, baseline covariates with no time dependency. The event time
+and the censoring time are simulated using the cumulative hazard
+inversion method for exponential models using the *simsurv* R package.
+For the simulation, 2000 samples $(X_{i},A_{i},C,T_{i}(0), T_{i}(1))$
+are generated in the following way :
+
+-   $X \sim \mathcal{N}\left(\mu=[1,1,-1,1]^{\top}, \Sigma=I_4\right)$
+
+-   $\operatorname{logit}\{e(X)\}=-0.5 X_1-0.3 X_2+0.1 X_3+0.2 X_4$ for
+    the propensity score $(A)$
+
+-   $\lambda(0)(X)=0.1 \cdot \exp \left\{0.5 X_1-0.1 X_2+0.3 X_3+0.2 X_4\right\}$
+    hazard for the event time $T(0)$
+
+-   $\cdot \lambda_c(X)=0.03 \cdot \exp \left\{0.1 X_1+0.1 X_2-0.2 X_3-0.2 X_4\right\}$
+    hazard for the censoring time $C$
+
+-   $T(1)=T(0)+4$
+
+-   the event time is $T=A T(1)+(1-A) T(0)$
+
+-   The observed time is $\widetilde{T}=\min (T, C)$
+
+-   The status is $\Delta=1(T \leq C)$
+
+-   The threshold time $\tau$ is 20
+
+The observed samples are $(X_{i},A_{i},\Delta_{i},\widetilde{T_{i}})$
+represented in Table @tbl-exemple_data.
+
+The cumulative hazard inversion method comes from the formula :
+$S(t)=\exp \left\{-\int_{0}^{t} \lambda(u) d u\right\}$
+
+The cumulative hazard inversion method is explained in annexes
+@sec-Annexes.
+
+```{r setup}
+library(simsurv)
+library(survival)
+
+simulate_data <- function(n,mu= c(1, 1, -1, 1), sigma=diag(4),tau,
+parsS=c(0.5,-0.1,0.3,0.2),parsA=c(-0.5,-0.3,0.1,0.2),parsC=c(0.1,0.1,-0.2,-0.2)){
+  
+  # Generate X from multivariate normal distribution
+  X <- MASS::mvrnorm(n, mu, sigma)
+  X <- as.data.frame(X)
+  colnames(X) <- c("X1", "X2", "X3", "X4")
+  #head(X)
+  # Treatment variable selection : all X
+  X_treatment<- as.matrix(X)
+  # propensity score
+  e <- rowSums(as.matrix(X_treatment) %*% diag(parsA))
+  e <- plogis(e)
+
+  # Affectation de traitement
+  A <- sapply(e, FUN=function(p) rbinom(n=1, size=1, prob=p))
+
+  # Outcome variable selection : all X 
+  X_outcome<- as.matrix(X)
+  # Simulate the outcome  with the cumulative hazard inversion method 
+  epsilon <- runif(n, min = 0.00000001, max = 1)
+  T0 <- -log(epsilon)/(0.1*exp(  X_outcome%*% parsS ))
+
+  # Temps T(1) = T(0) + 4
+  T1 <- T0 + 4
+
+  # Selection between T0 and T1
+  T_true <- A*T1 + (1-A)*T0
+  
+  # Censoring variable selection : all X
+  X_censoring<- as.matrix(X)  
+  
+  # Hazard pour la censure C with the cumulative hazard inversion method
+  epsilon2 <- runif(n, min = 0.00000001, max = 1)
+  C <- -log(epsilon2)/(0.03*exp(rowSums(X_censoring %*% diag(parsC))))
+
+  # Observed time
+  T_obs <- pmin(T_true, C)
+
+  # Status
+  status <- as.numeric(T_true <= C)
+  censor.status <- as.numeric(T_true > C)
+
+  # Restricted survival time
+  T_obs_tau <- pmin(T_obs,tau)
+  status_tau <- as.numeric((T_obs>tau) | (T_obs<=tau &  status == 1 ))
+
+  DATA_target_population <- data.frame(X,tau,A,T0,T1,C,T_obs,T_obs_tau, status,censor.status,status_tau,e)
+
+  return(DATA_target_population)
+}
+
+```
+
+
+```{r}
+data <- simulate_data(n=2000,tau=70)
+head(data,10)
+```
+
+### Data description
+
+```{r}
+library(survival)
+library(ggplot2)
+library(survminer)
+library(skimr)
+#afficher plus visuellement
+
+knitr::kable(skim(data))
+```
+
+
+The distribution of the death and censoring over the time is displayed below. 
+The number of patients is displayed on the y-axis and the time on the x-axis. 
+The censored patients are displayed in purple and the dead patients are displayed in red. 
+
+```{r}
+ggplot(data, aes(x = T_obs)) +
+  geom_histogram(data = subset(data, status == 0), aes(fill = "Censored"), alpha = 0.7, binwidth = 1) +
+  geom_histogram(data = subset(data, status == 1), aes(fill = "Dead"), alpha = 0.3, binwidth = 1) +
+  labs(x = "Time", y = "Number of patients") +
+  scale_fill_manual(name = "Status", values = c("Censored" = "#5f0e91", "Dead" = "#cf6666")) +
+  theme(legend.position = "top")
+
+```
+
+The kaplan meier of the censoring and the survival curve are displayed below.
+
+The kaplan for censoring is the probability of remaining uncensored. 
+
+```{r}
+kaplan_censoring <- survfit(Surv(time = C, event = censor.status) ~ 1, data = data)
+
+# risk table jusqu'à 80 jours
+ggsurvplot(kaplan_censoring, data=data,
+  surv.median.line = "hv",     # Ajoute les lignes médianes horizontales et verticales
+  conf.int = TRUE,             # Affiche les intervalles de confiance
+  title = "Censoring Curves (P(C>t)) : Probability of remain uncensored",  # Titre du graphique
+  xlab = "Time (days)",        # Étiquette de l'axe x
+  ylab = "Censoring Probability" ,# Étiquette de l'axe y
+  xlim=c(0,100)
+)
+
+```
+
+The survival curve is the probability of remaining alive. 
+```{r}
+kaplan <- survfit(Surv(time = T_obs, event = status) ~ 1, data = data)
+
+ggsurvplot(kaplan, data=data,
+  surv.median.line = "hv",     # Ajoute les lignes médianes horizontales et verticales
+  conf.int = TRUE,             # Affiche les intervalles de confiance
+  risk.table = TRUE,           # Affiche le tableau des risques en bas du graphique
+  risk.table.title = "Risks",  # Titre du tableau des risques
+  title = "Survival curve",  # Titre du graphique
+  xlab = "Time (days)",        # Étiquette de l'axe x
+  ylab = "Survival Probability" # Étiquette de l'axe y
+)
+
+```
+
+A stratified analysis by treatment of the survival curve is displayed below : 
+
+```{r}
+# faire une analyse stratifiée par traitement
+
+kaplan_treatment <- survfit(Surv(T_obs, status) ~ A, data = data)
+
+ggsurvplot(kaplan_treatment, data=data,
+  surv.median.line = "hv",     # Ajoute les lignes médianes horizontales et verticales
+  conf.int = TRUE,             # Affiche les intervalles de confiance
+  risk.table = TRUE,           # Affiche le tableau des risques en bas du graphique
+  risk.table.title = "Risks",  # Titre du tableau des risques
+  title = "Survival curve",  # Titre du graphique
+  xlab = "Time (days)",        # Étiquette de l'axe x
+  ylab = "Survival Probability" # Étiquette de l'axe y
+)
+
+```
+
+
+As a reminder, $T_{obs_tau}=\min(T_{obs},\tau)$ and $status_tau=1${(T_obs>tau | T_obs \leq tau & status =1)}. 
+Basically, if the event occurs before $\tau$, the status is 1 and the observed time doesn't change. 
+If the event or censoring occurs after $\tau$, the status is 1.
+The censoring before the threshold time $\tau$ remains the same.
+
+In estimating kaplan meier in using these parameter, the survival time is troncated at $\tau$, thus $P(T>\tau)=0$.
+It allows us to estimate easily the integral of the survival function up to $\tau$.
+
+In this exemple, $\tau=30$.
+
+```{r}
+kaplan_treatment_troncated <- survfit(Surv(T_obs_tau, status_tau) ~ A, data = data)
+
+ggsurvplot(kaplan_treatment_troncated, data=data,
+  surv.median.line = "hv",     # Ajoute les lignes médianes horizontales et verticales
+  conf.int = TRUE,             # Affiche les intervalles de confiance
+  risk.table = TRUE,           # Affiche le tableau des risques en bas du graphique
+  risk.table.title = "Risks",  # Titre du tableau des risques
+  title = "Survival curve",  # Titre du graphique
+  xlab = "Time (days)",        # Étiquette de l'axe x
+  ylab = "Survival Probability" # Étiquette de l'axe y
+)
+
+```
+
+It is the exact same curve than but with $P(T>30)=0$ to estimate the integral of the survival function up to $\tau$ : 
+```{r}
+ggsurvplot(kaplan_treatment, data=data,
+  surv.median.line = "hv",     # Ajoute les lignes médianes horizontales et verticales
+  conf.int = TRUE,             # Affiche les intervalles de confiance
+  risk.table = TRUE,           # Affiche le tableau des risques en bas du graphique
+  risk.table.title = "Risks",  # Titre du tableau des risques
+  title = "Survival curve",  # Titre du graphique
+  xlab = "Time (days)",        # Étiquette de l'axe x
+  ylab = "Survival Probability", # Étiquette de l'axe y
+  xlim=c(0,30)
+)
+```
+
+
+Tha naive estimator of the average treatment effect is the difference of the mean of the survival time between the treated and the untreated group is displayed below : 
+
+```{r}
+
+Naive <- function(data){
+  T_obs_tau <- data$T_obs_tau
+  status_tau <- data$status_tau
+  A <- data$A
+  mean_naive <- mean(T_obs_tau[A==1]) - mean(T_obs_tau[A==0]) 
+  return(mean_naive)
+}
+
+Naive(data)
+```
+
+```{r}
+
+Kaplan_meier(data)
+e_hat <- estimate_propensity_score(data,c("X1","X2","X3","X4"),type_of_model="reglog")
+mean_ipw <- Adjusted_Kaplan_Meier(data,e_hat)
+mean_ipw
+g_formula_cox_T_learner(data,c("X1","X2","X3","X4"),Y.grid=c(1:30))
+
+```
+
+### Simulation graph 
+
+Repeat the simulation 200 times and compare the different estimators in plotting the distribution of the estimates.
+
+```{r,eval=FALSE}
+# Simulation study
+
+#n <- 2000
+tau <- 30
+n_sim <- 1000
+
+
+all_estimates <- function(data,sample.size){
+
+  results <- data.frame("sample.size" = c(),
+                        "estimate" = c(),
+                        "estimator" = c(),
+                        "nuisance" = c())
+
+  e_hat <- estimate_propensity_score(data,c("X1","X2","X3","X4"),type_of_model="reglog")
+  ATE_naive<- Naive(data)
+  ATE_km_rct<- Kaplan_meier(data)
+  ATE_km_adj <- Adjusted_Kaplan_Meier(data,e_hat)
+  ATE_g_formula <- g_formula_cox_T_learner(data,c("X1","X2","X3","X4"),Y.grid=c(1:tau))
+    
+
+  data.frame <- data.frame("sample.size" = rep(sample.size, 4),
+                               "estimate" = c(ATE_naive, ATE_km_rct,
+                                              ATE_km_adj, ATE_g_formula),
+                               "estimator" = c("Naive", "KM", "Adjusted KM", "G_formula cox"),
+                               "nuisance" = rep("linear + cox", 4))
+  
+return(data.frame)
+}
+
+compute_estimator<-function(data,n_sim){
+data.frame <-  data.frame("sample.size" = c(),
+                        "estimate" = c(),
+                        "estimator" = c(),
+                        "nuisance" = c())
+  for (n in c(100,200,500,1000,2000,4000)){
+    for (i in 1:n_sim){
+      data <- simulate_data(n,tau=tau)
+      all <- all_estimates(data,n)
+      data.frame <- rbind(all,data.frame)
+    }
+  }
+return (data.frame)
+}
+
+simulation<-compute_estimator(data,n_sim)
+
+save(simulation,file="simulation.RData")
+```
+
+```{r}
+load("simulation.RData")
+```
+
+
+```{r}
+library(forcats)
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation$sample.size <- as.factor(simulation$sample.size )
+
+simulation_graph <- simulation %>%
+  mutate(estimator = fct_relevel(estimator,
+            "NAIVE", "KM", "ADJUSTED KM", "G FORMULA COX"))%>%
+  ggplot(aes(x = estimator, y = estimate, fill = sample.size)) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Different ATE estimators for different sample sizes")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE) +
+  xlab("") +
+  ylab("ATE") +
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = 4, linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "horizontal", legend.text = element_text(size=10)) +
+  theme(axis.text = element_text(size=13, face = "bold"),
+           axis.title.x = element_text(size=14, face = "bold")) +
+  ylim(0,6)
+simulation_graph
+```
+
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
+
+# Annex {#sec-Annexes}
+
+## Cumulative hazard inversion method {#sec-cumulative-hazard-inversion-method}
+
+When X, a random continuous variable, follow an exponential law (X \~
+$\varepsilon(\lambda)$) : the corresponding repartition function is:
+$F_{\lambda}(x)=P(X \geq x)=1-\exp(-\lambda x)$ and the density function
+is $f_{\lambda}(x)=\lambda \exp(-\lambda x)$.
+
+$F_{\lambda}$ is bijective from $\mathcal{R}^{+}$ to $]0;1[$ thus,
+$F_{\lambda}^{-1}$ exists and is also bijective from $]0;1[$ to
+$\mathcal{R}^{+}$. The inverse of the repartition function is :
+$F^{-1}(u)=\frac{-log(1-u)}{\lambda}$ where U \~ $\mathcal{U}(0,1)$ and
+$\frac{-log(1-u)}{\lambda}$ \~ $\varepsilon(\lambda)$.
+
+In knowing that 1-U \~$\mathcal{U}(0,1)$, we can also simulate X as :
+$\frac{-log(u)}{\lambda}$ \~ $\varepsilon(\lambda)$.
+
+Following this results, in the case where T, the survival time, follow
+an exponential distribution (T \~ $\varepsilon(\lambda)$). The variable
+T can be simulated as : $F_\lambda^{-1}(U)=\frac{-log(U)}{\lambda}$
+where U \~ $\mathcal{U}(0,1)$.
+
+# Session information {.appendix .unnumbered}
+
+```{r session-info}
+sessionInfo()
+```
