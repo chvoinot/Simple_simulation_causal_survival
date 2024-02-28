@@ -79,7 +79,7 @@ The observed data can be summarized as a quadruplet
 
 : Example of survival data with covariates, treatment, the censoring
 time, the status of censoring and the potential outcomes and observed
-outcomes. {#tbl-exemple_data} 
+outcomes. {#tbl-exemple_data}
 
 ## Treatment effect
 
@@ -126,12 +126,10 @@ when treatment $A=a$.
    \theta_{RMST}(\tau)  = \mathbb{E}\left[T(1) \wedge \tau - T(0) \wedge \tau\right]  
 \end{align*}
 ```
-Survival probabilities and RMST are linked as follows: 
-$$
+Survival probabilities and RMST are linked as follows: $$
      \theta_{RMST}(\tau) = \int_{0}^{\tau}\left( S_1(t) - S_0(t) \right)dt
 $$
 :::
-
 
 RMST can be interpreted as the average survival time from baseline to a
 pre-specified time $\tau$: a RMST value of $10$ days with $\tau=200$
@@ -218,7 +216,6 @@ $$ {#eq-randomization}
 @eq-randomization implies that the treatment is given at random and is
 independent of both the potential outcomes and the covariates.
 
-
 **Indentifiability**
 
 Under @eq-randomization (random treatment assignment) and
@@ -255,7 +252,7 @@ the covariate $X_i$
 ### Non adjusted Kaplan Meier estimator
 
 ::: {#def-km}
-#### Unadjusted kaplan meier estimator
+#### Unadjusted kaplan meier estimator {#sec-KM}
 
 ```{=tex}
 \begin{align*}
@@ -276,6 +273,8 @@ and controls @eq-RMSTkm.
 **Implementation**
 
 ```{r}
+library(survival)
+library(survminer)
 # Fonction pour calculer l'intégrale par la méthode des trapèzes pour fonction decroissante 
 trapezoidal_integration <- function(x, y) {
   sum((x[-1]-x[-length(x)]) * (y[-length(y)]+(y[-1]-y[-length(y)])/2))
@@ -297,49 +296,72 @@ Kaplan_meier_handmade <- function(data,status=data$status,T_obs=data$T_obs){
   return(df)
 }
 
+# kaplan meier estimator with weight (matrix (nb ind x Y.grid))
+Kaplan_meier_handmade_w <- function(data,status=data$status,T_obs=data$T_obs,weights= NULL,Y.grid=NULL){
+  n <- length(T_obs)
+  if (is.null(Y.grid)){
+    Y.grid <- sort(unique(T_obs))
+  }
+  if (is.null(weights)){
+    weights <- matrix(rep(1/n, each =n, times= length(Y.grid)),ncol = length(Y.grid))
+  }
+  # When SC is calculated in using non-parametric model : SC is not based on cov so not individual dependent 
+  if (length(weights)==n){
+    # the weight is the same for all individual
+    weights <- matrix(rep(weights,times = length(Y.grid)), ncol =  length(Y.grid))
+  }
+  d <- rep(NA,length(Y.grid))
+  n <- rep(NA,length(Y.grid))
+  S <- rep(NA,length(Y.grid))
+  w <- rep(NA,length(Y.grid))
+  for (i in 1:length(Y.grid)){
+    d[i] <- sum((T_obs==Y.grid[i] & status ==1))#*weights[,i])
+    n[i] <- sum((T_obs >= Y.grid[i]))#*weights[,i])
+    w[i] <- sum(weights[,i])
+  }
+  S <- cumprod(1-d/n)
+  df<-data.frame(d=d,n=n,S= S, T = Y.grid,w=w)
+  return(df)
+}
 
-#Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
-km <- Kaplan_meier_handmade(data)
-plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
 
-#Mettre sur le même graph le resultat de survfit 
-fit <- survfit(Surv(data$T_obs, data$status) ~ 1)
-lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
+test <- Kaplan_meier_handmade_w(DATA_treated,T_obs=DATA_treated$T_obs,status=DATA_treated$status,Y.grid=Y.grid, weights = weights_treated)
+#test2 <- Kaplan_meier_handmade_w(data,status=data$status,T_obs=data$T_obs,weights=weights,Y.grid = Y.grid)
+# test <- Kaplan_meier_handmade_w(data,status=data$status,T_obs=data$T_obs,weights=NULL,Y.grid = Y.grid)
+# test3 <- Kaplan_meier_handmade(data,status=data$status,T_obs=data$T_obs)
+# 
+# plot(test$T,test$S)
+# lines(test2$T,test2$S,col=2)
+# lines(test3$T,test3$S,col=3)
 
-data1 <- data[data$A==1,]
-data0 <- data[data$A==0,]
-
-#Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
-km <- Kaplan_meier_handmade(data1,status=data1$status,T_obs=data1$T_obs)
-km0 <- Kaplan_meier_handmade(data0,status=data0$status,T_obs=data0$T_obs)
-plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
-lines(km0$T,km0$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
-
-#Mettre sur le même graph le resultat de survfit 
-fit <- survfit(Surv(data$T_obs, data$status) ~ data$A)
-lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
 ```
 
+We implement four methods to compute the RMST:
+
+-   The first method consists in using a handmade estimator of the
+    Kaplan meier survival function and then to compute the RMST by
+    integrating the difference between the two survival functions
+    between 0 and $\tau$.
+
+-   The second method consists in using the handmade estimator of the
+    Kaplan meier survival function after truncating the data at $\tau$
+    and then compute the RMST by integrating the difference between the
+    two survival functions.
+
+-   The third method consists in using the survfit function from the
+    survival [@survival] package on the the truncated data to compute
+    the RMST in integrating the difference between the two survival
+    functions.
+
+-   The fourth method consists in computing the RMST in using the
+    package survRM2 [@survRM2] which is a package for the estimation of
+    the restricted mean survival time in the presence of right-censoring
+    and the package suvrival [@survival] for fitting the kaplan meier
+    estimator.
+
 ```{r}
-# sur deux graph diff
-par(mfrow=c(1,2))
-km <- Kaplan_meier_handmade(data1,status=data1$status,T_obs=data1$T_obs)
-km0 <- Kaplan_meier_handmade(data0,status=data0$status,T_obs=data0$T_obs)
-plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
-lines(km0$T,km0$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
-
-#Mettre sur un autre graph le resultat de survfit
-fit <- survfit(Surv(data$T_obs, data$status) ~ data$A)
-plot(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
-
-```
-
-
-
-
-```{r}
-RMST <-function(data,A1=1,A0=0,tau=20){
-  T_obs <- sort(data$T_obs)
+RMST_1_2 <-function(data,A1=1,A0=0,tau=20){
+  #T_obs <- sort(data$T_obs)
   # Method 1 : Handmade KM with no troncation 
   data1 <- data[data$A==A1,]
   data0 <- data[data$A==A0,]
@@ -375,34 +397,12 @@ RMST <-function(data,A1=1,A0=0,tau=20){
   return(list(RMST1=RMST1,RMST2=RMST2))
 }
 
-RMST(data,tau=20)
 
-# plot des 2 calculs de RMST en fonction de tau : 
-tau <- seq(0,70,by=1)
-res <- sapply(tau,function(x) RMST(data,tau=x))
-matplot(tau,res[1,],type="l",lty=1,col=1:2,ylab="RMST",xlab="tau")
-lines(tau,res[2,],lty=2,col=2)
-legend("topright",legend=c("RMST1","RMST2"),col=1:2,lty=1)
-
-boxplot(res,main="RMST",names=tau)
-```
-
-```{r}
-RMST(data,tau=01)
-
-
-```
-
-
-Il y a une différence entre les deux méthodes 
-
-```{r}
-# kaplan meier estimator with restricted tau
+# 3rd kaplan meier estimator with restricted tau : In using rmean 
 # fit KM
-Kaplan_meier <- function(data){
-  T_obs_tau <- data$T_obs_tau
-  status_tau <- data$status_tau
-  A <- data$A
+RMST_3 <- function(data,tau=10){
+  data$T_obs_tau <- ifelse(data$T_obs>=tau,tau,data$T_obs)
+  data$status_tau <- ifelse(data$T_obs>=tau | (data$T_obs < tau & data$status ==1),1,0)
   fit <- survfit(Surv(T_obs_tau, status_tau) ~ A, data = data)
   # Summarize table 
   res.sum <- surv_summary(fit, data = data)
@@ -415,8 +415,39 @@ Kaplan_meier <- function(data){
   return(mean_naive)
 }
 
-Kaplan_meier(data)
+
+# Fourth method : survRM2
+library(survRM2)
+RMST_4 <- function(data,tau=20){
+  data$T_obs_tau2 <- ifelse(data$T_obs>=tau,tau,data$T_obs)
+  data$status_tau2 <- ifelse(data$T_obs>=tau | (data$T_obs < tau & data$status ==1),1,0)
+  #fit <- survfit(Surv(T_obs, status) ~ A, data = data)
+  arm <- data$A
+  RMST <- rmst2(data$T_obs_tau2, data$status_tau2, arm=arm, tau = tau)
+  return(RMST[[5]][1])
+}
+
+
+RMST <- function(S_A1, S_A0,tau){
+  Y.grid1 <- S_A1$T[S_A1$T <= tau]
+  Y.grid0 <- S_A0$T[S_A0$T <= tau]
+  S_A1 <- S_A1%>%
+    dplyr::filter(T %in% Y.grid1)
+
+  S_A0 <- S_A0%>%
+    dplyr::filter(T %in% Y.grid0)
+
+  #integral from 0 to tau of S_A1 on Y.grid
+  intA1 <- trapezoidal_integration(S_A1$T, S_A1$S)
+  intA0 <- trapezoidal_integration(S_A0$T, S_A0$S)
+  #mean(S_A1$T)
+  RMST <- intA1 - intA0
+  return(list(intA1=intA1,intA0=intA0,RMST=RMST))
+}
 ```
+
+The results of the four methods are presented in the section
+@sec-simulation.
 
 ## Estimation under conditional censoring
 
@@ -445,8 +476,14 @@ $$\hat{S}_{IPCW-KM}(t \mid a) = \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w}_
     $X_i$ and $A_i$ the covariates.
 :::
 
-This estimator gives extra weight to subjects who are not censored. At
-every time point $t$, each subject $i$ is given a weight which is
+The probability of remaining uncensored depends on the covariates and
+the treatment, so subject with the same covariates have the same
+probability of remaining uncensored. Thus, the corresponding weights in
+this estimator give extra weight to subjects who are not censored in the
+same group of subject with the same covariates in order to compensate
+the dependent censoring.
+
+At every time point $t$, each subject $i$ is given a weight which is
 inversely proportional to the estimated probability of having remained
 uncensored until time $t$.
 
@@ -456,10 +493,13 @@ meier estimator of the treated and controls @eq-RMSTipcw.
 
 **Implementation**
 
-```{r}
-estimate_survival_function <- function(DATA,X_name,Y.grid,tau,type_of_model="cox"){
+```{r,eval=FALSE}
+library(riskRegression)
+# estimate survival function with covariates for each individuals at each time Y.grid
+estimate_survival_function <- function(DATA,X_name,Y.grid,type_of_model="cox",T_obs="T_obs",status="status"){
   if (type_of_model == "cox"){
-    outcome <- 'Surv(T_obs,status)'
+    outcome <- paste(c('Surv(',T_obs,',',status,')'),collapse="")
+    #outcome <- 'Surv(T_obs,status)'
     f <- as.formula(paste(outcome, paste(c(X_name,'A'), collapse = " + "), sep = " ~ "))
     fitS <- suppressWarnings(coxph(f, data=DATA, x=TRUE))
     fitS$coefficients[is.na(fitS$coefficients)] <- 0
@@ -476,45 +516,71 @@ estimate_survival_function <- function(DATA,X_name,Y.grid,tau,type_of_model="cox
     if ( length(Y.grid) > 1){
       S_hat0[,length(Y.grid)] <- S_hat0[,length(Y.grid)-1]
       S_hat1[,length(Y.grid)] <- S_hat1[,length(Y.grid)-1]
+      }
     }
-    }
-  if (type_of_model == "kaplan_meier"){
-    
-    
-}
+  # if (type_of_model == "kaplan_meier"){
+  #   DATA1 <- DATA %>%
+  #     dplyr::filter(A==1)
+  #   DATA0 <- DATA %>%
+  #     dplyr::filter(A==0)
+  #   KM1 <-Kaplan_meier_handmade(DATA1,DATA1$status,DATA1$T_obs)
+  #   KM0 <- Kaplan_meier_handmade(DATA0,DATA0$status,DATA0$T_obs)
+  #   S_hat1 <- KM1$S
+  #   S_hat0 <- KM0$S
+  # }
 S_hat <- S_hat1*DATA$A + (1-DATA$A)*S_hat0
-return(list('S_hat'=S_hat,"S_hat1"=S_hat1,"S_hat0"=S_hat0))
+return(list('S_hat'=S_hat,"S_hat1"=S_hat1,"S_hat0"=S_hat0,"T"=Y.grid))
 }
+
+S_C_hat <-estimate_survival_function(data,c("X1","X2","X3"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
+plot(S_C_hat$T,S_C_hat$S_hat[1,])
+status_tau_t <- sapply(Y.grid,function(t) as.numeric((data$T_obs>=t) | (data$T_obs<t &  data$status == 1 )))
+weights <- status_tau_t/S_C_hat$S_hat
+S <- Kaplan_meier_handmade_w(data,T_obs=data$T_obs,status=data$status, weights = weights)
+Sbis <- Kaplan_meier_handmade(data,T_obs=data$T_obs,status=data$status)
+
+# plot des deux courbes
+plot(S$T,S$S)+
+  lines(Sbis$T,Sbis$S)
 
 # IPCW kaplan meier estimator with restricted tau
-# fit IPCW KM
-IPCW_Kaplan_meier <- function(data,A1=1,A0=0,Y.grid){
-    DATA_treated <- data[data$A == A1,]
-    DATA_not_treated <- data[data$A == A0,]
-    status_tau_t <- sapply(Y.grid,function(t) as.numeric((data$T_obs>=t) | (data$T_obs<t &  data$status == 1 )))
+# fit IPCW KM 
+# Y.grid = sort(unique(data$T_obs))
+IPCW_Kaplan_meier <- function(data,Y.grid= sort(unique(data$T_obs)),tau){
+  data$T_obs_tau <- ifelse(data$T_obs>=tau,tau,data$T_obs)
+  data$censor.status_tau <- 1- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
+  data$status_tau <- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
+  
+  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
+  S_C <-  S_C_hat$S_hat
+  status_tau_t <- sapply(Y.grid,function(t) as.numeric((data$T_obs>=t) | (data$T_obs<t &  data$status == 1 )))
+  weights <- status_tau_t/S_C
     
-    weights <- status_tau_t/S_C_hat
-    weights_treated <- weights[data$A == 1,]
-    weights_not_treated <- weights[data$A == 0,]
+  
+  DATA_treated <- data[data$A == 1,]
+  DATA_not_treated <- data[data$A == 0,]
+  weights_treated <- weights[data$A == 1,]
+  weights_not_treated <- weights[data$A == 0,]
     
-    S1 <- Kaplan_meier_handmade(DATA_treated$T_obs,DATA_treated$status,Y.grid=Y.grid,weights = weights_treated)
-    S0 <- Kaplan_meier_handmade(DATA_not_treated$T_obs,DATA_not_treated$status,Y.grid=Y.grid,weights = weights_not_treated)
-    
-    grid.diff <- diff(c(0, Y.grid, max(Y.grid)))
-    E_hat1 <- c(c(1, S1) %*% grid.diff)
-    E_hat0 <- c(c(1, S0) %*% grid.diff)
-    theta_t <- S1-S0
-    ATE_treated <- E_hat1
-    ATE_not_treated <- E_hat0
-    ATE <- E_hat1 - E_hat0
-    return(list(ATE = ATE, ATE_treated = ATE_treated, ATE_not_treated = ATE_not_treated, theta_t = theta_t))
+  S1 <- Kaplan_meier_handmade_w(DATA_treated,T_obs=DATA_treated$T_obs,status=DATA_treated$status, weights = weights_treated)
+  S0 <- Kaplan_meier_handmade_w(DATA_not_treated,T_obs=DATA_not_treated$T_obs,status=DATA_not_treated$status,weights = weights_not_treated)
+  
+  S1bis <- Kaplan_meier_handmade_w(DATA_treated,T_obs=DATA_treated$T_obs_tau,status=DATA_treated$status_tau, weights = weights_treated)
+  S0bis <- Kaplan_meier_handmade_w(DATA_not_treated,T_obs=DATA_not_treated$T_obs_tau,status=DATA_not_treated$status_tau,weights = weights_not_treated)
+  
+  intA1 <- trapezoidal_integration(S1bis$T, S1bis$S)
+  intA0 <- trapezoidal_integration(S0bis$T, S0bis$S)
+  #mean(S_A1$T)
+  RMSTbis <- intA1 - intA0
+  
+  RMST <- RMST(S1,S0,tau)
+  
+  return(list(RMST = RMST$RMST, ATE_treated = RMST$intA1, ATE_not_treated = RMST$intA0, RMSTbis=RMSTbis, ATE_treatedbis = intA1, ATE_not_treatedbis = intA0))
 }
 
-S_C_hat <- estimate_survival_kaplan_meier(data$C_obs,data$status,Y.grid=Y.grid,)
+#IPCW_Kaplan_meier(data,tau=35)
 
-IPCW_Kaplan_meier(data,Y.grid=c(1:tau))
 ```
-
 
 # Causal survival analysis with an observational study
 
@@ -613,17 +679,20 @@ meier estimator of the treated and controls @eq-RMST-IPTW.
 **Implementation**
 
 ```{r}
-Adjusted_Kaplan_Meier<- function(dataset,e_hat) {
-  W <- (dataset$A == 1) * (1/e_hat) + (dataset$A==0) * (1)/(1-e_hat)
-  fitipw <- survfit(Surv(T_obs_tau, status_tau) ~ A, data = dataset,weights =W )
+Adjusted_Kaplan_Meier<- function(data,e_hat,tau){
+  data$T_obs_tau <- pmin(data$T_obs, tau)
+  data$status_tau <- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
+  W <- (data$A == 1) * (1/e_hat) + (data$A==0) * (1)/(1-e_hat)
+  fitipw <- survfit(Surv(T_obs_tau, status_tau) ~ A, data = data,weights =W )
   # Summarize
-  resipw.sum <- surv_summary(fitipw, data = dataset)
+  resipw.sum <- surv_summary(fitipw, data = data)
   res_ipw <- attr(resipw.sum, "table")
   
   
   mean_ipw <- (res_ipw$rmean[2] - res_ipw$rmean[1])
-  return(mean_ipw)
+  return(list("intA0"=res_ipw$rmean[1],"intA1"=res_ipw$rmean[2],"RMST"=mean_ipw))
 }
+
 
 library(grf)
 estimate_propensity_score <- function(DATA,treatment_name,type_of_model="reglog"){
@@ -803,16 +872,172 @@ g_formula_cox_T_learner <- function(DATA,X_outcome,Y.grid) {
 }
 ```
 
-# Simulation
+# Simulation {#sec-simulation}
 
 ## RCT
 
+We conducted two simples simulations to simulate RCTs
+studies, baseline covariates with no time dependency. The first simulation represents a scenario with
+independent censoring and the second one with conditional dependent
+censoring.
+
+The time of event and the censoring time (when there is dependency
+between the censoring time and the covariates) is simulated using the
+cumulative hazard method for exponential models using the *simsurv* R
+package.
+
+For the simulation, 2000 samples $(X_{i},A_{i},C,T_{i}(0), T_{i}(1))$
+are generated in the following way :
+
+-   $X \sim \mathcal{N}\left(\mu=[1,1,-1,1]^{\top}, \Sigma=I_4\right)$
+
+-   $e(X)=0.5$ (constant) for the propensity score $(A)$
+
+-   $\lambda(0)(X)=0.1 \cdot \exp \left\{0.5 X_1-0.1 X_2+0.3 X_3+0.2 X_4\right\}$
+    hazard for the event time $T(0)$
+
+-   The hazard for the censoring time $C$:
+
+    -   For scenario 1 :
+        $\lambda_c(X)=0.03 \cdot \exp \left\{0.1 X_1+0.1 X_2-0.2 X_3-0.2 X_4\right\}$.
+
+    -   For scenario 2 : $\lambda_c=0.03$.
+
+-   $T(1)=T(0)+4$
+
+-   the event time is $T=A T(1)+(1-A) T(0)$
+
+-   The observed time is $\widetilde{T}=\min (T, C)$
+
+-   The status is $\Delta=1(T \leq C)$
+
+(-   The threshold time $\tau$ is 20)
+
+The observed samples are $(X_{i},A_{i},\Delta_{i},\widetilde{T_{i}})$
+represented in Table @tbl-exemple_data_rct.
+
+The cumulative hazard inversion method is explained in annexes
+@sec-Annexes.
+
+```{r setup rct}
+# scenario :
+############ RCT 
+# RCT1 : Random treatment assignment + independent censoring
+# RCT2 : Random treatment assignment + dependent censoring (conditional on X)
+
+simulate_data_RCT <- function(n,mu= c(1, 1, -1, 1), sigma=diag(4),tau,coefT0=0.1,
+parsS=c(0.5,-0.1,0.3,0.2),coefC=0.03,parsC=c(0.1,0.1,-0.2,-0.2),scenario="RCT2"){
+  if (scenario=="RCT1"){
+    # Generate X from multivariate normal distribution
+    X <- MASS::mvrnorm(n, mu, sigma)
+    X <- as.data.frame(X)
+    colnames(X) <- c("X1", "X2", "X3", "X4")
+    #head(X)
+    # Treatment variable selection : all X
+    X_treatment<- as.matrix(X)
+    # propensity score constant : random assignment 
+    e <- 0.5
+    
+    # Random treatment assignment
+    A <- sapply(e, FUN=function(p) rbinom(n=1, size=1, prob=p))
+    
+    # Outcome variable selection : all X 
+    X_outcome<- as.matrix(X)
+    
+    # Simulate the outcome  with the cumulative hazard inversion method because T depends on X even in RCT
+    epsilon <- runif(n, min = 0.00000001, max = 1)
+    T0 <- -log(epsilon)/(coefT0*exp(  X_outcome%*% parsS ))
+    
+    #lambda = coefC for the independent censoring time 
+    epsilon <- runif(n, min = 0.00000001, max = 1)
+    C <- -log(epsilon)/coefC
+    
+    # Temps T(1) = T(0) + 4
+    T1 <- T0 + 4
+    
+    
+    T_true <- A*T1 + (1-A)*T0
+  
+    # Observed time
+    T_obs <- pmin(T_true, C)
+
+    # Status
+    status <- as.numeric(T_true <= C)
+    censor.status <- as.numeric(T_true > C)
+
+    # Restricted survival time
+    T_obs_tau <- pmin(T_obs,tau)
+    status_tau <- as.numeric((T_obs>tau) | (T_obs<=tau &  status == 1 ))
+  }
+  if (scenario=="RCT2"){
+    # Generate X from multivariate normal distribution
+    X <- MASS::mvrnorm(n, mu, sigma)
+    X <- as.data.frame(X)
+    colnames(X) <- c("X1", "X2", "X3", "X4")
+    #head(X)
+    # Treatment variable selection : all X
+    X_treatment<- as.matrix(X)
+    # propensity score constant : random assignment 
+    e <- 0.5
+    
+    # Random treatment assignment
+    A <- sapply(e, FUN=function(p) rbinom(n=1, size=1, prob=p))
+    
+    # Outcome variable selection : all X 
+    X_outcome<- as.matrix(X)
+    
+    # Simulate the outcome  with the cumulative hazard inversion method because T depends on X even in RCT
+    epsilon <- runif(n, min = 0.00000001, max = 1)
+    T0 <- -log(epsilon)/(coefT0*exp(  X_outcome%*% parsS ))
+    
+    #lambda = coefC for the independent censoring time 
+    epsilon <- runif(n, min = 0.00000001, max = 1)
+    C <- -log(epsilon)/(coefC*exp(rowSums(X_censoring %*% diag(parsC))))
+    
+    
+    # Temps T(1) = T(0) + 4
+    T1 <- T0 + 4
+    
+    
+    T_true <- A*T1 + (1-A)*T0
+  
+    # Observed time
+    T_obs <- pmin(T_true, C)
+
+    # Status
+    status <- as.numeric(T_true <= C)
+    censor.status <- as.numeric(T_true > C)
+
+    # Restricted survival time
+    T_obs_tau <- pmin(T_obs,tau)
+    status_tau <- as.numeric((T_obs>tau) | (T_obs<=tau &  status == 1 ))
+  }
+    DATA_target_population <- data.frame(X,tau,A,T0,T1,C,T_obs,T_obs_tau, status,censor.status,status_tau,e)
+  
+  return(DATA_target_population)
+}
+```
+
+```{r}
+data_rct1 <- simulate_data_RCT(n=2000,tau=5,scenario="RCT1")
+
+data_rct2 <- simulate_data_RCT(n=2000,tau=5,scenario="RCT2")
+
+```
+
 ## Observationnal study
 
-First, we conducted a simple simulation with a static treatment
-assignment, baseline covariates with no time dependency. The event time
-and the censoring time are simulated using the cumulative hazard
-inversion method for exponential models using the *simsurv* R package.
+We conducted two simples simulations to simulate observationnal
+studies with a static treatment assignment, baseline covariates with no
+time dependency. The first simulation represents a scenario with
+independent censoring and the second one with conditional dependent
+censoring.
+
+The time of event and the censoring time (when there is dependency
+between the censoring time and the covariates) is simulated using the
+cumulative hazard method for exponential models using the *simsurv* R
+package.
+
 For the simulation, 2000 samples $(X_{i},A_{i},C,T_{i}(0), T_{i}(1))$
 are generated in the following way :
 
@@ -824,8 +1049,12 @@ are generated in the following way :
 -   $\lambda(0)(X)=0.1 \cdot \exp \left\{0.5 X_1-0.1 X_2+0.3 X_3+0.2 X_4\right\}$
     hazard for the event time $T(0)$
 
--   $\cdot \lambda_c(X)=0.03 \cdot \exp \left\{0.1 X_1+0.1 X_2-0.2 X_3-0.2 X_4\right\}$
-    hazard for the censoring time $C$
+-   The hazard for the censoring time $C$:
+
+    -   For scenario 1 :
+        $\lambda_c(X)=0.03 \cdot \exp \left\{0.1 X_1+0.1 X_2-0.2 X_3-0.2 X_4\right\}$.
+
+    -   For scenario 2 : $\lambda_c=0.03$.
 
 -   $T(1)=T(0)+4$
 
@@ -835,79 +1064,127 @@ are generated in the following way :
 
 -   The status is $\Delta=1(T \leq C)$
 
--   The threshold time $\tau$ is 20
+(-   The threshold time $\tau$ is 20)
 
 The observed samples are $(X_{i},A_{i},\Delta_{i},\widetilde{T_{i}})$
 represented in Table @tbl-exemple_data.
 
-The cumulative hazard inversion method comes from the formula :
-$S(t)=\exp \left\{-\int_{0}^{t} \lambda(u) d u\right\}$
 
-The cumulative hazard inversion method is explained in annexes
-@sec-Annexes.
-
-```{r setup}
+```{r setup obs}
 library(simsurv)
 library(survival)
 
-simulate_data <- function(n,mu= c(1, 1, -1, 1), sigma=diag(4),tau,
-parsS=c(0.5,-0.1,0.3,0.2),parsA=c(-0.5,-0.3,0.1,0.2),parsC=c(0.1,0.1,-0.2,-0.2)){
+# simulate data 
+############ Observational 
+# Obs1 : Treatment assignment dependent on X + independent censoring
+# Obs2 : Treatment assignment dependent on X + dependent censoring (conditional on X)
+
+
+simulate_data_obs <- function(n,mu= c(1, 1, -1, 1), sigma=diag(4),tau,coefT0=0.1,
+parsS=c(0.5,-0.1,0.3,0.2),coefC=0.03,parsC=c(0.1,0.1,-0.2,-0.2),scenario="Obs2"){
+  if (scenario =="Obs1"){
+    # Generate X from multivariate normal distribution
+    X <- MASS::mvrnorm(n, mu, sigma)
+    X <- as.data.frame(X)
+    colnames(X) <- c("X1", "X2", "X3", "X4")
+    #head(X)
+    # Treatment variable selection : all X
+    X_treatment<- as.matrix(X)
+    # propensity score
+    e <- rowSums(as.matrix(X_treatment) %*% diag(parsA))
+    e <- plogis(e)
+    
+    # Affectation de traitement
+    A <- sapply(e, FUN=function(p) rbinom(n=1, size=1, prob=p))
+    
+    # Outcome variable selection : all X 
+    X_outcome<- as.matrix(X)
+    
+    # Simulate the outcome  with the cumulative hazard inversion method 
+    epsilon <- runif(n, min = 0.00000001, max = 1)
+    T0 <- -log(epsilon)/(coefT0*exp(  X_outcome%*% parsS ))
+    
+    #lambda = coefC
+    epsilon <- runif(n, min = 0.00000001, max = 1)
+    C <- -log(epsilon)/(coefC)
+    
+    # Temps T(1) = T(0) + 4
+    T1 <- T0 + 4
+    
+    
+    T_true <- A*T1 + (1-A)*T0
   
-  # Generate X from multivariate normal distribution
-  X <- MASS::mvrnorm(n, mu, sigma)
-  X <- as.data.frame(X)
-  colnames(X) <- c("X1", "X2", "X3", "X4")
-  #head(X)
-  # Treatment variable selection : all X
-  X_treatment<- as.matrix(X)
-  # propensity score
-  e <- rowSums(as.matrix(X_treatment) %*% diag(parsA))
-  e <- plogis(e)
+    # Observed time
+    T_obs <- pmin(T_true, C)
 
-  # Affectation de traitement
-  A <- sapply(e, FUN=function(p) rbinom(n=1, size=1, prob=p))
+    # Status
+    status <- as.numeric(T_true <= C)
+    censor.status <- as.numeric(T_true > C)
 
-  # Outcome variable selection : all X 
-  X_outcome<- as.matrix(X)
-  # Simulate the outcome  with the cumulative hazard inversion method 
-  epsilon <- runif(n, min = 0.00000001, max = 1)
-  T0 <- -log(epsilon)/(0.1*exp(  X_outcome%*% parsS ))
-
-  # Temps T(1) = T(0) + 4
-  T1 <- T0 + 4
-
-  # Selection between T0 and T1
-  T_true <- A*T1 + (1-A)*T0
+    # Restricted survival time
+    T_obs_tau <- pmin(T_obs,tau)
+    status_tau <- as.numeric((T_obs>tau) | (T_obs<=tau &  status == 1 ))
+  }
+  if (scenario=="Obs2"){
+    # Generate X from multivariate normal distribution
+    X <- MASS::mvrnorm(n, mu, sigma)
+    X <- as.data.frame(X)
+    colnames(X) <- c("X1", "X2", "X3", "X4")
+    #head(X)
+    # Treatment variable selection : all X
+    X_treatment<- as.matrix(X)
+    # propensity score
+    e <- rowSums(as.matrix(X_treatment) %*% diag(parsA))
+    e <- plogis(e)
+    
+    # Affectation de traitement
+    A <- sapply(e, FUN=function(p) rbinom(n=1, size=1, prob=p))
+    
+    # Outcome variable selection : all X 
+    X_outcome<- as.matrix(X)
+    # Simulate the outcome  with the cumulative hazard inversion method 
+    epsilon <- runif(n, min = 0.00000001, max = 1)
+    T0 <- -log(epsilon)/(coefT0*exp(  X_outcome%*% parsS ))
+    
+    # Temps T(1) = T(0) + 4
+    T1 <- T0 + 4
+    
+    # Selection between T0 and T1
+    T_true <- A*T1 + (1-A)*T0
+    
+    # Censoring variable selection : all X
+    X_censoring<- as.matrix(X)  
+    
+    # Hazard pour la censure C with the cumulative hazard inversion method
+    epsilon2 <- runif(n, min = 0.00000001, max = 1)
+    C <- -log(epsilon2)/(coefC*exp(rowSums(X_censoring %*% diag(parsC))))
+    
+    # Observed time
+    T_obs <- pmin(T_true, C)
+    
+    # Status
+    status <- as.numeric(T_true <= C)
+    censor.status <- as.numeric(T_true > C)
+    
+    # Restricted survival time
+    T_obs_tau <- pmin(T_obs,tau)
+    status_tau <- as.numeric((T_obs>tau) | (T_obs<=tau &  status == 1 ))}
   
-  # Censoring variable selection : all X
-  X_censoring<- as.matrix(X)  
-  
-  # Hazard pour la censure C with the cumulative hazard inversion method
-  epsilon2 <- runif(n, min = 0.00000001, max = 1)
-  C <- -log(epsilon2)/(0.03*exp(rowSums(X_censoring %*% diag(parsC))))
-
-  # Observed time
-  T_obs <- pmin(T_true, C)
-
-  # Status
-  status <- as.numeric(T_true <= C)
-  censor.status <- as.numeric(T_true > C)
-
-  # Restricted survival time
-  T_obs_tau <- pmin(T_obs,tau)
-  status_tau <- as.numeric((T_obs>tau) | (T_obs<=tau &  status == 1 ))
-
   DATA_target_population <- data.frame(X,tau,A,T0,T1,C,T_obs,T_obs_tau, status,censor.status,status_tau,e)
-
+  
   return(DATA_target_population)
 }
 
 ```
 
-
 ```{r}
-data <- simulate_data(n=2000,tau=70)
+# data simulation with censoring, treatment and time depend to covariates
+data <- simulate_data_obs(n=2000,tau=50,scenario="Obs2")
 head(data,10)
+
+#data with no informative censoring
+data_no_cens <- simulate_data_obs(n=2000,tau=50,scenario=2,coefC=0.05,scenario="Obs1")
+head(data_no_cens,10)
 ```
 
 ### Data description
@@ -920,12 +1197,14 @@ library(skimr)
 #afficher plus visuellement
 
 knitr::kable(skim(data))
+#knitr::kable(skim(data_no_cens))
+
 ```
 
-
-The distribution of the death and censoring over the time is displayed below. 
-The number of patients is displayed on the y-axis and the time on the x-axis. 
-The censored patients are displayed in purple and the dead patients are displayed in red. 
+The distribution of the death and censoring over the time is displayed
+below. The number of patients is displayed on the y-axis and the time on
+the x-axis. The censored patients are displayed in purple and the dead
+patients are displayed in red.
 
 ```{r}
 ggplot(data, aes(x = T_obs)) +
@@ -935,11 +1214,20 @@ ggplot(data, aes(x = T_obs)) +
   scale_fill_manual(name = "Status", values = c("Censored" = "#5f0e91", "Dead" = "#cf6666")) +
   theme(legend.position = "top")
 
+ggplot(data_no_cens, aes(x = T_obs)) +
+  geom_histogram(data = subset(data_no_cens, status == 0), aes(fill = "Censored"), alpha = 0.7, binwidth = 1) +
+  geom_histogram(data = subset(data_no_cens, status == 1), aes(fill = "Dead"), alpha = 0.3, binwidth = 1) +
+  labs(x = "Time", y = "Number of patients") +
+  scale_fill_manual(name = "Status", values = c("Censored" = "#5f0e91", "Dead" = "#cf6666")) +
+  theme(legend.position = "top")
+
+
 ```
 
-The kaplan meier of the censoring and the survival curve are displayed below.
+The kaplan meier of the censoring and the survival curve are displayed
+below.
 
-The kaplan for censoring is the probability of remaining uncensored. 
+The kaplan for censoring is the probability of remaining uncensored.
 
 ```{r}
 kaplan_censoring <- survfit(Surv(time = C, event = censor.status) ~ 1, data = data)
@@ -956,7 +1244,8 @@ ggsurvplot(kaplan_censoring, data=data,
 
 ```
 
-The survival curve is the probability of remaining alive. 
+The survival curve is the probability of remaining alive.
+
 ```{r}
 kaplan <- survfit(Surv(time = T_obs, event = status) ~ 1, data = data)
 
@@ -972,7 +1261,8 @@ ggsurvplot(kaplan, data=data,
 
 ```
 
-A stratified analysis by treatment of the survival curve is displayed below : 
+A stratified analysis by treatment of the survival curve is displayed
+below :
 
 ```{r}
 # faire une analyse stratifiée par traitement
@@ -991,14 +1281,16 @@ ggsurvplot(kaplan_treatment, data=data,
 
 ```
 
+As a reminder, $T_{obs_tau}=\min(T_{obs},\tau)$ and
+$status_tau=1${(T_obs\>tau \| T_obs \leq tau & status =1)}. Basically,
+if the event occurs before $\tau$, the status is 1 and the observed time
+doesn't change. If the event or censoring occurs after $\tau$, the
+status is 1. The censoring before the threshold time $\tau$ remains the
+same.
 
-As a reminder, $T_{obs_tau}=\min(T_{obs},\tau)$ and $status_tau=1${(T_obs>tau | T_obs \leq tau & status =1)}. 
-Basically, if the event occurs before $\tau$, the status is 1 and the observed time doesn't change. 
-If the event or censoring occurs after $\tau$, the status is 1.
-The censoring before the threshold time $\tau$ remains the same.
-
-In estimating kaplan meier in using these parameter, the survival time is troncated at $\tau$, thus $P(T>\tau)=0$.
-It allows us to estimate easily the integral of the survival function up to $\tau$.
+In estimating kaplan meier in using these parameter, the survival time
+is troncated at $\tau$, thus $P(T>\tau)=0$. It allows us to estimate
+easily the integral of the survival function up to $\tau$.
 
 In this exemple, $\tau=30$.
 
@@ -1017,7 +1309,9 @@ ggsurvplot(kaplan_treatment_troncated, data=data,
 
 ```
 
-It is the exact same curve than but with $P(T>30)=0$ to estimate the integral of the survival function up to $\tau$ : 
+It is the exact same curve than but with $P(T>30)=0$ to estimate the
+integral of the survival function up to $\tau$ :
+
 ```{r}
 ggsurvplot(kaplan_treatment, data=data,
   surv.median.line = "hv",     # Ajoute les lignes médianes horizontales et verticales
@@ -1031,8 +1325,11 @@ ggsurvplot(kaplan_treatment, data=data,
 )
 ```
 
+### Estimation of RMST
 
-Tha naive estimator of the average treatment effect is the difference of the mean of the survival time between the treated and the untreated group is displayed below : 
+The naive estimator of the average treatment effect is the difference of
+the mean of the survival time between the treated and the untreated
+group is displayed below :
 
 ```{r}
 
@@ -1047,9 +1344,109 @@ Naive <- function(data){
 Naive(data)
 ```
 
-```{r}
+#### Kaplan meier estimator
 
-Kaplan_meier(data)
+##### Unadjusted Kaplan meier estimator
+
+To ensure that the handmade estimator of Kaplan meier function is
+correct, we compare it with the survfit function of the survival
+package.
+
+```{r}
+#Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
+km <- Kaplan_meier_handmade(data)
+plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+
+#Mettre sur le même graph le resultat de survfit 
+fit <- survfit(Surv(data$T_obs, data$status) ~ 1)
+lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
+
+data1 <- data[data$A==1,]
+data0 <- data[data$A==0,]
+
+#Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
+km <- Kaplan_meier_handmade(data1,status=data1$status,T_obs=data1$T_obs)
+km0 <- Kaplan_meier_handmade(data0,status=data0$status,T_obs=data0$T_obs)
+plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+lines(km0$T,km0$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+
+#Mettre sur le même graph le resultat de survfit 
+fit <- survfit(Surv(data$T_obs, data$status) ~ data$A)
+lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
+```
+
+The handmade Kaplan meier estimator is the same as the survfit function
+of the survival package.
+
+The results of the four methods are presented in the section @sec-KM are
+displayed below :
+
+```{r}
+#| label : fig-KM-RMST
+#| fig.cap : Results of the RMST for the 4 methods
+library(dplyr)
+library(riskRegression)
+library(survminer)
+library(survRM2)
+# plot des 2 calculs de RMST en fonction de tau : 
+tau <- seq(0,48,by=1)
+res1_2 <- sapply(tau,function(x) RMST_1_2(data,tau=x))
+res3 <- sapply(tau,function(x) RMST_3(data,tau=x))
+res4 <- sapply(tau,function(x) RMST_4(data,tau=x))
+res4bis <- sapply(tau,function(x) RMST_4(data_no_cens,tau=x))
+
+matplot(tau,res1_2[1,],type="l",lty=1,col=1:2,ylab="RMST",xlab="tau",ylim=c(0,6))+lines(tau,res1_2[2,],lty=2,col=2)+
+  lines(tau,res3,lty=3,col=3)+
+  lines(tau,res4,lty=3,col=4)+
+  lines(tau,res4bis,lty=3,col=5)+
+  abline(h=4,xlim=c(0,50),col="black",lty=2)
+
+```
+
+##### Adjusted Kaplan meier estimator
+
+###### IPCW
+
+```{r}
+#| label : fig-KMIPCW-RMST
+#| fig.cap : Results of the RMST for the IPCW method
+
+# plot des 2 calculs de RMST en fonction de tau : 
+tau <- seq(0,50,by=1)
+res5 <- sapply(tau,function(x) IPCW_Kaplan_meier(data,tau=x))
+res5bis <- sapply(tau,function(x) IPCW_Kaplan_meier(data_no_cens,tau=x))
+
+matplot(tau,res5[1,],type="l",lty=1,col=1,ylab="RMST",xlab="tau")+
+  #lines(tau,res5[4,],lty=4,col=3)+
+  lines(tau,res5bis[1,],lty=2,col=2)+
+  abline(h=4,xlim=c(0,50),col="black",lty=2)
+
+```
+
+###### IPTW
+
+```{r}
+#| label : fig-KMIPTW-RMST
+#| fig.cap : Results of the RMST for the IPTW method
+
+# plot des 2 calculs de RMST en fonction de tau :
+tau <- seq(0,50,by=1)
+e_hat <- estimate_propensity_score(data,c("X1","X2","X3","X4"),type_of_model="reglog")
+
+e_hatbis <- estimate_propensity_score(data_no_cens,c("X1","X2","X3","X4"),type_of_model="reglog")
+res6 <- sapply(tau,function(x) Adjusted_Kaplan_Meier(data,e_hat=e_hat,tau=x))
+res6bis <- sapply(tau,function(x) Adjusted_Kaplan_Meier(data_no_cens,e_hat=e_hatbis,tau=x))
+
+
+matplot(tau,res6[3,],type="l",lty=1,col=1,ylab="RMST",xlab="tau",ylim=c(0,6))+ 
+  lines(tau,res6bis[3,],lty=2,col=2)+
+  abline(h=4,xlim=c(0,50),col="black",lty=2)
+  
+```
+
+```{r,eval=FALSE}
+
+#Kaplan_meier(data)
 e_hat <- estimate_propensity_score(data,c("X1","X2","X3","X4"),type_of_model="reglog")
 mean_ipw <- Adjusted_Kaplan_Meier(data,e_hat)
 mean_ipw
@@ -1057,9 +1454,10 @@ g_formula_cox_T_learner(data,c("X1","X2","X3","X4"),Y.grid=c(1:30))
 
 ```
 
-### Simulation graph 
+### Simulation graph
 
-Repeat the simulation 200 times and compare the different estimators in plotting the distribution of the estimates.
+Repeat the simulation 200 times and compare the different estimators in
+plotting the distribution of the estimates.
 
 ```{r,eval=FALSE}
 # Simulation study
@@ -1099,7 +1497,7 @@ data.frame <-  data.frame("sample.size" = c(),
                         "nuisance" = c())
   for (n in c(100,200,500,1000,2000,4000)){
     for (i in 1:n_sim){
-      data <- simulate_data(n,tau=tau)
+      data <- simulate_data_obs(n,tau=tau)
       all <- all_estimates(data,n)
       data.frame <- rbind(all,data.frame)
     }
@@ -1115,7 +1513,6 @@ save(simulation,file="simulation.RData")
 ```{r}
 load("simulation.RData")
 ```
-
 
 ```{r}
 library(forcats)
@@ -1142,7 +1539,6 @@ simulation_graph <- simulation %>%
   ylim(0,6)
 simulation_graph
 ```
-
 
 # References {.unnumbered}
 
@@ -1171,6 +1567,8 @@ Following this results, in the case where T, the survival time, follow
 an exponential distribution (T \~ $\varepsilon(\lambda)$). The variable
 T can be simulated as : $F_\lambda^{-1}(U)=\frac{-log(U)}{\lambda}$
 where U \~ $\mathcal{U}(0,1)$.
+
+## Trapezoidal method for integration
 
 # Session information {.appendix .unnumbered}
 
