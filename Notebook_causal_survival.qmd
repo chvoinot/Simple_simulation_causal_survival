@@ -100,35 +100,38 @@ $$
 \theta = \mathbb{E}\left[y(T(1)) - y(T(0))\right] 
 $$
 
--   $y(T) = I\{T > t\}$ for $t \leq \tau$; then, $E(y(T))$ becomes the
-    survival probability at time t.
-
 -   $y(T) = T \wedge \tau = \min(T,\tau)$ with $\tau$ a fixed time
     horizon; then, $E(y(T))$ becomes the restricted mean survival time
-    (RMST) at time $\tau$ @RMST.
+    (RMST) at time $\tau$ [@RMST].
+    
+-   $y(T) = \int_0^{\tau}I\{T > t\}dt$ for $t \leq \tau$. Indeed, $T \wedge \tau = \int_0^{T \wedge \tau}1dt= \int_0^{\tau}I\{T > t\}dt$, so we have $E(T \wedge \tau)=\int_0^\tau S(t)dt$ 
+
+
 :::
 
-::: {#def-causalsurvival}
-## Causal effect: Difference between survival probabilities
+Thus, the average treatment effect can be expressed in two ways in using the RMST : 
 
-$$
-    \theta(t) = E[I\{T(1) > t\} -I\{T(0) > t\} )]
-    = S_1\{t) - S_0(t)
-$$ with $S_a(t) = P(T(a)>t)$, the probability of surviving at time $t$
-when treatment $A=a$.
-:::
 
 ::: {#def-causalmin}
 ## Causal effect: Difference of restricted mean survival time (RMST) between treated and controls
 
-```{=tex}
-\begin{align*}
-   \theta_{RMST}(\tau)  = \mathbb{E}\left[T(1) \wedge \tau - T(0) \wedge \tau\right]  
-\end{align*}
-```
-Survival probabilities and RMST are linked as follows: $$
-     \theta_{RMST}(\tau) = \int_{0}^{\tau}\left( S_1(t) - S_0(t) \right)dt
 $$
+\begin{aligned}
+   \theta_{RMST}(\tau)  = \mathbb{E}\left[T(1) \wedge \tau - T(0) \wedge \tau\right]  
+\end{aligned}
+$$
+
+Survival probabilities and RMST are linked as follows: 
+$$
+\begin{aligned}
+     \theta_{RMST}(\tau) = &= E\left[\int_0^{\tau}I\{T(1) > t\}dt -\int_0^{\tau}I\{T(0) > t\}dt\right] \\
+    &=\int_{0}^{\tau}{\mathbb{E}[I\{T(1) > t\}]dt - \int_{0}^{\tau}\mathbb{E}[I\{T(0) > t\}]dt }\\
+    &= \int_0^\tau S_1(t) - \int_0^\tau S_0(t)dt \\
+    &= \int_0^\tau [S_1(t) - S_0(t)]dt 
+\end{aligned}
+$$
+with $S_a(t) = P(T(a)>t)$, the probability of surviving at time $t$
+when treatment $A=a$.
 :::
 
 RMST can be interpreted as the average survival time from baseline to a
@@ -227,9 +230,9 @@ $$
     \theta_{RMST} &=  \mathbb{E}[T(1) \wedge \tau - T(0) \wedge \tau]\\
     &= \mathbb{E}[T(1) \wedge \tau] - \mathbb{E}[T(0) \wedge \tau]\\
     &= \mathbb{E}[T(1) \wedge \tau|A=1] - \mathbb{E}[T(0) \wedge \tau|A=0]  && \tiny\text{(Random treatment assignment)}\\
-    &= \mathbb{E}[T \wedge \tau|A=1] - \mathbb{E}[T \wedge \tau|A=0]  && \tiny\text{(First possible estimator)}\\
+    &= \mathbb{E}[T \wedge \tau|A=1] - \mathbb{E}[T \wedge \tau|A=0] && \tiny\text{(By consistency)}\\
     &= \int_{0}^{\tau}{\mathbb{P}(T>t|A=1) - \mathbb{P}(T>t|A=0) dt} \\
-    &= \int_{0}^{\tau}{S(t|A=1)-S(t|A=0)dt} && \tiny\text{(Second possible estimator)}\\
+    &= \int_{0}^{\tau}{S(t|A=1)-S(t|A=0)dt}\\
 \end{aligned}
 $$ {#eq-RMSTkm} where $S(t|A=a)$ is the survival function of the
 population with treatment $A=a$.
@@ -257,36 +260,6 @@ is the status of the individual troncated at $\tau$.
 
 ## Estimation under independent censoring
 
-### FAUX : In using the function min
-
-The RMST can be estimated using the function min as follows: $$
-    \theta_{RMST}= \mathbb{E}[T \wedge \tau|A=1] - \mathbb{E}[T \wedge \tau|A=0] 
-$$
-
-**Implementation**
-
-FAUX : ne prend pas en compte la censure
-
-```{r}
-#Function to estimate the RMST using the function min
-RMST_min <- function(data, status=data$status, T_obs=data$T_obs, tau){
-  data$rmst<- pmin(data$T_obs, tau)
-  data_treated <- data %>%
-    dplyr::filter(A==1)
-  data_control <- data %>%
-    dplyr::filter(A==0)
-  #Compute the RMST for the treated group
-  rmst_treated <- mean(data_treated$rmst)
-  #Compute the RMST for the control group
-  rmst_control <- mean(data_control$rmst)
-  #Compute the RMST
-  rmst <-rmst_treated - rmst_control
-  return(rmst)
-  }
-
-
-```
-
 ### Non adjusted Kaplan Meier estimator
 
 ::: {#def-km}
@@ -306,7 +279,11 @@ estimating the survival function [@Kaplan_consistency] and [@kaplan].
 
 The corresponding RMST is obtained in integrating from 0 to $\tau$ the
 difference between non adjusted kaplan meier estimator of the treated
-and controls @eq-RMSTkm.
+and controls @eq-RMSTkm : 
+
+$$
+     \theta_{RMST}(\tau) = \int_{0}^{\tau}\left( S_1(t) - S_0(t) \right)dt
+$$
 
 **Implementation**
 
@@ -334,43 +311,49 @@ Kaplan_meier_handmade <- function(data,status=data$status,T_obs=data$T_obs){
   return(df)
 }
 
-# kaplan meier estimator with weight (matrix (nb ind x Y.grid))
-Kaplan_meier_handmade_w <- function(data,status=data$status,T_obs=data$T_obs,weights= NULL,Y.grid=NULL){
-  n <- length(T_obs)
-  if (is.null(Y.grid)){
-    Y.grid <- sort(unique(T_obs))
+# Kaplan meier adjusted
+# Times of event 
+# Failures : 1 if event 0 if censored
+# Variable : 1 if treated 0 if control
+# Weights : weight of the individual
+adjusted.KM <- function(times, failures, variable, weights = NULL) {
+  if (sum(times < 0) > 0) {
+    print("Error: times must be positive")
+  } else {
+    if (sum(weights < 0) > 0) {
+      print("Error: weights must be superior to 0")
+    } else {
+      if (sum(failures != 0 & failures != 1) > 0) {
+        print("Error: failures must be a vector of 0 or 1")
+      } else {
+        if (is.null(weights)) {
+          .w <- rep(1, length(times))
+        } else {
+          .w <- weights
+        }
+        
+        .data <- data.frame(t = times, f = failures, v = variable, w = .w)
+        .data <- .data[!is.na(.data$v),]
+        Table <- data.frame(times = NULL, n.risk = NULL, n.event = NULL, survival = NULL, variable = NULL)
+        
+        for (i in unique(variable)) {
+          .d <- .data[.data$v == i,]
+          .tj <- c(0, sort(unique(.d$t[.d$f == 1])), max(.d$t))
+          .dj <- sapply(.tj, function(x) {
+            sum(.d$w[.d$t == x & .d$f == 1])
+          })
+          .nj <- sapply(.tj, function(x) {
+            sum(.d$w[.d$t >= x])
+          })
+          .st <- cumprod((.nj - .dj) / .nj)
+          Table <- rbind(Table, data.frame(T = .tj, n = .nj, d = .dj, S = .st, variable = i))
+        }
+        return(Table)
+      }
+    }
   }
-  if (is.null(weights)){
-    weights <- matrix(rep(1/n, each =n, times= length(Y.grid)),ncol = length(Y.grid))
-  }
-  # When SC is calculated in using non-parametric model : SC is not based on cov so not individual dependent 
-  if (length(weights)==n){
-    # the weight is the same for all individual
-    weights <- matrix(rep(weights,times = length(Y.grid)), ncol =  length(Y.grid))
-  }
-  d <- rep(NA,length(Y.grid))
-  n <- rep(NA,length(Y.grid))
-  S <- rep(NA,length(Y.grid))
-  w <- rep(NA,length(Y.grid))
-  for (i in 1:length(Y.grid)){
-    d[i] <- sum((T_obs==Y.grid[i] & status ==1))#*weights[,i])
-    n[i] <- sum((T_obs >= Y.grid[i]))#*weights[,i])
-    w[i] <- sum(weights[,i])
-  }
-  S <- cumprod(1-d/n)
-  df<-data.frame(d=d,n=n,S= S, T = Y.grid,w=w)
-  return(df)
 }
 
-
-#test <- Kaplan_meier_handmade_w(DATA_treated,T_obs=DATA_treated$T_obs,status=DATA_treated$status,Y.grid=Y.grid, weights = weights_treated)
-#test2 <- Kaplan_meier_handmade_w(data,status=data$status,T_obs=data$T_obs,weights=weights,Y.grid = Y.grid)
-# test <- Kaplan_meier_handmade_w(data,status=data$status,T_obs=data$T_obs,weights=NULL,Y.grid = Y.grid)
-# test3 <- Kaplan_meier_handmade(data,status=data$status,T_obs=data$T_obs)
-# 
-# plot(test$T,test$S)
-# lines(test2$T,test2$S,col=2)
-# lines(test3$T,test3$S,col=3)
 
 ```
 
@@ -471,22 +454,6 @@ RMST_4 <- function(data,tau=20){
 
 #RMST_4(data,tau=20)
 
-RMST <- function(S_A1, S_A0,tau){
-  Y.grid1 <- S_A1$T[S_A1$T <= tau]
-  Y.grid0 <- S_A0$T[S_A0$T <= tau]
-  S_A1 <- S_A1%>%
-    dplyr::filter(T %in% Y.grid1)
-
-  S_A0 <- S_A0%>%
-    dplyr::filter(T %in% Y.grid0)
-
-  #integral from 0 to tau of S_A1 on Y.grid
-  intA1 <- trapezoidal_integration(S_A1$T, S_A1$S)
-  intA0 <- trapezoidal_integration(S_A0$T, S_A0$S)
-  #mean(S_A1$T)
-  RMST <- intA1 - intA0
-  return(list(intA1=intA1,intA0=intA0,RMST=RMST))
-}
 ```
 
 The results of the four methods are presented in the section
@@ -509,7 +476,11 @@ causal treatment effect.
 ::: {#def-ipcwkm}
 #### IPCW adjusted kaplan meier estimator
 
-$$\hat{S}_{IPCW-KM}(t \mid a) = \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w}_{i}(t_j,X_i)*I\left\{\widetilde{T_i}=t_j, C_i \geq t_j, A_i=a\right\}}{\sum_k \hat{w}_{k}(t_j,X_k)*I\left\{\widetilde{T_k} \geq t_j, C_k \geq t_j, A_k=a\right\}}\right)$$
+$$
+\begin{aligned}
+\hat{S}_{IPCW-KM}(t \mid a) &= \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w}_{i}(t_j,X_i)*I\left\{\widetilde{T_i}=t_j, C_i \geq t_j, A_i=a\right\}}{\sum_k \hat{w}_{k}(t_j,X_k)*I\left\{\widetilde{T_k} \geq t_j, C_k \geq t_j, A_k=a\right\}}\right) 
+\end{aligned}
+$$
 
 -   $\hat{w_{i}}(t,X_i)=\frac{1}{\hat{S_{c}}(t|X_{i},A_{i})}$ is the
     inverse of the probability of remain uncensored given the covariates
@@ -532,11 +503,33 @@ uncensored until time $t$.
 
 In the exact same way than before, the corresponding RMST is obtained in
 integrating from 0 to $\tau$ the difference between adjusted kaplan
-meier estimator of the treated and controls @eq-RMSTipcw.
+meier estimator of the treated and controls @eq-RMSTipcw :
+
+$$
+     \theta_{RMST}(\tau) = \int_{0}^{\tau}\left( S_1(t) - S_0(t) \right)dt
+$$
 
 **Implementation**
 
 ```{r}
+#function which compute rmst in having tau and the two survival function 
+RMST_fromS <- function(S_A1, S_A0,tau){
+  Y.grid1 <- S_A1$T[S_A1$T <= tau]
+  Y.grid0 <- S_A0$T[S_A0$T <= tau]
+  S_A1 <- S_A1%>%
+    dplyr::filter(T %in% Y.grid1)
+
+  S_A0 <- S_A0%>%
+    dplyr::filter(T %in% Y.grid0)
+
+  #integral from 0 to tau of S_A1 on Y.grid
+  intA1 <- trapezoidal_integration(S_A1$T, S_A1$S)
+  intA0 <- trapezoidal_integration(S_A0$T, S_A0$S)
+  #mean(S_A1$T)
+  RMST <- intA1 - intA0
+  return(list(intA1=intA1,intA0=intA0,RMST=RMST))
+}
+
 library(riskRegression)
 # estimate survival function with covariates for each individuals at each time Y.grid
 estimate_survival_function <-function(DATA,X_name,Y.grid,type_of_model="cox",T_obs="T_obs",status="status"){
@@ -586,6 +579,7 @@ return(list('S_hat'=S_hat,"S_hat1"=S_hat1,"S_hat0"=S_hat0,"T"=Y.grid))
 #plot(S$T,S$S)+
 #  lines(Sbis$T,Sbis$S)
 
+
 # IPCW kaplan meier estimator with restricted tau
 # fit IPCW KM 
 # Y.grid = sort(unique(data$T_obs))
@@ -595,35 +589,30 @@ IPCW_Kaplan_meier <- function(data,tau){
   data$status_tau <- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
   Y.grid <- sort(unique(data$T_obs_tau))
   
-  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
-  S_C <-  S_C_hat$S_hat
-  status_tau_t <- sapply(Y.grid,function(t) as.numeric((data$T_obs>t) | (data$T_obs<=t &  data$status == 1 )))
-  weights <- status_tau_t/S_C
-    
+  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3","X4"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
   
+  data$S_C <- S_C_hat$S_hat[cbind(1:nrow(data),match(data$T_obs_tau,Y.grid))]
+  
+  data$weights <- data$status_tau/data$S_C
+
   DATA_treated <- data[data$A == 1,]
   DATA_not_treated <- data[data$A == 0,]
-  weights_treated <- weights[data$A == 1,]
-  weights_not_treated <- weights[data$A == 0,]
-    
-  S1 <- Kaplan_meier_handmade_w(DATA_treated,T_obs=DATA_treated$T_obs_tau,status=DATA_treated$status_tau, weights = weights_treated)
-  S0 <- Kaplan_meier_handmade_w(DATA_not_treated,T_obs=DATA_not_treated$T_obs_tau,status=DATA_not_treated$status_tau,weights = weights_not_treated)
-  
-  #S1bis <- Kaplan_meier_handmade_w(DATA_treated,T_obs=DATA_treated$T_obs_tau,status=DATA_treated$status_tau, weights = weights_treated)
-  #S0bis <- Kaplan_meier_handmade_w(DATA_not_treated,T_obs=DATA_not_treated$T_obs_tau,status=DATA_not_treated$status_tau,weights = weights_not_treated)
-  
-  #intA1 <- trapezoidal_integration(S1bis$T, S1bis$S)
-  #intA0 <- trapezoidal_integration(S0bis$T, S0bis$S)
 
-  #RMSTbis <- intA1 - intA0
+  S <- adjusted.KM(times=data$T_obs_tau,failures=data$status_tau, variable=data$A ,weights = data$weights)
+
   
   #Exact same results : 
-  RMST <- RMST(S1,S0,tau=20)
+  RMST <- RMST_fromS(S_A1=S[S$variable==1,],S_A0=S[S$variable==0,],tau=tau)
   
   return(list(RMST = RMST$RMST, ATE_treated = RMST$intA1, ATE_not_treated = RMST$intA0))
 }
+```
+
+Based on the identifiability formula @eq-RMSTipcw, it is possible to implement the IPCW estimator differently not in using the survival function.
 
 
+
+```{r}
 # other way of implementing IPCW
 IPCW_min <- function(data,tau){
   data$T_obs_tau <- ifelse(data$T_obs>=tau,tau,data$T_obs)
@@ -631,31 +620,22 @@ IPCW_min <- function(data,tau){
   data$status_tau <- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
   Y.grid<- sort(unique(data$T_obs_tau))
   
-  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
-  S_C <-  S_C_hat$S_hat
-  #status_tau_t <- sapply(Y.grid,function(t) as.numeric((data$T_obs>t) | (data$T_obs<t &  data$status == 1 )))
-  weights <- 1/S_C
+  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3","X4"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
+  data$S_C <- S_C_hat$S_hat[cbind(1:nrow(data),match(data$T_obs_tau,Y.grid))]
+  
+  data$weights <- data$status_tau/data$S_C
   
   DATA_treated <- data[data$A == 1,]
   DATA_not_treated <- data[data$A == 0,]
-  weights_treated <- weights[data$A == 1,]
-  weights_not_treated <- weights[data$A == 0,]
-  
-  #on selectionne les poids correspondant à l'ind i et au temps T_obs_tau
-  #weights_treated <- weights_treated[cbind(1:nrow(DATA_treated),match(DATA_treated$T_obs_tau,Y.grid))]
-  
-  DATA_treated$weights <- weights_treated[cbind(1:nrow(DATA_treated),match(DATA_treated$T_obs_tau,Y.grid))]
-  #DATA_treated$weights <- weights_treated[cbind(1:nrow(DATA_treated),match(DATA_treated$T_obs_tau,Y.grid))]
-  DATA_not_treated$weights <- weights_not_treated[cbind(1:nrow(DATA_not_treated),match(DATA_not_treated$T_obs_tau,Y.grid))]
-  
-  DATA_treated$RST <- DATA_treated$T_obs_tau*DATA_treated$weights*DATA_treated$status_tau
-  DATA_not_treated$RST <- DATA_not_treated$T_obs_tau*DATA_not_treated$weights*DATA_not_treated$status_tau
+
+  DATA_treated$RST <- DATA_treated$T_obs_tau*DATA_treated$weights
+  DATA_not_treated$RST <- DATA_not_treated$T_obs_tau*DATA_not_treated$weights
   
   RMST <- mean(DATA_treated$RST) - mean(DATA_not_treated$RST)
   return(list(RMST = RMST, ATE_treated = mean(DATA_treated$RST), ATE_not_treated = mean(DATA_not_treated$RST)))
 }
 
-
+#same graph
 # graph de l'evolution des RMST en fonction de tau pour IPCW_min et IPCW_Kaplan_meier
 #tau <- seq(1,50,by=1)
 #RMST_min <- sapply(tau,function(t) IPCW_min(data,tau=t)$RMST)
@@ -709,7 +689,8 @@ $$
     &= \mathbb{E}\left[\frac{\mathbb{E}\left[T(1) \wedge \tau|X\right]*\mathbb{E}[A|X]}{e(X)}-\frac{\mathbb{E}[T(0) \wedge \tau|X]*\mathbb{E}[1-A|X]}{1-e(X)}\right] \\
     &= \mathbb{E}\left[\frac{\mathbb{E}\left[A*T(1) \wedge \tau|X\right]}{e(X)}-\frac{\mathbb{E}[(1-A)T(0) \wedge \tau|X]}{1-e(X)}\right] \tiny\text { (By unconfoundedness) }\\
     & =\mathbb{E}\left[\mathbb{E}[(T \wedge \tau) \mid A, X]\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right)\right] \tiny\text { (By consistency) }\\
-     & =\mathbb{E}\left[(\widetilde{T} \wedge \tau)\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right)\right]\\
+    &= \int_0^\tau \mathbb{E}\left[1(\{T \geq t\}|A) \right]*\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right) dt \\
+    &= \int_0^\tau p(T \geq t | A)*\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right) dt 
 \end{aligned}
 $$ {#eq-RMST-IPTW}
 
@@ -724,6 +705,7 @@ $$
     &= \mathbb{E}\left[\mathbb{E}[T(1) \wedge \tau \mid X]\right]-\mathbb{E}[T(0) \wedge \tau \mid X] \tiny\text { (By the total probability law) }  \\
     & =\mathbb{E}\left[\mathbb{E}[(T \wedge \tau) \mid A, X]\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right)\right] \tiny\text { (def of IPTW) }  \\
     & =\mathbb{E}\left[\frac{\widetilde{T} \wedge \tau \cdot \Delta^\tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)}\left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right) \right]  \tiny\text { (def of IPCW) } &&
+    
 \end{aligned}
 $$ {#eq-RMST-IPTW-IPCW}
 
@@ -770,11 +752,11 @@ meier estimator of the treated and controls @eq-RMST-IPTW.
 ```{r}
 
 library(grf)
-estimate_propensity_score <- function(DATA,treatment_name,type_of_model="reglog"){
+estimate_propensity_score <- function(DATA,treatment_covariates,type_of_model="reglog"){
   # ## GLM
   if (type_of_model == "reglog"){
     outcome <- 'A'
-    f <- as.formula(paste(outcome, paste(c(treatment_name), collapse = " + "), sep = " ~ "))
+    f <- as.formula(paste(outcome, paste(c(treatment_covariates), collapse = " + "), sep = " ~ "))
     fitA <- glm(f,data = DATA,family = binomial(link="logit"))
     e_hat <- predict(fitA,newdata=DATA,type="response")
     return(e_hat)
@@ -782,9 +764,9 @@ estimate_propensity_score <- function(DATA,treatment_name,type_of_model="reglog"
   if (type_of_model == "forest"){
     
     # onehot encode factor variables
-    categorical_name <- names(which(sapply(subset(DATA, select = c(treatment_name)), class) == "factor"))
+    categorical_name <- names(which(sapply(subset(DATA, select = c(treatment_covariates)), class) == "factor"))
     if (length(categorical_name) >0){
-      numerical_name <- setdiff(treatment_name,categorical_name)
+      numerical_name <- setdiff(treatment_covariates,categorical_name)
       na.action <- options()$na.action
       options(na.action='na.pass')
       X_one_hot <- model.matrix(~ 0 + ., DATA[categorical_name], na.action = "na.pass")
@@ -792,12 +774,12 @@ estimate_propensity_score <- function(DATA,treatment_name,type_of_model="reglog"
       replace_string <- function(string) {return(str_replace_all(string, ' ', '_'))}
       categorical_name_one_hot <- sapply(categorical_name_one_hot,replace_string)
       DATA[categorical_name_one_hot] <- X_one_hot
-      treatment_name<- union(categorical_name_one_hot,numerical_name)
+      treatment_covariates<- union(categorical_name_one_hot,numerical_name)
       options(na.action = na.action)
     }
     ## Forest
     
-    Xipw <- as.matrix(DATA[treatment_name])
+    Xipw <- as.matrix(DATA[treatment_covariates])
     Wipw <- as.matrix(DATA$A)
     forest.W <- regression_forest(Xipw, Wipw,honesty = FALSE)
     e_hat <- predict(forest.W)$predictions
@@ -805,25 +787,28 @@ estimate_propensity_score <- function(DATA,treatment_name,type_of_model="reglog"
   }
 }
 
-IPTW_Kaplan_Meier<- function(data,e_hat,tau){
+IPTW_Kaplan_Meier<- function(data,tau){
+  data$e_hat <- estimate_propensity_score(data,treatment_covariates = c("X1","X2","X3","X4"))
   data$T_obs_tau <- pmin(data$T_obs, tau)
   data$status_tau <- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
-  W <- (data$A == 1) * (1/e_hat) + (data$A==0) * (1)/(1-e_hat)
-  fitipw <- survfit(Surv(T_obs_tau, status_tau) ~ A, data = data,weights =W )
-  # Summarize
-  resipw.sum <- surv_summary(fitipw, data = data)
-  res_ipw <- attr(resipw.sum, "table")
+  data$weights <- (data$A) * (1/data$e_hat) + (1-data$A)/(1-data$e_hat)
   
+  S <- adjusted.KM(times=data$T_obs_tau,failures=data$status_tau, variable=data$A ,weights = data$weights)
+  RMST <- RMST_fromS(S_A1=S[S$variable==1,],S_A0=S[S$variable==0,],tau=tau)
   
-  mean_ipw <- (res_ipw$rmean[2] - res_ipw$rmean[1])
-  return(list("intA0"=res_ipw$rmean[1],"intA1"=res_ipw$rmean[2],"RMST"=mean_ipw))
+  return(list("intA0"=RMST$intA0,"intA1"=RMST$intA1,"RMST"=RMST$RMST))
 }
 
-#e_hat <- estimate_propensity_score(data,treatment_name="A",type_of_model="reglog")
+
 #IPTW_Kaplan_Meier(data,e_hat,tau)
 
 
 ```
+
+As $T \wedge \tau$ is not directly observable because of censoring, we have to use a censoring unbiased
+transformation to identify $E [(T \wedge \tau )|A, X]$
+
+
 
 ## Estimation under conditionally independent censoring
 
@@ -858,7 +843,10 @@ model. Then, the weight for each observation can be computed as:
 $$w_i=\frac{\Delta_i^\tau}{\hat{S}_C\left(\widetilde{T} \wedge \tau \mid A_i, X_i\right)}*(\frac{A_i}{\hat{e}\left(X_i\right)}-\frac{1-A_i}{1-\hat{e}(X_i)})$$
 
 An adjusted kaplan estimator (weighted by the previous $w_i$) can be
-fitted for $A=1$ and $A=0$ (see definition @def-iptwipcw).
+fitted for $A=1$ and $A=0$ (see definition @def-iptwipcw):
+$$
+     \theta_{RMST}(\tau) = \int_{0}^{\tau}\left( S_1(t) - S_0(t) \right)dt
+$$
 
 ::: {#def-iptwipcwkm}
 #### Adjusted IPTW-IPCW kaplan meier estimator
@@ -876,27 +864,28 @@ the survival curve with $A=1$ and the $A=0$.
 
 **Implementation**
 
-```{r}
-IPTW_IPCW_Kaplan_Meier<- function(data,e_hat,tau){
-  data$T_obs_tau <- pmin(data$T_obs, tau)
+```{r} 
+IPTW_IPCW_Kaplan_Meier<- function(data,tau){
+  data$T_obs_tau <- ifelse(data$T_obs>=tau,tau,data$T_obs)
+  data$censor.status_tau <- 1- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
   data$status_tau <- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
-  data$censor.status_tau <- 1-data$status_tau
+  data$e_hat <- estimate_propensity_score(data,treatment_covariates = c("X1","X2","X3","X4"))
+  Y.grid <- sort(unique(data$T_obs_tau))
   
-  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
-  S_C <-  S_C_hat$S_hat
-  status_tau_t <- sapply(Y.grid,function(t) as.numeric((data$T_obs>t) | (data$T_obs<=t &  data$status == 1 )))
-  weights <- status_tau_t/S_C*(data$A/e_hat + (1-data$A)/(1-e_hat))
-    
+  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3","X4"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
   
+  data$S_C <- S_C_hat$S_hat[cbind(1:nrow(data),match(data$T_obs_tau,Y.grid))]
+  
+  data$weights <- data$status_tau/data$S_C*((data$A) * (1/data$e_hat) + (1-data$A)/(1-data$e_hat))
+
   DATA_treated <- data[data$A == 1,]
   DATA_not_treated <- data[data$A == 0,]
-  weights_treated <- weights[data$A == 1,]
-  weights_not_treated <- weights[data$A == 0,]
-    
-  S1 <- Kaplan_meier_handmade_w(DATA_treated,T_obs=DATA_treated$T_obs_tau,status=DATA_treated$status_tau, weights = weights_treated)
-  S0 <- Kaplan_meier_handmade_w(DATA_not_treated,T_obs=DATA_not_treated$T_obs_tau,status=DATA_not_treated$status_tau,weights = weights_not_treated)
+
+  S <- adjusted.KM(times=data$T_obs_tau,failures=data$status_tau, variable=data$A ,weights = data$weights)
+
   
-  RMST <- RMST(S1,S0,tau=20)
+  #Exact same results : 
+  RMST <- RMST_fromS(S_A1=S[S$variable==1,],S_A0=S[S$variable==0,],tau=tau)
   
   return(list(RMST = RMST$RMST, ATE_treated = RMST$intA1, ATE_not_treated = RMST$intA0))
 }
@@ -904,6 +893,35 @@ IPTW_IPCW_Kaplan_Meier<- function(data,e_hat,tau){
 #IPTW_IPCW_Kaplan_Meier(data,e_hat,tau)
 
 ```
+
+Exactly the same than IPCW estimator, it exists another way of implementing the IPCW-IPTW estimator :
+**(pas les mêmes resultats)**
+
+```{r}
+# In using the min
+IPTW_IPCW_min<- function(data,e_hat,tau){
+  data$T_obs_tau <- ifelse(data$T_obs>=tau,tau,data$T_obs)
+  data$censor.status_tau <- 1- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
+  data$status_tau <- as.numeric((data$T_obs>=tau) | (data$T_obs<tau &  data$status == 1 ))
+  data$e_hat <- estimate_propensity_score(data,treatment_covariates = c("X1","X2","X3","X4"))
+  Y.grid <- sort(unique(data$T_obs_tau))
+  
+  S_C_hat <-estimate_survival_function(data,c("X1","X2","X3","X4"),Y.grid,T_obs="T_obs_tau",status="censor.status_tau")
+  
+  data$S_C <- S_C_hat$S_hat[cbind(1:nrow(data),match(data$T_obs_tau,Y.grid))]
+  
+  data$weights <- data$status_tau/data$S_C*((data$A/data$e_hat) + (1-data$A)/(1-data$e_hat))
+  data$RST <- data$T_obs_tau*data$weights
+  
+  DATA_treated <- data[data$A == 1,]
+  DATA_not_treated <- data[data$A == 0,]
+  
+  RMST <- mean(DATA_treated$RST) - mean(DATA_not_treated$RST)
+  return(list(RMST = RMST, ATE_treated = mean(DATA_treated$RST), ATE_not_treated = mean(DATA_not_treated$RST)))
+}
+
+```
+
 
 
 ### G-formula plug-in estimator
@@ -1048,8 +1066,18 @@ RMST_package <- function(data, tau) {
 
   
 #test <- RMST_package(data_rct1,tau=20)
-  
+#test  
 ```
+
+```{r}
+# in using the package survival 
+
+library(survival)
+
+# function to compute the RMST
+
+```
+
 
 # Simulation {#sec-simulation}
 
@@ -1104,8 +1132,8 @@ The cumulative hazard inversion method is explained in annexes
 # RCT1 : Random treatment assignment + independent censoring
 # RCT2 : Random treatment assignment + dependent censoring (conditional on X)
 
-simulate_data_RCT <- function(n,mu= c(1, 1, -1, 1), sigma=diag(4),tau,coefT0=0.1,
-parsS=c(1,1,-1,1),coefC=0.03,parsC=c(0.1,0.1,-0.2,-0.2),scenario="RCT2"){
+simulate_data_RCT <- function(n,mu= c(1, 1, -1, 1), sigma=diag(4),tau,coefT0=0.01,
+parsS=c(0.5,0.5,-0.5,0.5),coefC=0.03,parsC=c(0.1,0.1,-0.2,-0.2),scenario="RCT2"){
   if (scenario=="RCT1"){
     # Generate X from multivariate normal distribution
     X <- MASS::mvrnorm(n, mu, sigma)
@@ -1318,7 +1346,7 @@ shinyApp(ui = ui2, server = server2)
 
 ```{r}
 data_rct1 <- simulate_data_RCT(n=2000,tau=70,scenario="RCT1")
-
+  
 data_rct2 <- simulate_data_RCT(n=2000,tau=5,scenario="RCT2")
 
 ```
@@ -1479,13 +1507,13 @@ data_obs2 <- simulate_data_obs(n=2000,tau=50,scenario="Obs2")
 
 
 #data with no informative censoring
-data_obs1 <- simulate_data_obs(n=2000,tau=50,coefC=0.05,scenario="Obs1")
+data_obs1 <- simulate_data_obs(n=2000,tau=50,scenario="Obs1")
 
 ```
 
 ## Data description
 
-```{r}
+```{r,eval=FALSE}
 library(survival)
 library(ggplot2)
 library(survminer)
@@ -1637,7 +1665,7 @@ Naive <- function(data){
   return(mean_naive)
 }
 
-Naive(data)
+Naive(data_rct1)
 ```
 
 ### Kaplan meier estimator
@@ -1649,35 +1677,30 @@ correct, we compare it with the survfit function of the survival
 package.
 
 ```{r}
-#Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
-km <- Kaplan_meier_handmade(data)
-plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
-
-#Mettre sur le même graph le resultat de survfit 
-fit <- survfit(Surv(data$T_obs, data$status) ~ 1)
-lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
-
-data1 <- data[data$A==1,]
-data0 <- data[data$A==0,]
+data_rct11 <- data_rct1[data_rct1$A==1,]
+data_rct10 <- data_rct1[data_rct1$A==0,]
 
 #Plot entre handmade and survfit pour voir si difference sans utiliser ggplot 
-km <- Kaplan_meier_handmade(data1,status=data1$status,T_obs=data1$T_obs)
-km0 <- Kaplan_meier_handmade(data0,status=data0$status,T_obs=data0$T_obs)
-plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
-lines(km0$T,km0$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
-
+km <- Kaplan_meier_handmade(data_rct11,status=data_rct11$status,T_obs=data_rct11$T_obs)
+km0 <- Kaplan_meier_handmade(data_rct10,status=data_rct10$status,T_obs=data_rct10$T_obs)
 #Mettre sur le même graph le resultat de survfit 
-fit <- survfit(Surv(data$T_obs, data$status) ~ data$A)
-lines(fit, col= "blue", lty=1, xlab="Time", ylab="Survival function", main="Survfit")
+fit <- survfit(Surv(data_rct1$T_obs, data_rct1$status) ~ data_rct1$A)
+
+plot(km$T,km$S, col= "red", lty=1, xlab="Time", ylab="Survival function", main="Handmade KM")
+points(km0$T,km0$S, col= "red", lty=1)
+lines(fit$time, fit$surv, col= "blue", lty=1)
+
 ```
 
-The handmade Kaplan meier estimator is the same as the survfit function
+The handmade Kaplan meier estimator (red points) is the same as the survfit function (blue lines)
 of the survival package.
 
-The results of the four methods are presented in the section @sec-KM are
+##### RMST
+
+The results of the four RMST methods in using the unadjusted Kaplan meier presented in the section @sec-KM are
 displayed below :
 
-```{r}
+```{r,eval=FALSE}
 #| label : fig-KM-RMST
 #| fig.cap : Results of the RMST for the 4 methods
 library(dplyr)
@@ -1685,60 +1708,65 @@ library(riskRegression)
 library(survminer)
 library(survRM2)
 # plot des 2 calculs de RMST en fonction de tau : 
-tau <- seq(0,48,by=1)
-res1_2 <- sapply(tau,function(x) RMST_1_2(data,tau=x))
-res3 <- sapply(tau,function(x) RMST_3(data,tau=x))
-res4 <- sapply(tau,function(x) RMST_4(data,tau=x))
-res4bis <- sapply(tau,function(x) RMST_4(data_no_cens,tau=x))
+# tau doit être infereieur à T_obs max pour les packages SurvRM2
+tau <- seq(0,as.integer(max(data_rct1$T_obs)),by=1)
+res1_2 <- sapply(tau,function(x) RMST_1_2(data_rct1,tau=x))
+res3 <- sapply(tau,function(x) RMST_3(data_rct1,tau=x))
+res4 <- sapply(tau,function(x) RMST_4(data_rct1,tau=x))
 
 matplot(tau,res1_2[1,],type="l",lty=1,col=1:2,ylab="RMST",xlab="tau",ylim=c(0,6))+lines(tau,res1_2[2,],lty=2,col=2)+
   lines(tau,res3,lty=3,col=3)+
   lines(tau,res4,lty=3,col=4)+
-  lines(tau,res4bis,lty=3,col=5)+
   abline(h=4,xlim=c(0,50),col="black",lty=2)
 
 ```
+The 4 methods for compute RMST presented in the section @sec-KM are equivalent
+
 
 #### Adjusted Kaplan meier estimator
 
-##### IPCW
+##### RMST  
+
+###### IPCW
 
 ```{r}
 #| label : fig-KMIPCW-RMST
 #| fig.cap : Results of the RMST for the IPCW method
 
 # plot des 2 calculs de RMST en fonction de tau : 
-tau <- seq(0,50,by=1)
-res5 <- sapply(tau,function(x) IPCW_Kaplan_meier(data,tau=x))
-res5bis <- sapply(tau,function(x) IPCW_Kaplan_meier(data_no_cens,tau=x))
+tau <- seq(1,50,by=1)
+res5 <- sapply(tau,function(x) IPCW_Kaplan_meier(data_rct1,tau=x))
+res6 <- sapply(tau,function(x) IPCW_min(data_rct1,tau=x))
 
 matplot(tau,res5[1,],type="l",lty=1,col=1,ylab="RMST",xlab="tau")+
   #lines(tau,res5[4,],lty=4,col=3)+
-  lines(tau,res5bis[1,],lty=2,col=2)+
+  lines(tau,res6[1,],lty=2,col=2)+
   abline(h=4,xlim=c(0,50),col="black",lty=2)
 
 ```
 
-##### IPTW
+###### IPTW
 
-```{r}
+```{r,eval=FALSE}
 #| label : fig-KMIPTW-RMST
 #| fig.cap : Results of the RMST for the IPTW method
 
 # plot des 2 calculs de RMST en fonction de tau :
-tau <- seq(0,50,by=1)
-e_hat <- estimate_propensity_score(data,c("X1","X2","X3","X4"),type_of_model="reglog")
-
-e_hatbis <- estimate_propensity_score(data_no_cens,c("X1","X2","X3","X4"),type_of_model="reglog")
-res6 <- sapply(tau,function(x) Adjusted_Kaplan_Meier(data,e_hat=e_hat,tau=x))
-res6bis <- sapply(tau,function(x) Adjusted_Kaplan_Meier(data_no_cens,e_hat=e_hatbis,tau=x))
+tau <- seq(1,50,by=1)
+e_hat <- estimate_propensity_score(data_rct1,c("X1","X2","X3","X4"),type_of_model="reglog")
+res6 <- sapply(tau,function(x) Adjusted_Kaplan_Meier(data_rct1,e_hat=e_hat,tau=x))
 
 
 matplot(tau,res6[3,],type="l",lty=1,col=1,ylab="RMST",xlab="tau",ylim=c(0,6))+ 
-  lines(tau,res6bis[3,],lty=2,col=2)+
   abline(h=4,xlim=c(0,50),col="black",lty=2)
   
 ```
+
+###### IPCW-IPTW 
+
+
+
+###### G-formula 
 
 ```{r,eval=FALSE}
 
@@ -1749,6 +1777,8 @@ mean_ipw
 g_formula_cox_T_learner(data,c("X1","X2","X3","X4"),Y.grid=c(1:30))
 
 ```
+
+
 
 ## Simulation graph
 
@@ -1770,7 +1800,6 @@ all_estimates <- function(data,sample.size,tau){
                         "estimator" = c(),
                         "nuisance" = c())
 
-  e_hat <- estimate_propensity_score(data,c("X1","X2","X3","X4"),type_of_model="reglog")
   ATE_naive<- Naive(data)
   
   data1 <- data %>%
@@ -1779,21 +1808,22 @@ all_estimates <- function(data,sample.size,tau){
     dplyr::filter(A==0)
   km_rct1<- Kaplan_meier_handmade(data1)
   km_rct0 <- Kaplan_meier_handmade(data0)
-  ATE_km_rct <- RMST(S_A1=km_rct1,S_A0=km_rct0,tau=tau)
+  ATE_km_rct <- RMST_fromS(S_A1=km_rct1,S_A0=km_rct0,tau=tau)
   
   ATE_pack <- rmst2(data$T_obs, data$status, arm=data$A, tau = tau)[[5]][1]
   
-  ATE_km_adj <- Adjusted_Kaplan_Meier(data,e_hat,tau=tau)
+  ATE_km_adj <- IPTW_Kaplan_Meier(data,tau=tau)
   
   ATE_g_formula <- g_formula_cox_T_learner(data,c("X1","X2","X3","X4"),Y.grid=c(1:tau))
   
   ATE_IPCW <- IPCW_Kaplan_meier(data, tau=tau)  
+  ATE_IPCW_IPTW <- IPTW_IPCW_Kaplan_Meier(data,tau=tau)
 
-  data.frame <- data.frame("sample.size" = rep(sample.size, 6),
+  data.frame <- data.frame("sample.size" = rep(sample.size, 7),
                                "estimate" = c(ATE_naive, ATE_km_rct$RMST,
-                                              ATE_km_adj$RMST,ATE_IPCW$RMST,  ATE_g_formula,ATE_pack),
-                               "estimator" = c("Naive", "KM", "IPTW Adjusted KM", "IPCW Adjusted KM", "G_formula cox","Package"),
-                               "nuisance" = rep("linear + cox", 6))
+                                              ATE_km_adj$RMST,ATE_IPCW$RMST, ATE_IPCW_IPTW$RMST, ATE_g_formula,ATE_pack),
+                               "estimator" = c("Naive", "KM", "IPTW Adjusted KM", "IPCW Adjusted KM","IPTW-IPCW Adjusted KM", "G_formula cox","Package"),
+                               "nuisance" = rep("linear + cox", 7))
   
 return(data.frame)
 }
@@ -1816,7 +1846,7 @@ return (data.frame)
 
 ```{r,eval=FALSE}
 # rct1
-simulation_rct1<-compute_estimator(data_rct1,n_sim,tau=10)
+simulation_rct1<-compute_estimator(data_rct1,n_sim,tau=20)
 
 save(simulation_rct1,file="simulation_rct1.RData")
 
