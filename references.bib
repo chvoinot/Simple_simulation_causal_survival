@@ -270,6 +270,7 @@ eprint = {
     abstract = { Censored data make survival analysis more complicated because exact event times are not observed. Statistical methodology developed to account for censored observations assumes that patients’ withdrawal from a study is independent of the event of interest. However, in practice, some covariates might be associated to both lifetime and censoring mechanism, inducing dependent censoring. In this case, standard survival techniques, like Kaplan–Meier estimator, give biased results. The inverse probability censoring weighted estimator was developed to correct for bias due to dependent censoring. In this article, we explore the use of inverse probability censoring weighting methodology and describe why it is effective in removing the bias. Since implementing this method is highly time consuming and requires programming and mathematical skills, we propose a user friendly algorithm in R. Applications to a toy example and to a medical data set illustrate how the algorithm works. A simulation study was carried out to investigate the performance of the inverse probability censoring weighted estimators in situations where dependent censoring is present in the data. In the simulation process, different sample sizes, strengths of the censoring model, and percentages of censored individuals were chosen. Results show that in each scenario inverse probability censoring weighting reduces the bias induced in the traditional Kaplan–Meier approach where dependent censoring is ignored. }
 }
 
+
 @Inbook{Robins1992,
 author="Robins, James M.
 and Rotnitzky, Andrea",
@@ -288,3 +289,207 @@ doi="10.1007/978-1-4757-1229-2_14",
 url="https://doi.org/10.1007/978-1-4757-1229-2_14"
 }
 
+
+@misc{athey2019estimating,
+      title={Estimating Treatment Effects with Causal Forests: An Application}, 
+      author={Susan Athey and Stefan Wager},
+      year={2019},
+      eprint={1902.07409},
+      archivePrefix={arXiv},
+      primaryClass={stat.ME}
+}
+
+
+
+@misc{wager2017estimation,
+      title={Estimation and Inference of Heterogeneous Treatment Effects using Random Forests}, 
+      author={Stefan Wager and Susan Athey},
+      year={2017},
+      eprint={1510.04342},
+      archivePrefix={arXiv},
+      primaryClass={stat.ME}
+}
+
+@article{1994_robinsAIPW,
+author = {James M. Robins, Andrea Rotnitzky and Lue Ping Zhao},
+title = {Estimation of Regression Coefficients When Some Regressors are not Always Observed},
+journal = {Journal of the American Statistical Association},
+volume = {89},
+number = {427},
+pages = {846-866},
+year = {1994},
+publisher = {Taylor & Francis},
+doi = {10.1080/01621459.1994.10476818},
+
+
+URL = { 
+    
+        https://doi.org/10.1080/01621459.1994.10476818
+    
+    
+
+},
+eprint = { 
+    
+        https://doi.org/10.1080/01621459.1994.10476818
+    
+    
+
+}
+
+}
+
+
+
+
+
+@article{1995_robinsAIPW ,
+author = {James M. Robins, Andrea Rotnitzky and Lue Ping Zhao},
+title = {Analysis of Semiparametric Regression Models for Repeated Outcomes in the Presence of Missing Data},
+journal = {Journal of the American Statistical Association},
+volume = {90},
+number = {429},
+pages = {106-121},
+year = {1995},
+publisher = {Taylor & Francis},
+doi = {10.1080/01621459.1995.10476493},
+
+
+URL = { 
+    
+    
+        https://www.tandfonline.com/doi/abs/10.1080/01621459.1995.10476493
+    
+
+},
+eprint = { 
+    
+    
+        https://www.tandfonline.com/doi/pdf/10.1080/01621459.1995.10476493
+    
+
+}
+
+}
+
+@article {Hernan_HR,
+	Title = {The hazards of hazard ratios},
+	Author = {Hernán, Miguel A},
+	DOI = {10.1097/ede.0b013e3181c1ea43},
+	Number = {1},
+	Volume = {21},
+	Month = {January},
+	Year = {2010},
+	Journal = {Epidemiology (Cambridge, Mass.)},
+	ISSN = {1044-3983},
+	Pages = {13—15},
+	URL = {https://europepmc.org/articles/PMC3653612},
+}
+
+
+@article{HR_Martinussen,
+author = {Martinussen, Torben and Vansteelandt, Stijn and Andersen, Per},
+year = {2020},
+month = {10},
+pages = {},
+title = {Subtleties in the interpretation of hazard contrasts},
+volume = {26},
+journal = {Lifetime Data Analysis},
+doi = {10.1007/s10985-020-09501-5}
+}
+
+@article{Buckley_james_79,
+    author = {BUCKLEY, JONATHAN and JAMES, IAN},
+    title = "{Linear regression with censored data}",
+    journal = {Biometrika},
+    volume = {66},
+    number = {3},
+    pages = {429-436},
+    year = {1979},
+    month = {12},
+    abstract = "{We give a method of estimating parameters in the linear regression model which allowB the dependent variable to be censored and the residual distribution to be unspecified. The method differs from that of Miller (1976) in that the normal equations rather than the sum of squares of residuals are modified and this appears to overcome the inconsistency problems in Miller's approach. Large sample properties of the estimator of slope are derived heuristically and substantiated by simulations. Some of the heart transplant data reported and analysed by Miller are reanalysed using the present method.}",
+    issn = {0006-3444},
+    doi = {10.1093/biomet/66.3.429},
+    url = {https://doi.org/10.1093/biomet/66.3.429},
+    eprint = {https://academic.oup.com/biomet/article-pdf/66/3/429/631183/66-3-429.pdf},
+}
+
+@article{DoublyR_transformation,
+url = {https://doi.org/10.2202/1557-4679.1052},
+title = {A Doubly Robust Censoring Unbiased Transformation},
+title = {},
+author = {Daniel Rubin and Mark J. van der Laan},
+volume = {3},
+number = {1},
+journal = {The International Journal of Biostatistics},
+doi = {doi:10.2202/1557-4679.1052},
+year = {2007},
+lastchecked = {2024-03-29}
+}
+
+@Inbook{vanderLaan2003,
+author="van der Laan, Mark J.
+and Robins, James M.",
+title="Introduction",
+bookTitle="Unified Methods for Censored Longitudinal Data and Causality",
+year="2003",
+publisher="Springer New York",
+address="New York, NY",
+pages="8--101",
+abstract="In most empirical studies, the full (equivalently, complete) data X on certain subjects are censored (equivalently, missing or coarsened). That is, the data X that one would wish to collect are incompletely observed for a (possibly improper) subset of the study subjects; instead, only a random function (equivalently, a random coarsening) Y of X is observed. Furthermore, over the past decades, data from epidemiological, biostatistical, and econometric studies have become increasingly high-dimensional as longitudinal designs that collect data on many time-varying covariate processes at frequent intervals have become commonplace. Scientific interest, however, often focuses on a low-dimensional functional $\mu$ of the distribution FXof the full data --- say, as an example, the medians of the treatment-arm specific distributions of time to tumor recurrence in a cancer clinical trial in which recurrence times are right censored by lost -to-follow-up. In such a trial, X is often high dimesional because the study protocol specifies comprehensive laboratory and clinical measurements be taken monthly. In such settings, the use of non-or semiparametric models for FXthat do not model the components of FXthat are of little scientific interest have become commonplace, so as to insure that misspecification of the functional form of a parametric model for the entire distribution FXdoes not induce biased estimates of $\mu$. The methodology described in this book was developed to meet the analytic challenges posed by high dimensional censored data in which a low-dimensional functional $\mu$ of the distribution FXis the parameter of scientific interest.",
+isbn="978-0-387-21700-0",
+doi="10.1007/978-0-387-21700-0_1",
+url="https://doi.org/10.1007/978-0-387-21700-0_1"
+}
+
+@article{HTE_causal_survival_forests,
+    author = {Cui, Yifan and Kosorok, Michael R and Sverdrup, Erik and Wager, Stefan and Zhu, Ruoqing},
+    title = "{Estimating heterogeneous treatment effects with right-censored data via causal survival forests}",
+    journal = {Journal of the Royal Statistical Society Series B: Statistical Methodology},
+    volume = {85},
+    number = {2},
+    pages = {179-211},
+    year = {2023},
+    month = {02},
+    abstract = "{Forest-based methods have recently gained in popularity for non-parametric treatment effect estimation. Building on this line of work, we introduce causal survival forests, which can be used to estimate heterogeneous treatment effects in survival and observational setting where outcomes may be right-censored. Our approach relies on orthogonal estimating equations to robustly adjust for both censoring and selection effects under unconfoundedness. In our experiments, we find our approach to perform well relative to a number of baselines.}",
+    issn = {1369-7412},
+    doi = {10.1093/jrsssb/qkac001},
+    url = {https://doi.org/10.1093/jrsssb/qkac001},
+    eprint = {https://academic.oup.com/jrsssb/article-pdf/85/2/179/50204704/qkac001.pdf},
+}
+
+@misc{DML,
+Author = {Victor Chernozhukov and Denis Chetverikov and Mert Demirer and Esther Duflo and Christian Hansen and Whitney Newey and James Robins},
+Title = {Double/Debiased Machine Learning for Treatment and Causal Parameters},
+Year = {2016},
+Eprint = {arXiv:1608.00060},}
+
+@article{zheng2012targeted,
+  title={Targeted maximum likelihood estimation of natural direct effects},
+  author={Zheng, Wenjing and van der Laan, Mark J},
+  journal={The international journal of biostatistics},
+  volume={8},
+  number={1},
+  year={2012},
+  publisher={NIH Public Access}
+}
+
+@article{cai2020one,
+  title={One-step targeted maximum likelihood estimation for time-to-event outcomes},
+  author={Cai, Weixin and van der Laan, Mark J},
+  journal={Biometrics},
+  volume={76},
+  number={3},
+  pages={722--733},
+  year={2020},
+  publisher={Wiley Online Library}
+}
+
+@article{grf_article,
+      title={Generalized Random Forests}, 
+      author={Susan Athey and Julie Tibshirani and Stefan Wager},
+      year={2018},
+      eprint={1610.01271},
+      archivePrefix={arXiv},
+      primaryClass={stat.ME}
+}
