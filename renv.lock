@@ -4,7 +4,7 @@
     "Repositories": [
       {
         "Name": "CRAN",
-        "URL": "https://cloud.r-project.org"
+        "URL": "https://cran.rstudio.com"
       }
     ]
   },
@@ -2604,22 +2604,6 @@
       ],
       "Hash": "11abaf7c540ff33f94514d50f929bfd1"
     },
-    "repr": {
-      "Package": "repr",
-      "Version": "1.1.6",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "base64enc",
-        "grDevices",
-        "htmltools",
-        "jsonlite",
-        "pillar",
-        "utils"
-      ],
-      "Hash": "fab761ee8f3554a04afef40ac53689f4"
-    },
     "reshape2": {
       "Package": "reshape2",
       "Version": "1.4.4",
@@ -2898,30 +2882,6 @@
         "stats"
       ],
       "Hash": "9ea850bdb2184bdaf7eeb71041b95bb9"
-    },
-    "skimr": {
-      "Package": "skimr",
-      "Version": "2.1.5",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "cli",
-        "dplyr",
-        "knitr",
-        "magrittr",
-        "pillar",
-        "purrr",
-        "repr",
-        "rlang",
-        "stats",
-        "stringr",
-        "tibble",
-        "tidyr",
-        "tidyselect",
-        "vctrs"
-      ],
-      "Hash": "8f138ff2c8fbea9e0a523f6c399c0386"
     },
     "slider": {
       "Package": "slider",
