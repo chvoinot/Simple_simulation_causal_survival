@@ -392,7 +392,7 @@ $$
 
 #### Properties of Unadjusted Kaplan Meier estimator
 
-Unadjusted Kaplan Meier for the survival function is a nonparametric MLE (maximum likelihood estimator). Its asymptotic properties has been derived firstly by @Kaplan_consistency_breslow74. An other simple way of deriving the asymptotic properties is to consider Kaplan-Meier estimator as a Martingale process [@Aalen2008]. Kaplan-Meier is prooved to be:
+Unadjusted Kaplan Meier for the survival function is a nonparametric MLE (maximum likelihood estimator). Its asymptotic properties has been derived firstly by @Kaplan_consistency_breslow74. An other simple way of deriving the asymptotic properties is to consider Kaplan-Meier estimator as a Martingale process [@Aalen2008]. Kaplan-Meier is proved to be:
 
 - Uniformly consistent: $\sup _{s \in[0, t]}|\hat{S}(s)-S(s)| \xrightarrow{\mathbb{P}} 0$.
 
@@ -400,7 +400,9 @@ Unadjusted Kaplan Meier for the survival function is a nonparametric MLE (maximu
 
 To derive this asymptotic distribution, we need to assume that the proportion of the sample at risk at time $t$ becomes stable as the sample size increases [@Aalen2008] and that the censoring is not informative (independent). 
 
-RMST ($\int_0^\tau S(t)dt$) 
+The Restricted Mean Survival Time ($\int_0^\tau S(t)dt$) derived by an unadjusted Kaplan-Meier is proved to be:
+
+- Almost surely consistent estimator of the true RMST 
  
 
 #### Implementation {#sec-implunadjusted}
@@ -791,11 +793,9 @@ $$ {#eq-RMSTipcw}
 
 ##### Properties of IPCW Kaplan Meier
 
-This estimator with known $S_{c}(t|X_{i},A_{i})$ is subject to
-appropriate laws of large numbers and central limit theorem thus it is
-convenient for asymptotic theory [@IPCW_consistency]. It means also that
-this estimator is sensible to mispecification of censoring model.
-Exactly than Unadjusted Kaplan-Meier, if adjustement on covariates is required for the survival curve $S$, the IPCW Kaplan-Meier estimate remains consistent but looses its efficiency as compared to regression based estimates such as G-formula (@sec-gformula). 
+**Robins (1993)** (fameuse publi introuvable) shows that our IPCW estimate $\hat{S}_{IPCW-KM}(t,a)$ is guaranteed to be consistent and asymptotically normal under @eq-condindepcensoring and the model of conditional censoring is correct [@Robins2004]. Also, @IPCWrobins shows that IPCW estimate is asymptotically more efficient than the standard Kaplan-Meier estimator for failure in treatment arm a whenever the latter estimator is consistent 
+(i.e., whenever censoring is independent). 
+
 
 ##### Implementation {#sec-implIPCW}
 
