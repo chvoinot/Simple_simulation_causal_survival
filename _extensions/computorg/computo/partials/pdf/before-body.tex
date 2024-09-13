@@ -1,0 +1,51 @@
+
+\definecolor{computo-blue}{HTML}{6E2C2C}
+
+
+\begin{tikzpicture}[remember picture,overlay]
+\fill[computo-blue]
+  (current page.north west) -- (current page.north east) --
+  ([yshift=-5cm]current page.north east|-current page.north east) --
+  ([yshift=-5cm]current page.north west|-current page.north west) -- cycle;
+\node[anchor=north west, xshift=.75cm,
+  yshift=-.75cm] at (current page.north west) {\includegraphics[height=1cm]{inr_logo_blanc}};
+\node[font=\sffamily\bfseries\color{white},anchor=west,
+  xshift=4.25cm,yshift=-2.75cm] at (current page.north west)
+  {\begin{minipage}{15cm}
+    \fontsize{25}{30}\selectfont
+    $title$
+    \vspace{.5cm}
+    \\
+    \fontsize{15}{18}\selectfont
+    $subtitle$
+  \end{minipage}};
+\end{tikzpicture}
+
+\vspace*{2.5cm}
+\begin{center}
+    $for(by-author)$
+      $if(by-author.name.literal)$$by-author.name.literal$$endif$$if(it.orcid)$~\orcidlink{$it.orcid$}$endif$$if(it.attributes.corresponding)$\footnote{Corresponding author: $if(it.email)$\href{mailto:$it.email$}{$it.email$}$endif$}$endif$\quad
+      $for(by-author.affiliations)$
+       $if(it.department)$$it.department$$if(it.name)$, $endif$$endif$$if(it.name)$$it.name$$endif$$if(it.department)$\\$elseif(it.name)$\\$endif$
+       $endfor$
+    $endfor$
+
+  \bigskip
+  
+	 Last modified: $date-modified$
+\end{center}
+      
+\bigskip
+\begin{abstract}
+$abstract$
+\end{abstract}
+
+$if(keywords)$
+\noindent%
+{\it Keywords:} $for(keywords)$$it$$sep$, $endfor$
+\vfill
+$endif$
+
+$if(draft)$
+\linenumbers
+$endif$
