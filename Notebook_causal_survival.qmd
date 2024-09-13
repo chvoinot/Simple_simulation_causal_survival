@@ -3107,7 +3107,6 @@ simulate_data_mis <- function(n,
   
   # Transformer en échelle de probabilité
   e <- plogis(e)
-  C <- rpois(n, lambda_C)
   
   # Treatment assignment based on the propensity score
   A <- sapply(e, FUN = function(p) rbinom(n = 1, size = 1, prob = p))
@@ -5154,6 +5153,8 @@ save(simulation_complex_positivity,file="simulation_complex_positivity.RData")
 
 ```{r}
 load("simulation_rct2_positivity.RData")
+load("simulation_obs2_positivity.RData")
+load("simulation_complex_positivity.RData")
 
 ```
 
