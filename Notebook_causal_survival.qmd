@@ -54,54 +54,14 @@ editor:
 
 # Introduction {#sec-intro}
 
-*Survival analysis* is a highly active area of research with significant applications in biostatistics, engineering, social sciences, and more. This statistical field focuses on analyzing time-to-event data. One of the major challenges in survival analysis is dealing with censoring, which occurs when only partial information about an event is known.
-A tempting approach might be to remove this incomplete data, but this would lead to substantial bias, as partial information still holds value. Conversely, treating partial information as complete also introduce significant bias. Even if the event is not fully observed, it is crucial to consider the time up until censoring and not just the uncensored time for the analysis of these event times. This so-called censoring can be most effectively handled using survival analysis techniques, which depend on the specific characteristics of the censoring.
-One key characteristic of censoring is its type, which indicates where the lack of information lies. The most common type is *right-censoring*, where the event has not occurred by the time of the last observation, suggesting it will happen after this point. Left-censoring occurs when the event happened before the start of the study. Interval censoring occurs when the event happened between two observation times, but the exact time is unknown.
-Another crucial characteristic to consider is the censoring mechanism, as the properties for survival analysis methods often depend on it. The mechanism can be independent, also known as *non-informative censoring*, meaning that the probability of an individual being censored is independent of the covariates. Well-known estimators, such as the Kaplan-Meier [@kaplan] or Cox estimators [@Cox_1972], require an independent censoring mechanism to be consistent.
-In real-life conditions, conditionally independent censoring, or *informative censoring*, is more likely to occur. This means that the probability of being censored is dependent on the survival time and/or covariates, leading to selection bias if ignored. Techniques used in the context of independent censoring are not valid in this scenario. 
+Survival analysis is a key research area with applications in biostatistics, engineering, and social sciences. It deals with time-to-event data and faces the challenge of censoring, where only partial information about an event is known. Removing censored data introduces bias, while treating it as complete is equally problematic. This so-called censoring can be most effectively handled using survival analysis techniques, which depend on the specific characteristics of the censoring.
+The most common type of censoring is right-censoring, where the event has not occurred by the last observation, suggesting it happens later. Left-censoring occurs when the event predates the study, while interval censoring happens when the event occurs between two observations. The censoring mechanism also plays a crucial role: independent censoring (or non-informative censoring) assumes that censoring is unrelated to covariates, a requirement for estimators like Kaplan-Meier and Cox models. In contrast, informative censoring depends on the survival time and covariates, introducing bias if not accounted for, making standard techniques invalid.
 
-On the other hand, *causal inference* [@rubin_estimating_1974;@hernan2010causal; @Imbens_Rubin_2015; @Hernan2020] aims to evaluate the effect of a treatment, policy or
-intervention on an outcome. It has acquired considerable importance like survival analysis in a
-variety of fields, including the social sciences, health and economics. In a dichotomous treatment assignment ($A=1$: treated, $A=0$: untreated), the outcome $Y$ can be equal to $Y^{a=1}$ (the outcome that would have been observed under the treatment $a=1$) if treated or $Y^{a=0}$ if not. These variables are referred to as *potential outcome*. 
-The *individual treatment effect* (ITEs) is the main objective in causal
-inference. This measure (equals to $Y^{a=1}-Y^{a=0}$) allows to evaluate the impact of a treatment per
-individual.  But, at most one of the potential outcomes can be observed
-per individual i.e. an observation cannot experiment both treatments. 
-The *Average Treatment Effects* (ATE), one of fundamental
-estimand in causal analysis, get round this fundamental problem by
-average the ITEs. On possibility to evaluate causal effect is by running
-a randomized clinical trial (RCT). This experiment completely controls
-over treatment assignment which ensure balanced distribution of
-covariates between treated and control. RCTs are considered as gold
-standard to assess causal effect because one simple estimator 
-(such as Difference in Means) can measure the causal treatment effect. However, due
-to restrictive inclusion/exclusion criteria, this controlled design can lead to a lack of
-generalization to the target population. Recently, the use of observational studies 
-to evaluate real-world data (RWD) in clinical studies has been growing rapidly. 
-But, contrary to RCTs, extracting causal evidence from
-observational data suppose to control for confounding variables because
-of confounding bias. In practice, under some strong causal assumptions
-such as unconfoundedness, estimation methods take this into account. ATE can be evaluated in using propensity-score
-based methods IPW, regression methods or augmented IPW
-[@Imbens_Rubin_2015].
+Causal inference evaluates the effect of treatments or interventions on outcomes, a widely used approach in health, economics, and social sciences. In a binary treatment setting ($A=1$: treated, $A=0$: untreated), outcomes $Y^{a=1}$ and $Y^{a=0}$ represent potential outcomes under different treatments. The individual treatment effect (ITE), defined as $Y^{a=1}-Y^{a=0}$, is central to causal inference. However, only one potential outcome can be observed per individual. The Average Treatment Effect (ATE) addresses this limitation by averaging ITEs. Randomized controlled trials (RCTs) are the gold standard for causal effect estimation as they balance covariates between treated and untreated groups. However, RCTs often lack generalizability due to restrictive inclusion criteria. Consequently, observational studies using real-world data (RWD) are increasingly used. Unlike RCTs, observational studies must address confounding bias, often handled using propensity scores or regression-based methods, under strong assumptions like unconfoundedness.
 
-This article will focus on causal survival analysis which bridges the
-fields of causal inference and survival analysis: the aim is to assess
-the causal effect of a treatment or an intervention on a outcome which
-is a time until an event occurs in the presence of censoring. 
-In this article, we will focus on estimating the Average Treatment Effect (ATE) on time to event data with static treatment assignment, baseline covariates and also right-censoring.
-To do so, in @sec-notations, we will define the causal treatment effect with survival
-outcome. In particular, we will focus on the Restricted Mean Survival Time (RMST) quantity that is easy
-to interpret. Then, in @sec-theoryRCT, we will define identifiability
-assumptions that are necessary to overcome the two main issues we presented above i.e. censoring mechanism and treatment assignment. Next, we will present and implement the corresponding estimators in the context of a randomized controlled trial. In the same way than RCT, @sec-theoryOBS focuses on presenting and implementing estimators in the context of observational study. 
+This article explores causal survival analysis, which combines causal inference and survival analysis to assess the effect of a treatment on time-to-event outcomes in the presence of censoring. Specifically, we focus on estimating the ATE for time-to-event data with static treatment assignment, baseline covariates, and right-censoring. In @sec-notations, we define the causal treatment effect for survival outcomes, emphasizing the easily interpretable Restricted Mean Survival Time (RMST). In @sec-theoryRCT, we discuss identifiability assumptions to address the challenges of censoring and treatment assignment, followed by the presentation of corresponding estimators in the RCT context. Similarly, @sec-theoryOBS extends these estimators to observational studies.
 
-Despite the abundant literature on causal survival estimators in our context, there are
-few available packages for these estimators. Then, for each of the estimator in @sec-theoryRCT and @sec-theoryOBS, an implementation is proposed. Finally in @sec-simulation, these estimators will be challenged by different simulation scenarios representing different context: RCT or observational study and independent or conditionally independent censoring and
-with good model specification or mis-specification of nuisance
-parameters or positivity violation of censoring. In this section, We
-will also provide practical recommendations on which estimators should be
-used in different context, based on convergence criteria, implementation
-complexity, computing time etc.
+Despite extensive literature on causal survival estimators, few software packages exist. We provide implementations for each estimator discussed in @sec-theoryRCT and @sec-theoryOBS. Finally, in @sec-simulation, we evaluate these estimators through simulations representing RCTs and observational studies under different conditions: independent or conditionally independent censoring, correct or incorrect model specifications, and positivity violations. We conclude with practical recommendations on estimator selection based on criteria like convergence, complexity, and computational efficiency.
 
 # Context and Notations {#sec-notations}
 
@@ -283,7 +243,7 @@ Under @eq-condindepcensoring, within subgroups represented by $X_c=x$,
 subjects censored at time $t$ are representative of all subjects in
 their subgroup who remain at risk at time $t$. It is as if the censored
 subjects were randomly selected inside each subgroup. This assumption is very 
-similar to the assumption of uncounfoundedness in causal inference.
+similar to the assumption of uncounfoundedness in causal inference. This assumption implies that there are no unmeasured confounders for censoring.
 
 Another assumption for identifiability of $\theta_{RMST}$ is required in case of conditionally independent censoring: we need to assume that all subjects have a positive probability to remain
 uncensored at their failure time.
@@ -296,21 +256,7 @@ $$
 $$ {#eq-positivitycensoring}
 :::
 
-If this assumption is violated, i.e. for a time $t$, $\mathbb{P}( C > t \mid X=x, A=a) = 0$ or $\mathbb{P}( C > t \mid X=x, A=a) = 1$, then this excludes that we have results observed after time $t$ or respectively that we have only results observed after time $t$. 
-This assumption is necessary to be able to balance the censoring mechanism
-within subgroup.
-
-The value of $\tau$ can be adjusted to ensure that the hypothesis of
-positivity is met. For example, if we consider a clinical study where patients are followed for 5 years and some patients leave the study before the end, either because they have developed serious side effects (and have therefore decided to stop the treatment), or because their state of health has deteriorated so much that they have been transferred to a palliative care unit. In this case, censoring is dependent, as the probability of leaving the study is linked to the severity of the illness and the probability of remaining uncensored for severe patient at 5 years is zero.
-Consequently, the potential outcomes $T(0)$ and $T(1)$ are entirely
-unobserved beyond the one-year mark. To address this limitation, one
-approach is to adjust the threshold time $\tau$ such that each
-participant has a chance of remaining uncensored up to their revised
-threshold time.
-
-Although this assumption is strong, it can be verified. One way to check it is by modeling the conditional probability of censoring using a Cox model or a survival forest and then assessing whether this probability is non-zero across all covariate subgroups.
-
-The other assumptions of identifiability depend on the design of the study. We will start with the simplest but stronger design: the Randomized Clinical Trial.
+This assumption ensures that, for any time $t$, the probability of censoring is neither 0 nor 1, allowing for balance in the censoring mechanism across subgroups. If violated, it means that results are either only observed before or after time $t$, which can limit the analysis. In practice, adjusting the threshold time $\tau$ can help meet this assumption. For example, in a 5-year clinical study, if patients leave due to severe side effects or worsening health, censoring becomes dependent. In such cases, the likelihood of remaining uncensored for severely ill patients at 5 years is zero. To address this, $\tau$ can be adjusted so that participants have a chance to remain uncensored up to a revised threshold time. Despite its strength, this assumption can be verified by modeling the conditional probability of censoring using methods like the Cox model or survival forest, and checking for non-zero probabilities across covariate subgroups. We will next consider the identifiability assumptions for randomized clinical trials, starting with this simpler but more robust design.
 
 # Causal survival analysis with a Randomized Control Trial {#sec-theoryRCT}
 
@@ -400,9 +346,11 @@ Unadjusted Kaplan Meier for the survival function is a nonparametric MLE (maximu
 
 To derive this asymptotic distribution, we need to assume that the proportion of the sample at risk at time $t$ becomes stable as the sample size increases [@Aalen2008] and that the censoring is not informative (independent). 
 
-The Restricted Mean Survival Time ($\int_0^\tau S(t)dt$) derived by an unadjusted Kaplan-Meier is proved to be:
+Under the same conditions, the Restricted Mean Survival Time ($F(t)=\int_0^\tau S(t)dt$) derived by an unadjusted Kaplan-Meier is proved to be:
 
-- Almost surely consistent estimator of the true RMST 
+- Almost surely consistent estimator of the true RMST [@Andersen1993]
+
+- Asymptotically normal with a variance that may be estimated by  $\hat{V}(t)=\sum_{t_j \leq t} \frac{\left(\hat{F}(t)-\hat{F}(t_j)\right)^2}{Y(t_j)^2}$ [@Aalen2008 ; @Andersen1993].
  
 
 #### Implementation {#sec-implunadjusted}
@@ -422,19 +370,7 @@ library(forecast)
 library(gridExtra)
 ```
 
-For reasons of interpretability and transparency, we
-implement an Unadjusted Kaplan-Meier estimator and apply the
-rectangle integration method (detailed of this method in @sec-Annexes)
-between 0 and $\tau$ of the two survival curves (control and treated) to
-obtain $\theta_{RMST}$ (as presented in @fig-RMST).
-However, it is also possible to use existing packages to perform these
-calculations. For example, one can simulate a Kaplan-Meier curve using
-the survfit() function from the
-[survival](https:%20//cran.r-project.org/web/packages/survival/index.html)
-package [@Therneau_2001] and then use the rmean() function to derive the restricted mean
-survival time for each survival curve by rectangle integration method
-also, and subsequently calculating the difference. These methods are
-equivalent and yield to the same results.
+For better interpretability and transparency, we implement an unadjusted Kaplan-Meier estimator and apply the rectangle integration method (detailed in @sec-Annexes) between 0 and $\tau$ for both survival curves (control and treated) to obtain $\theta_{RMST}$ (as shown in @fig-RMST). Alternatively, existing packages can be used for these calculations. For instance, the Kaplan-Meier curve can be generated with the survfit() function from the survival package [@Therneau_2001], and the restricted mean survival time can be derived using the rmean() function through the same rectangle integration method, followed by calculating the difference. Both approaches are equivalent and yield the same results.
 
 The following code includes several functions :
 
@@ -558,15 +494,10 @@ RMST_1 <- function(data = NULL, A1 = 1, A0 = 0, tau, S_A1 = NULL, S_A0 = NULL) {
 
 ```
 
-It is important to adapt the integration method to the type of function
-being integrated. In our case, since the Kaplan-Meier estimator is a
-step function, the most appropriate integration method is the rectangle
-method. However, if the survival function is derived from a parametric
-model (such as the Weibull or Exponential model), it is preferable to
-use a more precise method, such as the trapezoidal method (details of
-this method can be found in @sec-Annexes) to derive $\theta_{RMST}$.
 
-When the censoring becomes conditionally independent on covariates, the previous estimators are not sufficient as it considers only independent censoring. The next section will introduce other strategies to overcome this issue. 
+It is crucial to adapt the integration method to the type of function being integrated. Since the Kaplan-Meier estimator is a step function, the rectangle method is the most suitable. However, when the survival function comes from a parametric model (e.g., Weibull or Exponential), a more precise method like the trapezoidal method is recommended (details in @sec-Annexes) to calculate $\theta_{RMST}$.
+
+When censoring becomes conditionally independent on covariates, the previously mentioned estimators are insufficient, as they assume independent censoring. The next section introduces strategies to address this issue.
 
 ## Conditional independent censoring {#sec-condcens}
 
@@ -577,33 +508,7 @@ censoring unbiased transformation. A notable advantage of this transformation is
 
 ### Notion of censoring unbiased transformation {#sec-unbiasedtransf}
 
-This notion has been introduced by @Fan1994LocalPM for local polynomial
-modelling adapted to regression problems. 
-The objective of this transformation is to adjust for
-the censoring effect by transforming the data in an unbiased way. 
-In other word, it creates an estimated unbiased fully observed population. 
-
-The method consists in transforming the observed data mentioned in
-@sec-notations : $O_i=(X_{i},A_{i},\Delta_{i},\tilde{T_{i}})$ into
-$(X_{i},A_{i},T_i^*)$ according to:
-
-$$
-\begin{aligned}
-T^* & =\Delta \phi_1(\mathbf{X},A, \tilde{T})+(1-\Delta) \phi_2(\mathbf{X},A, \tilde{T})
-\end{aligned}
-$$ {#eq-censtransf}
-
-with $\phi_1(.,.)=$ and $\phi_2(.,.)$ the transformation functions on
-respectively uncensored and censored observations.\
-The basic requirement is that $E(T^*|X,A)=E(T \wedge \tau|X,A)$. 
-It allows to create a population that would have been observed if
-there was no censoring. Several transformations has been proposed in the
-literature such as the Buckley-James transformation [@Buckley_james_79]
-(one of the earliest transformation detailed in @sec-Annexes) or the
-inverse probability of censoring transformation (IPC) firstly introduced
-by @IPCtransKoul81 for right-censored regression.
-
-In the following section, we begin by considering the IPC (inverse probability of censoring) transformation, then the Buckley-James transformation. After defining these transformations, we present the identifiability formula using IPC transformation for $\theta_{RMST}$ and finally an estimation strategy. Then, identifiability formula and estimator in using Buckley-James transformation.
+The concept introduced by @Fan1994LocalPM for local polynomial modeling in regression addresses censoring by transforming the data to create an unbiased fully observed population. This is achieved by ensuring $E(T^*|X,A) = E(T \wedge \tau|X,A)$. Transformations such as the Buckley-James and inverse probability of censoring (IPC) transformations are used for this purpose. The IPC transformation is examined first, followed by the Buckley-James transformation. We will define these transformations, present the identifiability formula for $\theta_{RMST}$ using the IPC transformation, and discuss estimation strategies for both transformations.
 
 #### The inverse probability of censoring transformation (IPC transformation) {#sec-IPCtrans}
 
@@ -620,36 +525,9 @@ uncensored truncated at $\tau$ given the covariate $X$ in the treatment
 arm $A=a$ and $\Delta^{\tau}=I\{T \wedge \tau < C\}$ is the status
 of the individual truncated at $\tau$.
 
-Considering @eq-censtransf, this transformation corresponds to the case where $\phi_1=\frac{\widetilde{T} \wedge \tau}{S_c(\widetilde{T}\wedge \tau|X,A)}$ and $\phi_2=0$. It does not consider censored observations.
+IPC transformation verify $E(T^*|X,A)=E(T \wedge \tau|X,A)$ (proof in @sec-Annexes).
 
-This transformation can be also identified by the following formula:
-
-$$
-\begin{aligned}
-E\left[ T \wedge \tau \mid A, X \right] &= E\left[ \textcolor{blue}{E\left[ 1{\{T \wedge \tau < C\}} \mid A, X, T \right]} \cdot \frac{T \wedge \tau}{\textcolor{blue}{S_C(\widetilde{T} \wedge \tau \mid A, X)}} \middle| A, X \right]  \tiny\quad (1) \\ 
-& \tiny\text{(In color, the terms are equal)}  \\
-&= E\left[ E\left[ \Delta^\tau \mid A, X, T \right] \cdot \frac{T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X \right] \tiny\quad (2) \\
-&= E\left[ E\left[ \Delta^\tau \mid A, X, T \right] \cdot E\left[ \frac{T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X, T \right] \middle| A, X \right] \tiny\quad (3)\\
-&= E\left[ E\left[ \Delta^\tau \cdot \frac{T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X, T \right] \middle| A, X \right] \tiny\text{(By conditional censoring As.3)} \tiny\quad (4) \\
-&= E\left[ \frac{\Delta^\tau \cdot T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X \right] \tiny\text{(Law of total probability)}  \tiny\quad (5)\\
-&= E\left[ \frac{\Delta^\tau \cdot \widetilde{T} \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X \right] \tiny (\Delta^\tau \cdot T\wedge\tau=\Delta^\tau \cdot \widetilde{T} \wedge \tau) \quad (6)\\
-    &= \mathbb{E}[T^*|A,X] \tiny\quad (7)
-\end{aligned}
-$$ {#eq-IPCW_transf}
-
-The term in color are equal because $E\left[ 1\{T \wedge \tau < C\} \mid A, X, T \right]=E\left[ 1\{\widetilde{T} \wedge \tau < C\} \mid A, X, T \right]= S_C(\widetilde{T} \wedge \tau \mid A, X)$. Also, the equality in the line 6 of @eq-IPCW_transf is easily proven by the fact that
-$\Delta^\tau$, the indicator of censoring, selects observations which
-declare the event:
-
-$$
-\begin{aligned}
-  (\widetilde{T} \wedge \tau)*\Delta^\tau &= (\widetilde{T} \wedge \tau)*I\{T \wedge \tau < C|A=0\} \\
-  &= min(T\wedge \tau,C) *I\{T \wedge \tau < C|A=0\} \\
-  &= (T \wedge \tau) * I\{T \wedge \tau < C|A=0\} 
-\end{aligned}
-$$ {#eq-T_to_tild}
-
-The particularity of this transformation is that it doesn't take into account the censored observation by weighting only the uncensored observations.
+Considering @eq-censtransf, this transformation does not consider censored observations by weighting only the uncensored observations.
 It exits other censoring unbiased transformation such as Buckley James that consider also the censored observations. 
 
 #### Buckley James unbiased censoring transformation {#sec-BJtrans}
@@ -664,7 +542,7 @@ T^*(O,\tau) &= \Delta^\tau*(\widetilde{T}\wedge\tau) + (1-\Delta^\tau)*\mathbb{E
 \end{aligned}
 $$
 
-with $Q_S(t|x,a) =E[T \wedge \tau | X=x,A=a,T \wedge \tau > t]$
+with $Q_S(t|x,a) =E[T \wedge \tau | X=x,A=a,T \wedge \tau > t]= \frac{1}{S(T\wedge \tau|X=x,A=a)}\int_{t}^{+\infty}{t. d(1-S(T\wedge \tau|X=x,A=a)) }$ (proof in @sec-Annexes) with $F$ the function of the cumulative probability ($F(t) = \mathbb{P}(t \leq T)$) and $\bar{F}$ the complementary cumulative probability ($S(t)=1-F(t)$).
 
 This transformation uses the uncensored observed
 values of the time-to-event $\widetilde{T} \wedge \tau$ directly in the formula 
@@ -674,35 +552,12 @@ are extrapolated from an estimator $Q_S(t|x,a)$ which corresponds to the
 expected remaining survival time given the covariates and treatment for
 censored observation.
 
-The function $Q_S$ can be expressed in an other way:
-
-$$
-\begin{aligned}
-Q_S(t|x,a)&=E[T\wedge \tau \mid X=x, A=a, T\wedge \tau> t]\\
-&=\frac{E[T\wedge \tau . I\{T\wedge \tau > t\}  \mid X=x, A=a]}{P(T\wedge \tau>t|X,A)} \quad \tiny\text{(by the law of conditional expectation)}\\
-&= \int_{-\infty}^{+\infty}{\frac{t. I\{T\wedge \tau > t\}.dF(T\wedge \tau|X,A)}{P(T\wedge \tau>t|X,A)}} \quad \tiny\text{(by def of Riemann–Stieltjes integral)}\\
-&= \frac{1}{P(T\wedge \tau>t|X,A)}\int_{t}^{+\infty}{t. dF(T\wedge \tau|X,A) }\\
-&= \frac{1}{S(T\wedge \tau|X,A)}\int_{t}^{+\infty}{t. dF(T\wedge \tau|X,A) }\\
-Q_{S}(t|x,a) &= \frac{1}{S(T\wedge \tau|X=x,A=a)}\int_{t}^{+\infty}{t. d(1-S(T\wedge \tau|X=x,A=a)) }\\
-\end{aligned}
-$$ 
-with $F$ the function of the cumulative probability ($F(t) = \mathbb{P}(t \leq T)$) and $\bar{F}$
-the complementary cumulative probability ($S(t)=1-F(t)$).
-
-Considering @eq-censtransf, this transformation can be expressed as: 
-
-$$
-\begin{aligned}
-T^* &= \begin{cases} 
-    \phi_1(X,A,\widetilde{T} \wedge \tau)=\tilde{T}\wedge \tau \quad \text{if} \quad \Delta^{\tau} = 1 \\
-    \phi_2(X,A,\widetilde{T} \wedge \tau)=\mathbb{E}[T\wedge \tau | X, A,  T\wedge \tau \geq \tilde{T}\wedge \tau ]& \text{else  } \Delta^{\tau} = 0
-    \end{cases}
-\end{aligned}
-$$
-
-
 Exactly than the inverse probability of censoring transformation, the
 Buckley James transformation verify $E(T^*|X,A)=E(T \wedge \tau|X,A)$ (proof in @sec-Annexes).
+
+Visually, these two transformations will create fully complete population as below: 
+
+![Illustration on Inverse Probability of Censoring and Buckley-James transformation](schema_transformation.png){#fig-trans}
 
 Unfortunately, the two previous transformation depends on nuisance
 parameters:
@@ -741,15 +596,7 @@ The IPC transformation used in this identifiability equation has been detailed i
 
 #### Estimation with IPCW Kaplan Meier {#sec-est_IPCWKM}
 
-Under Assumptions @eq-randomization (random treatment assignment),
-@eq-condindepcensoring (conditional censoring) and
-@eq-positivitycensoring (Positivity for censoring), the Unadjusted KM
-estimator in @def-km misjudges the real survival probabilities [@IPCW].
-Correction for the presence of conditionally independent censoring
-is a necessity. The adjusted IPCW
-(inverse probability of censoring weighting) Kaplan Meier estimator
-[@Robins1992; @IPCWrobins] can be used to estimate the causal treatment
-effect represented in the identifiability @eq-RMSTipcwkm by applying the weight $\frac{\Delta^\tau}{S_c(T \wedge \tau \mid A = 1, X)}$ on all observations into Kaplan-Meier estimator:
+Under the assumptions of random treatment assignment (@eq-randomization), conditional censoring (@eq-condindepcensoring), and positivity for censoring (@eq-positivitycensoring), the unadjusted Kaplan-Meier (KM) estimator in @def-km can misestimate survival probabilities due to conditionally independent censoring [@IPCW]. To correct for this, the adjusted IPCW (inverse probability of censoring weighting) Kaplan-Meier estimator [@Robins1992; @IPCWrobins] is used. This estimator applies the weight $\frac{\Delta^\tau}{S_c(T \wedge \tau \mid A = 1, X)}$ to observations in the KM estimator:
 
 ::: {#def-ipcwkm}
 #### IPCW adjusted Kaplan Meier estimator
@@ -762,7 +609,7 @@ $$
 
 -   $\hat{w_{i}}(t,X_i)=\frac{\Delta^{\tau}_i}{\hat{S_{c}}(t|X_{i},A_{i})}$
     is the inverse of the probability of remain uncensored given the
-    covariates $X_{i}$.
+    covariates $X_{i}$ (IPC transformation) .
 -   $\Delta^\tau = I\{T \wedge \tau < C\}= I\{\widetilde{T} \geq \tau\}+ I\{\widetilde{T} \leq \tau\}.\Delta$
     (proof in @sec-Annexes).
 -   $\hat{S_{c}}(t|X_{i},A_{i})$ is based on the fit of parametric,
@@ -771,21 +618,9 @@ $$
     the covariates.
 :::
 
-The probability of remaining uncensored depends on the covariates and
-the treatment, so subjects with the same covariates have the same
-probability of remaining uncensored. Thus, this estimator give extra
-weight to subjects who are not censored in the same group of subject. It 
-compensates the conditionally independent censoring and  offsets the
-selection bias induced by this dependency [@Howe2016SelectionBD].
+This estimator assigns higher weights to uncensored subjects within the same covariate group, correcting for conditionally independent censoring and reducing selection bias [@Howe2016SelectionBD].
 
-At every time point $t$, each subject $i$ is given a weight which is
-inversely proportional to the estimated probability of having remained
-uncensored until time $t$.
-
-In the exact same way than before in @sec-unadjusted_KM, the
-corresponding $\theta_{RMST}$ is obtained in integrating from 0 to $\tau$ the
-difference between adjusted Kaplan Meier estimator of the treated and
-controls (@eq-RMSTipcw) :
+To estimate $\theta_{RMST}$, integrate the difference between the adjusted Kaplan-Meier estimates for treated and control groups from 0 to $\tau$:
 
 $$
   \hat{\theta}_{RMST}= \int_{0}^{\tau}{\hat{S}_{IPCW-KM}(t,A=1) - \hat{S}_{IPCW-KM}(t,A=0) dt}
@@ -793,8 +628,7 @@ $$ {#eq-RMSTipcw}
 
 ##### Properties of IPCW Kaplan Meier
 
-**Robins (1993)** (fameuse publi introuvable) shows that our IPCW estimate $\hat{S}_{IPCW-KM}(t,a)$ is guaranteed to be consistent and asymptotically normal under @eq-condindepcensoring and the model of conditional censoring is correct [@Robins2004]. Also, @IPCWrobins shows that IPCW estimate is asymptotically more efficient than the standard Kaplan-Meier estimator for failure in treatment arm a whenever the latter estimator is consistent 
-(i.e., whenever censoring is independent). 
+**@robins1993** (fameuse publi introuvable mais très cité) shows that our IPCW estimate $\hat{S}_{IPCW-KM}(t,a)$ is guaranteed to be consistent and asymptotically normal under @eq-condindepcensoring and when the model of conditional censoring is correct [@Robins2004]. Also, @IPCWrobins shows that IPCW estimate is asymptotically more efficient than the standard Kaplan-Meier estimator for failure in treatment arm a whenever the latter estimator is consistent (i.e., whenever censoring is independent). 
 
 
 ##### Implementation {#sec-implIPCW}
@@ -1178,28 +1012,18 @@ The previous estimators are suitable for RCT settings but not for more complex c
 
 # Causal survival analysis with an observational study {#sec-theoryOBS}
 
-In contrast to RCT, observational data (for example data from
-registries, electronic health reports, national health data system...)
-are collected without interventions on the treatment allocation. The
-@fig-causalgraph_obs presents an illustration of a simple causal graph
-in observational survival data without censoring to show that causal
-effect is no longer easily identifiable.
+In contrast to randomized controlled trials (RCTs), observational data, such as data from registries, electronic health records, and national health data systems, are collected without controlled interventions on treatment allocation.
+
+The figure below (referenced as @fig-causalgraph_obs) illustrates a simple causal graph in observational survival data, showing that the causal effect is not easily identifiable without additional assumptions, even in the absence of censoring:
 
 ![Illustration of a simple causal graph in observational survival data
 without censoring (A is the treatment, $X_t$ the confounding variable
 and T is the time to event
 outcome)](Obs_causalgraph.png){#fig-causalgraph_obs width="50%"}
 
-In this context, treated and control group can be unbalanced due to the
-lack of controlled design. As a consequence, causal effect of treatment
-is obscured by the effect of confounding variables $X_t$ that have both
-impact on time to event outcome $T$ and treatment allocation $A$.
+In this setting, treated and control groups can be unbalanced due to the non-randomized design, meaning that the treatment allocation is not controlled. Consequently, the causal effect of the treatment is confounded by variables $X_t$, which affect both the time-to-event outcome $T$ and the treatment allocation $A$.
 
-The assumption of @eq-randomization (randomized treatment assignment)
-presented in @sec-theoryRCT is no longer verified. To enable the
-identifiability of causal estimand, some additional assumptions on the
-treatment allocation are required. These assumptions are classical for
-causal inference with observational data and can be extended to identify
+The assumption of randomized treatment assignment, as presented in @eq-randomization (see @sec-theoryRCT), is not satisfied in observational studies. To enable the identifiability of the causal estimand, additional assumptions regarding treatment allocation are needed. These assumptions are standard in causal inference methods with observational data and can be extended to identify 
 $\theta_{RMST}$:
 
 ::: assumption
@@ -1213,7 +1037,7 @@ to treatment's assignment and outcomes.
 
 Under Assumption @eq-uncounf, the treatment assignment is randomly
 assigned conditionally on the covariates $X$. It is as if the treatment
-for all subjects were randomly selected inside each subgroup. Also, this
+for all subjects were randomly selected inside each subgroup. Exactly than @eq-condindepcensoring, this
 assumption assumes that there are no unmeasured confounders as
 unobserved confounders make it impossible to separate correlation and
 causality.
@@ -1226,19 +1050,9 @@ $$
 $$ {#eq-positivitytreat} 
 :::
 
-The @eq-positivitytreat requires adequate overlap of the covariates
-distribution between group of treatment. This means that all
-observations in the study have non-zero probability of being treated.
+The @eq-positivitytreat assumption requires adequate overlap in covariate distributions between treatment groups, meaning every observation must have a non-zero probability of being treated. 
 
-In addition to the confounding bias, the censoring bias has to be
-considered as seen in @sec-theoryRCT. Therefore, the assumptions
-regarding the censoring mechanism discussed in @sec-censoringmechan
-remain applicable. In the following section, we will present the
-identifiability formula, the corresponding estimator and
-implementation when censoring is independent in an observational study.
-Following this, we will present several identifiability formulae when
-censoring is conditionally dependent on $X_c$, along with their
-estimators and implementations.
+In addition to confounding bias, censoring bias must also be addressed, as discussed in @sec-theoryRCT. The censoring mechanism assumptions from @sec-censoringmechan remain applicable. The next section will present the identifiability formula, corresponding estimator, and implementation when censoring is independent in observational studies. Following this, we will cover identifiability formulas when censoring is conditionally dependent on $X_c$, with their estimators and implementations.
 
 In the following section, we will consider that the variables $X_t=X_c=X$.
 
@@ -1274,6 +1088,7 @@ due to some confounding variables. The use of propensity score in causal
 inference has been introduced by @Propensity_causality and extended to
 survival analysis by @IPTW. 
 
+
 #### Estimation with IPTW Kaplan Meier {#sec-est_IPTWKM}
 
 Under @eq-uncounf (Uncounfoundedness) and @eq-independantcensoring
@@ -1303,18 +1118,23 @@ adjusted Kaplan Meier estimator of the treated and controls.
 
 ##### Properties of IPTW Kaplan Meier estimator
 
-When the propensity score is known, the estimator IPTW KM is a consistent estimate and is the maximum pseudo-likelihood estimate. Its variance when $A=1$ is estimated by: 
-$$
-\operatorname{Var}\left[\hat{S}^1(t)\right]=\left(S^1(t)\right)^2 \sum_{j: t_j \leq t} \frac{1-s_j^1}{M_j s_j^1}
-$$
-where $M_j=\left(\sum_{i: T_i \geq t_j} \frac{1}{e_i}\right)^2 / \sum_{i: T_i \geq t_j}\left(\frac{1}{e_i}\right)^2$
+Under @eq-uncounf and @eq-positivitytreat, and that $\sup_{X_i} |\hat{e}(X_i) - e(X_i)| \xrightarrow{P} 0$, IPTW adjusted Kaplan-Meier is a consistent estimate of the survival function : 
 
-When the propensity score is unknown but estimated given $X,A$ in using parametric or non-parametric model, then the corresponding variance is estimated by: 
 $$
-\operatorname{Var}\left[\hat{S}^1(t)\right]=\left(S^1(t)\right)^2 \sum_{j: t_j \leq t} \frac{1-\hat{s_j}^1}{\hat{M_j} \hat{s_j}^1}
+\hat{S}_{IPTW}(t) \xrightarrow{P} S(t)\quad \forall t \leq \tau
 $$
-Thus, the estimator is consistent if the propensity estimators uniformly converges to the true probability
-($\max_{i: T_i \geqslant t_j}\left(1 / \hat{e_i}\right) / \sum_{i: T_i \geqslant t_j} 1 / \hat{e_i} \underset{n \rightarrow \infty}{\rightarrow} 0$) [@IPTW].
+
+The propensity score can be estimated given $X,A$ in using parametric or non-parametric model, then the corresponding variance of IPTW Kaplan-Meier estimator is estimated by [@IPTW]: 
+
+$$
+\operatorname{Var}\left[\hat{S}(t)\right]=\left(\hat{S}(t)\right)^2 \sum_{j: t_j \leq t} \frac{1-\hat{s_j}}{\hat{M_j} \hat{s_j}}
+$$
+with $$
+\hat{M}_j = 
+\begin{cases} 
+\frac{\left( \sum_{i: T_i \geq t_j} \frac{1}{\hat{e}_i} \right)^2}{\sum_{i: T_i \geq t_j} \left( \frac{1}{\hat{e}_i} \right)^2} & \text{when } A = 1, \\
+\frac{\left( \sum_{i: T_i \geq t_j} \frac{1}{1 - \hat{e}_i} \right)^2}{\sum_{i: T_i \geq t_j} \left( \frac{1}{1 - \hat{e}_i} \right)^2} & \text{when } A = 0.
+\end{cases}$$
 
 ##### Implementation {#sec-implIPTW}
 
@@ -1458,71 +1278,50 @@ In the identification formula, it seems that this corresponding estimator does n
 
 #### Estimation with G-formula estimator {#sec-gformula}
 
-Introduced by @ROBINS1986, it is well-known in causal inference for
-overcoming confounding bias. It can be extended to survival data.
-
-It offers an alternative to IPCW in leveraging the regression
-formulation. In addition, instead of fitting distinct models for the censoring
-mechanism and treatment probability, these estimators focus on modeling
-the conditional mean of the outcome. By applying these models to each
-treatment arm and subsequently marginalizing over the empirical
-covariate distributions of the target population, the corresponding
-expected outcome is derived [@ROBINS1986]:
+Introduced by @ROBINS1986, the G-formula addresses confounding bias in causal inference and can be applied to survival data. Unlike IPCW, it models the conditional mean of the outcome and marginalizes over the empirical covariate distributions for each treatment arm. The plug-in estimator is:
 
 ::: {#def-gformula}
 #### G-formula plug-in estimator
 
 $$ \widehat{\theta}_{\text {g-formula }}(\tau) =\frac{1}{n} \sum_{i=1}^n\left(\hat{F}\left(X_i, 1\right)-\hat{F}\left(X_i, 0\right)\right) $$
 
-with $\hat{F}(x, a) \triangleq \mathbb{E}[T \wedge \tau \mid X=x, A=a]$ the
-estimation of the conditional survival function.
+with $\hat{F}(x, a) \triangleq \mathbb{E}[T \wedge \tau \mid X=x, A=a]=\int_0^\tau S_a(t,x) dt$ the
+estimation of the conditional restricted mean survival time.
 :::
 
-Generally, $F(x, a)$ estimator can be obtained in fitting parametric
-(i.e. Weibull distribution), semi-parametric (i.e. Cox model) or event
-non-parametric model (i.e. survival random forest). 
-$F(x,a)$ can be implemented in two ways: 
 
-- Fitting only one model adjusted on both covariates and treatment $F(a,x)$, and predicting on 
-the all data if everyone had the treatment and on the all data if everyone had the control. 
-This method is known as S-learner (single learner).
+An illustration of G-formula computation is displayed below:
+![Illustration of the G-formula Process for calculating $\theta_{RMST}$](G_formula.png){#fig-gf}
 
-- Fitting two different estimators in adjusting on covariates. One estimator is fitted on treated observation $F(1,x)$ and one estimator on control $F(0,x)$, then the two fitted models predict on the all data set (as if all observations had received the treatment and respectively as if they had all received the control). This method is known as T-learner (two-learner). 
+$S_a(t, x)$ can be estimated through parametric (e.g., Weibull), semi-parametric (e.g., Cox), or non-parametric models (e.g., survival random forests). Two methods can be used:
 
-The choice between the T-learner and the S-learner can be made according to the type of model used to
-estimate $F(x,a)$. For example, in a model where the treatment effect is
-expected to be additive and we wish to use a Cox model, a S-learner
-will probably not be suitable because of the violation of the
-proportional hazard hypothesis for variable A. In this case, the
-T-learner will therefore be preferred.
+- S-learner: Fit a single model on both covariates and treatment, predicting for both treated and control groups.
+- T-learner: Fit separate models for treated and control groups, then predict as if all observations had received each treatment.
 
+The choice between the two methods depends on the model used. For instance, if you are using a Cox model and the proportional hazards assumption is violated for the treatment variable, the S-learner may not be appropriate, and the T-learner would be a better option.
 
 ##### Properties of G-formula plug-in estimator
 
-In @RMST, they show the asymptotic normality of the G-estimator when the
-conditional survival probability
-$S(t |a,x)=P(T \wedge \tau > t \mid X=x, A =a)$ is estimated with a Cox
-model and the cumulative hazard function with a Breslow estimator for 
-S-learner or T-learner. 
-The asymptotic properties of G-formula can be obtained through the asymptotic properties of the influence functions $\varphi$ (as the variance will be equal to $\mathbb{E}(\varphi^2)$). 
-An expression of the asymptotic variance of G-formula estimator has been detailed in @RMST: 
+@RMST proove the asymptotic normality of the G-estimator assuming a proportional hazard relationship.
+An expression of the asymptotic variance of G-formula estimator has been detailed: 
 
 $$
 \begin{aligned}
-& (1-\pi) g_1^T \Sigma_1 g_1+\int_0^L \frac{h_1^2(t) \lambda_1(t)}{s_1^{(0)}\left(t, \beta_1\right)} d t \\
-& \quad+\pi g_0^T \Sigma_0 g_0+\int_0^L \frac{h_0^2(t) \lambda_0(t)}{s_0^{(0)}\left(t, \beta_0\right)} d t \\
-& \quad+\operatorname{var}\left[\int_0^L\left\{S_1\left(u \mid Z_i\right)-S_0\left(u \mid Z_i\right)\right\} d u\right]
+\hat{var}(\int_0^\tau\mathbb{E}[T \wedge \tau \mid X=x, A=1]-\mathbb{E}[T \wedge \tau \mid X=x, A=0]) &= \frac{n_1}{n} \hat{g}_1^T \hat{\Sigma}_1 \hat{g}_0+\int_0^\tau \frac{\hat{h_1}^2(t) \hat{\lambda_1}(t)}{s_1^{(0)}\left(t, \beta_1\right)} d t \\
+& \quad+ \frac{n_0}{n} \hat{g}_0^T \hat{\Sigma}_0 \hat{g}_0+\int_0^\tau \frac{\hat{h_0}^2(t) \hat{\lambda_0}(t)}{s_0^{(0)}\left(t, \beta_0\right)} d t \\
+& \quad+\operatorname{\hat{var}}\left[\int_0^\tau\left\{S_1\left(u \mid Z_i\right)-S_0\left(u \mid Z_i\right)\right\} d u\right]
 \end{aligned}
 $$
+
 where
 
-- $n_0=\sum_{i=1}^n I\left(A_i=0\right)$
-- $\hat{\Sigma}_0=n_0^{-1} \sum_{i=1}^n \int_0^L\left(1-A_i\right)  \times\left[\frac{S_0^{(2)}\left(t, \hat{\beta}_0\right)}{S_0^{(0)}\left(t, \hat{\beta}_0\right)}-\left\{\frac{S_0^{(1)}\left(t, \hat{\beta}_0\right)}{S_0^{(0)}\left(t, \hat{\beta}_0\right)}\right\}^{\otimes 2}\right] \times d N_i(t)$
-- $\hat{g}_0=n_0{ }^{-1} \hat{\Sigma}_0^{-1} \sum_{i=1}^n \int_0^L \int_0^u \hat{S}_0\left(u \mid Z_i\right) e^{\hat{\beta}_0^T Z_i}  \times\left\{\bar{Z}_0\left(t, \hat{\beta}_0\right)-Z_i\right\} d \hat{\Lambda}_0(t) d u$
-- $\hat{h}_0(t)=n^{-1} \sum_{i=1}^n \int_t^L \hat{S}_0\left(u \mid Z_i\right) e^{\hat{\beta}_0^T Z_i} d u$
-- $\widehat{\operatorname{var}}\left\{\int_0^L S_0\left(u \mid Z_i\right) d u\right\}$ is obtained using the moment estimator:
+- $n_0=\sum_{i=1}^n I\left(A_i=0\right)$ and $n_1=\sum_{i=1}^n I\left(A_i=1\right)$
+- $\hat{\Sigma}_0=n_0^{-1} \sum_{i=1}^n \int_0^\tau\left(1-A_i\right)  \times\left[\frac{S_0^{(2)}\left(t, \hat{\beta}_0\right)}{S_0^{(0)}\left(t, \hat{\beta}_0\right)}-\left\{\frac{S_0^{(1)}\left(t, \hat{\beta}_0\right)}{S_0^{(0)}\left(t, \hat{\beta}_0\right)}\right\}^{\otimes 2}\right] \times d N_i(t)$
+- $\hat{g}_0=n_0{ }^{-1} \hat{\Sigma}_0^{-1} \sum_{i=1}^n \int_0^\tau \int_0^u \hat{S}_0\left(u \mid Z_i\right) e^{\hat{\beta}_0^T Z_i}  \times\left\{\bar{Z}_0\left(t, \hat{\beta}_0\right)-Z_i\right\} d \hat{\Lambda}_0(t) d u$
+- $\hat{h}_0(t)=n^{-1} \sum_{i=1}^n \int_t^\tau \hat{S}_0\left(u \mid Z_i\right) e^{\hat{\beta}_0^T Z_i} d u$
+- $\widehat{\operatorname{var}}\left\{\int_0^\tau S_0\left(u \mid Z_i\right) d u\right\}$ is obtained using the moment estimator:
 $$
-n^{-1} \sum_{i=1}^n\left\{\int_0^L \hat{S}_0\left(u \mid Z_i\right) d u-n^{-1} \sum_{j=1}^n \int_0^L \hat{S}_0\left(u \mid Z_j\right) d u\right\}^2
+n^{-1} \sum_{i=1}^n\left\{\int_0^\tau \hat{S}_0\left(u \mid Z_i\right) d u-n^{-1} \sum_{j=1}^n \int_0^\tau \hat{S}_0\left(u \mid Z_j\right) d u\right\}^2
 $$
 
 Moreover, G-formula plug-in estimator is simple to implement and also very stable.
@@ -1835,7 +1634,13 @@ difference between the survival curve with $A=1$ and the $A=0$.
 
 ##### Properties of IPTW-IPCW Kaplan Meier estimator {#sec-prop_IPTWIPCW}
 
-This estimator converges almost surely and uniformly to the true $\theta_{RMST}$ if the two nuisance parameters $\hat{e}(X_{i})$ and $\hat{S}_C\left(\widetilde{T} \wedge \tau \mid A_i, X_i\right)$ are well estimated [@Schaubel2011]. Like the IPTW Kaplan-Meier (in @sec-est_IPTWKM) or the IPCW Kaplan-Meier (in @sec-est_IPCWKM), this estimator is even more subject to extreme weights since it is weighted by two inverse probabilities. This makes it very sensitive to positivity for censoring and processing.
+Under the regularity conditions $\hat{e}(x)=e^*(x)$ for almost all $x$ and $\hat{S}_C\left(\widetilde{T} \wedge \tau \mid a, x\right)=S^*_C\left(\widetilde{T} \wedge \tau \mid a, x\right)$ for all $t \in [0, \tau]$), @Schaubel2011 shows that estimated  $\hat{\theta}_{RMST}$ in using double weighting method converge almost surely and uniformly to $\theta_{RMST}$ and that $\hat{\theta}_{RMST}$
+
+- Uniformly consistent: $\sup _{s \in[0, \tau]}|\hat{\theta}_{RMST}(s)-\theta_{RMST}(s)| \xrightarrow{\mathbb{P}} 0$.
+
+- Asymptotically normal for a fixed $t$: $\sqrt{n}\left(\hat{\theta}_{RMST}(t)-\theta_{RMST}(t)\right) \underset{n \rightarrow \infty}{\stackrel{\mathcal{L}}{\longrightarrow}} \mathcal{N}\left(0, V^2\left(t\right)\right)$ with $V^2$ the covariance function expressed in @Schaubel2011.
+
+Like the IPTW Kaplan-Meier (in @sec-est_IPTWKM) or the IPCW Kaplan-Meier (in @sec-est_IPCWKM), this estimator is even more subject to extreme weights since it is weighted by two inverse probabilities. This makes it very sensitive to positivity for censoring and treatment.
 
 ##### Implementation
 
@@ -1923,7 +1728,7 @@ following identifiability formula.
 
 ### Identifiability of $\theta_{RMST}$ by double weighting with BJ transformation
 
-Under @eq-uncounf (uncounfoundedness), the $\theta_{RMST}$ can be
+Under @eq-uncounf (uncounfoundedness), @eq-condindepcensoring (conditional independent censoring) and @eq-positivitycensoring (positivity for censoring) the $\theta_{RMST}$ can be
 identified as follow:
 
 $$
@@ -1942,8 +1747,6 @@ $$
 $$ {#eq-RMSTIPTWBJ}
 
 The transition from line 5 to line 6 has been explained by the Buckley-James transformation explained in @sec-BJtrans. 
-As in the identifiability formula @eq-RMSTgformula of G-formula plug-in estimator, this identifiability formula do need implicitly for @eq-condindepcensoring (conditional independent censoring) or @eq-positivitycensoring (positivity for censoring) to be verified.
-
 The next section will start with the estimation based on the identifiability formula in @eq-RMSTIPTWBJ.
 
 #### Estimation with IPTW-BJ estimator {#sec-IPTW_BJ}
@@ -1962,7 +1765,7 @@ Exactly than simple BJ estimator (introduced in @sec-estBJmin), this estimator i
 
 ##### Properties of IPTW-BJ estimator
 
-Exactly than IPTW-IPCW (described in @sec-prop_IPTWIPCW), IPTW-Bj estimator converges almost surely and uniformly to the true $\theta_{RMST}$ if the two nuisance parameters $\hat{e}(X_{i})$ and $\hat{Q}_S\left(\widetilde{T} \wedge \tau \mid A_i, X_i\right)$ are well estimated [@PseudoIPTW_Anderson2016]. 
+**Pas de publi** (peut-être @PseudoIPTW_Anderson2016)
 
 ##### Implementation of IPTW-BJ estimator {#sec-IPTW_BJ_impl}
 
@@ -2026,45 +1829,27 @@ IPTW_BJ <- function(data,
 As seen in the previous properties, the estimators with inverse weighting such as IPTW-IPCW or BJ-IPTW are subject to instability and sensible to mis-specification of nuisance models. Regression based estimators such as G-formula are also subject to mis-specification of the outcome model.
 A possibility to overcome these issues is to use doubly robust
 corrections that is by property more robust to mis-specification. The next section will discuss the identifiability of
-$\theta_{RMST}$ using doubly robust methods. First, we will introduce
+$\theta_{RMST}$ using doubly robust methods. First, by introducing
 the concept of the influence function, which enables the construction of
-the augmented version of IPTW. The properties of this AIPTW estimator will be disclosed.
+the augmented version of IPTW. Then, the properties of this AIPTW estimator will be disclosed.
 Next, we will present the augmented version of IPCW, another unbiased censoring transformation. Finally, we
 will describe the corresponding estimator with double augmented weighting corrections for treatment and censoring
 and explain its theoretical properties.
 
 ### Identifiability of $\theta_{RMST}$ by augmented corrections
 
-The
-following sub-sections explain how to derive the augmented weighting
-based on a semi-parametric approach, firstly to correct for the
-confounding effect, and secondly to correct for the
-conditionally independent censoring. In the next part, we consider a fully observed population (as there is no censoring). 
-
 #### Augmented weighting for treatment from semi-parametric approach {#sec-AIPW}
 
-The semi-parametric approach allows to create estimators $\sqrt{n}$
-consistent with valid confidence interval. It is a model free functional
-of the observed data distribution based on the derivation of the
-efficient influence function [@Hines_2022].
+The semi-parametric approach yields $\sqrt{n}$-consistent estimators with valid confidence intervals by deriving the efficient influence function [@Hines_2022]. The influence function measures the sensitivity of an estimator to small perturbations in the sample distribution. Suppose we have a distribution $P$, perturbed distribution $\bar{P}$, and "mixture" distribution $P_{\epsilon}= P + \epsilon(\bar{P}-P)$ with $\epsilon \in [0;1]$ [@Aaron2021]. For the unknown true distribution $P_0$, the goal is to estimate $\psi(P_0)$.
 
-Influence function is used to measure how much an estimator changes in
-response to a slight perturbation in the sample distribution. To
-introduce how to identify the augmented version of IPTW in using
-influence function, let's say we have a distribution $P$, a perturbed
-distribution $\bar{P}$ and that we have access to a "mixture" distribution  $P_{\epsilon}= P + \epsilon(\bar{P}-P)$ where
-$\epsilon \in [0;1]$ is a slight perturbation [@Aaron2021]. $P_0$ corresponds to the true distribution (unknown) and the objective is to estimate $\psi(P_0)$.
-
-In following the method to derive influence function (detailed in @sec-Annexes), the influence function for the plug-in
-estimator $\psi(P)=\mathbb{E}_{P}[\mathbb{E}_{P}(T \wedge \tau|X,A=1)]$
-which satisfies @eq-Taylor (in @sec-Annexes) is defined as (detail in
+For the plug-in estimator $\psi(P)=\mathbb{E}_{P}[\mathbb{E}_{P}(T \wedge \tau|X,A=1)]$, the influence function which satisfies @eq-Taylor (in @sec-Annexes) is expressed as (detail in
 @kennedy2023semiparametric):
 
 $$
 \varphi(\psi)=\frac{A}{e(X)}(T \wedge \tau-F(X,A=1)) + F(X,A=1) - \psi
 $$
 
-Thus the corresponding bias-corrected estimator is:
+Thus, based on @eq-Taylor in @sec-Annexes, the corresponding bias-corrected estimator is:
 
 $$
 \psi(P) = \mathbb{P}_n\left[\hat{F}(X,A=1)+ \frac{A.(T \wedge \tau -\hat{F}(X,A=1))}{\hat{e}(X)}\right]
@@ -2096,7 +1881,7 @@ $$
 This augmented inverse probability of treatment weighting (AIPTW) estimator does direct conditional survival (1) and IPW to conditional survival
 residuals (2).
 
-In the exact same way, AIPTW can also be defined as:
+Alternatively, AIPTW can also be defined as:
 
 $$
 \begin{aligned}
@@ -2113,12 +1898,7 @@ inference [@1994_robinsAIPW; @1995_robinsAIPW; @DML].
 
 ##### Properties of AIPTW estimator {#sec-AIPTWproperties}
 
-The resulting estimators from semi-parametric approach have been
-described to be doubly robust. In our case, double robustness means that
-the estimator is consistent if either the treatment model $\hat{F}(X,A)$
-or the outcome model $\hat{e}(X)$ is correctly specified. Based on what
-we saw in the previous section, this double robustness properties can be
-explained by the decomposition of $\hat{\psi} - \psi$:
+Semi-parametric estimators, like AIPTW, are doubly robust, meaning that AIPTW remains consistent if either the treatment model $\hat{F}(X,A)$ or the outcome model $\hat{e}(X)$ is correctly specified. This robustness can be explained by the decomposition of $\hat{\psi} - \psi$
 
 $$
 \begin{aligned}
@@ -2126,13 +1906,12 @@ $$
 & =\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \widehat{\mathbb{P}})\}+R_2(\widehat{\mathbb{P}}, \mathbb{P}) \\
 & =\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \mathbb{P})\}}_\textrm{S*}+\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \widehat{\mathbb{P}})-\varphi(Z ; \mathbb{P})\}}_{\textrm{T}_1}+\underbrace{R_2(\widehat{\mathbb{P}}, \mathbb{P})}_{\textrm{T}_2} \\
 \end{aligned}
-$$ $S^*=o_\mathbb{P}(1/\sqrt{n})$ by the central limit theorem. $T_1$,
+$$ 
+with $S^*=o_\mathbb{P}(1/\sqrt{n})$ by the central limit theorem. $T_1$,
 known as the empirical process, is of smallest order (sample average of
 a short term as $\varphi(Z ; \widehat{\mathbb{P}})$ converge to
 $\varphi(Z ; \mathbb{P})$) when working with not too complex estimators
-(Donsker estimator) and in using sample splitting. $T_2$, the crucial
-one, can often converge to zero under some conditions such as sparsity
-or smoothness (negligible under nonparametric conditions). The double
+(such as Donsker estimator) and in using sample splitting. The double
 robustness properties can be explained by the remainder term $T_2$.
 
 By Cauchy-Schwarz theorem, this remainder term $T_2$ can be lower and
@@ -2142,10 +1921,7 @@ $$
 \left|R_2(\widehat{\mathbb{P}}, \mathbb{P})\right| \leq\left(\frac{1}{\epsilon}\right) \int\left|e(x)-\widehat{e}(x)\left\|F(x)-\widehat{F}(x) \left\lvert\, d \mathbb{P}(x) \leq\left(\frac{1}{\epsilon}\right)\right.\right\| \widehat{e}-e\|\| \widehat{F}-F \|\right.
 $$
 
-where $e(x)=P(A=1 \mid X=x)$ with known and
-$\hat{e}(x)=\hat{P}(A=1 \mid X=x)$, and similarly for
-$F(x)=\mathbb{E}_P(Y \mid X=x, A=1)$. If $\widehat{e}(x) \geq \epsilon$
-with $\epsilon>0$ and that the combination product of
+If $\widehat{e}(x) \geq \epsilon > 0$ and that the combination product of
 $\| \widehat{e}-e\|$ and $\|\widehat{F}-F \|$ give
 $o_\mathbb{P}(\frac{1}{\sqrt{n}})$, thus,
 $\left|R_2(\widehat{\mathbb{P}}, \mathbb{P})\right|=o_\mathbb{P}(\frac{1}{\sqrt{n}})$.
@@ -2158,8 +1934,10 @@ non-parametric approach) and attains the nonparametric efficiency bound
 (no estimator can have smaller mean squared error than this estimator)
 [@kennedy2023semiparametric].
 
-This estimator only considers correction for treatment in case of confounding effect. In our context of @eq-uncounf (uncounfoundedness) and @eq-condindepcensoring
-(conditional independent censoring), this estimator is not sufficient as it does not consider censoring at all. This augmented treatment weighting could be associated with transformations already mentioned above but an augmented transformation based on the semi-parametric approach also exists for censoring to overcome this problem and form an estimator that is also doubly robust for censoring. 
+This estimator only considers correction for treatment in case of confounding effect. In addition, it can be applied on complete observations. In our context of @eq-uncounf (uncounfoundedness) and @eq-condindepcensoring
+(conditional independent censoring), this estimator cannot be applied. This augmented treatment weighting could be associated with transformations already mentioned above but an augmented transformation based on the semi-parametric approach also exists for censoring to overcome this problem and form an estimator that is also doubly robust for censoring. 
+
+This estimator is limited to complete observations. In the context of censoring, it becomes unsuitable as we refer to an incomplete data. This issue can be resolved with a previous introduced unbiased transformation for censoring. But, a semi-parametric approach would offer better solution, providing complete observation and a doubly robust estimator for censoring.
 
 #### Augmented weighting for conditionally independent censoring from semi-parametric approach {#sec-AIPCW}
 
@@ -2187,13 +1965,8 @@ the estimation function of the remaining survival function
 
 ##### Properties of AIPCW estimator {#sec-AIPCWproperties}
 
-As derived from semiparametric approach, AIPCW estimator has double robustness properties.
-The augmented inverse probability of censoring
-transformation is unbiased if either $S_c(t|x,a)$ or $Q_S(t|x,a)$ is
-correctly estimated. It gives a clear advantage to the previous
-transformation in @sec-IPCtrans.
-Also, this estimator is root-$n$ consistent, asymptotically normal (even in
-non-parametric approach) and attains the nonparametric efficiency bound (details in @Laan2003UnifiedMF).
+This estimator is root-$n$ consistent, asymptotically normal (even in
+non-parametric approach) and attains the nonparametric efficiency bound (details in @Laan2003UnifiedMF) if either $S_c(t|x,a)$ or $Q_S(t|x,a)$ is correctly estimated.
 
 In order to obtain a complete correction for confounding effect and conditionally independent censoring, the both estimator can be combined.
 
@@ -2236,7 +2009,6 @@ $$
 :::
 
 In this case, the estimator applies direct conditional survival and the residuals of the conditional survival (based on the augmented unbiased pseudo-population) is weighted by IPTW.
-
 
 
 ##### Properties of AIPTW-AIPCW estimator {#sec-AIPTW_AIPCW_properties}
@@ -2590,37 +2362,22 @@ measure of the unadjusted survival time distribution presented in @sec-unadjuste
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 library(survRM2)
 RMST_survRM2 <- function(data, tau) {
-  
   ATE_pack <- rmst2(data$T_obs, data$status, arm = data$A, tau = tau)
-  
   RMST <- ATE_pack[[5]][1]
-  
   return(RMST)
 }
-
 ```
 
 ## RISCA
 
-[RISCA](https:%20//cran.r-project.org/web/packages/RISCA/index.html)
-package [@Foucher_Le_Borgne_Chatton_2019] allows to compute $\theta_{RMST}$ with unadjusted survival function (as in @sec-unadjusted_KM), with $S_{IPTW}$ adjusted survival function (as in @sec-est_IPTWKM) and g-computation, a maximum-likelihood substitution estimator of the g-formula (as in @sec-gformula) [@Chatton_22]. The weights for the adjusted IPTW survival function have to be computed before using the function.
+The RISCA package [@Foucher_Le_Borgne_Chatton_2019] enables the computation of $\theta_{RMST}$ through various methods: unadjusted survival functions (as discussed in @sec-unadjusted_KM), $S_{IPTW}$-adjusted survival functions (from @sec-est_IPTWKM), and g-computation, a maximum-likelihood estimator based on the g-formula (from @sec-gformula) [@Chatton_22]. For adjusted IPTW survival functions, the weights must be calculated prior to using the relevant function.
 
--   The function rmst() allows to compute the RMST for a given time
-    horizon $\tau$ and a survival function. The survival function has to
-    be computed before using it. To be equivalent to @eq-unadjKM, we stratify 
-    the survival function by treatment and compute the RMST for treated and control, 
-    then we compute $\theta_{RMST}$ by doing the difference. 
+- The rmst() function computes the RMST for a specified time horizon $\tau$ based on a survival function, which must be pre-calculated. To match @eq-unadjKM, the survival function is stratified by treatment group, and the RMST is computed for both treated and control groups, followed by calculating $\theta_{RMST}$ as the difference.
 
--   The function ipw.survival() allows to estimate confounder-adjusted
-    survival curves by weighting the individual contributions by the
-    inverse of the probability to be in the group of treatment (as @eq-IPTWKM).
-    This function could be also used with other weights such as IPTW-IPCW (as @eq-IPTW_IPCWKM) as the weights (propensity score) have to
-    be computed before using it.
+- The ipw.survival() function estimates confounder-adjusted survival curves by weighting individual contributions based on the inverse probability of being in the treatment group (as in @eq-IPTWKM). This function also supports other weights, such as IPTW-IPCW (as in @eq-IPTW_IPCWKM), provided the propensity scores are computed beforehand.
 
--   The function gc.survival() allows to estimate the marginal effect of
-    an exposure or a treatment by G-computation for a censored
-    times-to-event, the Q-model being specified by a Cox model. 
-    This function is computed like a single learner. 
+- The gc.survival() function estimates the marginal effect of treatment using G-computation for censored time-to-event data, with the Q-model specified by a Cox model. This function operates as a single learner.
+
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Function to estimate RMST using unadjusted method
@@ -2739,36 +2496,23 @@ It exists other way of using forest algorithm for observational study with condi
 
 ### Theory of causal survival forest
 
-The causal survival forest [@HTE_causal_survival_forests] is an
-adaptation of the causal forest algorithm of [@grf_article] in a context
-of time to event output and censoring. 
-
-This estimator is mainly used in the case
-of heterogeneous treatment effect estimation in observational setting by
-estimating the conditional average treatment effect (CATE):
+The causal survival forest [@HTE_causal_survival_forests] is an adaptation of the causal forest algorithm [@grf_article] for time-to-event data with censoring. This estimator is primarily used to estimate heterogeneous treatment effects (CATE):
 
 $$
 \theta(x) = E[y(T_i(1)) - y(T_i(0))|X_i=x]
 $$
+Assumptions like consistency (@eq-consistency), conditional independent censoring (@eq-condindepcensoring), positivity of censoring (@eq-positivitycensoring), unconfoundedness (@eq-uncounf), and positivity of the propensity score  (@eq-positivitytreat) are crucial for identifying and estimating CATE using causal survival forests.
 
-The assumption of consistency (@eq-consistency), conditional independent
-censoring (@eq-condindepcensoring), positivity of censoring
-(@eq-positivitycensoring), unconfoundedness of treatment assignment
-(@eq-uncounf) and positivity of propensity score (@eq-positivitytreat)
-play a fundamental role in the identifiability and estimation of the CATE using causal
-survival forest.
-
-To introduce it, let's begin in a context without censoring. The corresponding estimator adjusts for treatment effect by solving the localized equation:
+Without censoring, the estimator adjusts for treatment effects by solving the localized equation:
 
 $$
 \sum_{i=1}^{n}\alpha_i(x)\psi_{\theta}(X_i,T_i\wedge \tau, A_i, \hat{e},\hat{F})=0
 $$ 
-with $\psi_{\theta}(X_i,T_i\wedge \tau, A_i, \hat{e},\hat{F})=[A_i-\hat{e}(X_i)].[T_i\wedge\tau-\hat{F}(X_i)-\theta(A_i-\hat{e}(X_i)]$, $\theta$ is the conditional average treatment effect, $\alpha_{b i}(x)=\frac{\mathbf{1}\left(\left\{X_i \in L_b(x)\right\}\right)}{\left|L_b(x)\right|}, \quad \alpha_i(x)=\frac{1}{B} \sum_{b=1}^B \alpha_{b i}(x)$ with $L_b(x)$ the set of training observations falling in the same leaf
-as $x$ in the tree $b$. 
-In other words, the weighting $\alpha$ is used to express heterogeneity in $\theta_{RMST}$ by measuring the relevance of the
-i-th sample to fitting $\theta$ at $x$. The weights sum is equal to 1.
+with $\psi_{\theta}(X_i,T_i\wedge \tau, A_i, \hat{e},\hat{F})=[A_i-\hat{e}(X_i)].[T_i\wedge\tau-\hat{F}(X_i)-\theta(A_i-\hat{e}(X_i)]$, $\theta$ is the conditional average treatment effect, $\alpha_{b i}(x)=\frac{\mathbf{1}\left(\left\{X_i \in L_b(x)\right\}\right)}{\left|L_b(x)\right|}, \quad \alpha_i(x)=\frac{1}{B} \sum_{b=1}^B \alpha_{b i}(x)$ with $L_b(x)$ the set of training observations falling in the same leaf as $x$ in the tree $b$. 
+In other words, the weighting $\alpha$ is used to express heterogeneity in $\theta_{RMST}$ by measuring the relevance of the i-th sample to fitting $\theta$ at $x$. The weights sum is equal to 1.
 
-In the presence of censoring, another adjustment has to correct the censoring bias. The use of AIPCW transformation introduced in @sec-AIPCW, enable to complete the expression of $\psi_{\theta}(X_i,T_i\wedge \tau, A_i, \hat{e},\hat{F})$:
+In the presence of censoring, an additional adjustment corrects for censoring bias, using the AIPCW transformation (@sec-AIPCW):
+
 
 $$
 \begin{aligned}
@@ -2785,9 +2529,7 @@ Exactly than illustrated before, the causal survival forest solves this localize
 $$
 \sum_{i=1}^{n}\alpha_i(x)\psi_\theta\left(X_i, T_i\wedge \tau, A_i, \Delta_i^\tau ; \hat{e}, \hat{F}, \hat{\lambda}_a^C, \hat{S}_a^C, \hat{Q}_a\right)=0
 $$ 
-In the method from @athey2019estimating, the splitting method relies on
-favoring split that increase the heterogeneity of the estimates as fast
-as possible. The following $\Delta$-criterion has to be large:
+In the method from @athey2019estimating, splits in the forest favor maximizing heterogeneity in treatment effects, using a criterion:
 
 $$
 \Delta\left(C_1, C_2\right):  = \frac{n_{C_1} n_{C_2}}{n_P^2}\left(\hat{\theta}_{C_1}(\mathcal{J})-\hat{\theta}_{C_2}(\mathcal{J})\right)^2
@@ -2798,9 +2540,7 @@ $n_P=\left|\left\{i \in \mathcal{J}: X_i \in P\right\}\right|$, the
 number of observations in the parent and $n_{C_j}$ for the number of
 observations in each child node.
 
-In reality, an approximate criterion
-$\widetilde{\Delta}\left(C_1, C_2\right)$ based on gradient
-approximation is used for computational reason.
+In reality, an approximate criterion is used in practice for computational efficiency.
 
 ### Properties of Causal survival forest
 
@@ -2884,6 +2624,10 @@ Here's a summary of the notation used in the previous sections:
 
 : Notations reminder for all estimators {#tbl-reminder_notations}
 
+As illustrated previously, the estimators can be computed in two ways:
+
+**DO AN ILLUSTRATION**
+
 As seen in the previous sections, the estimators do not all have the same nuisance parameters to estimate.
 The following table summarizes the estimators used in the simulation and
 the nuisance parameters used to estimate them:
@@ -2934,8 +2678,7 @@ After having presented the estimators and their theoretical properties, we will 
 
 ## Data generating process {#sec-DGP}
 
-The proposed data generation processes simulate RCT and observational data. 
-Among the RCT and observational data, we propose two versions, one with an independent censoring mechanism and another with conditionally independent censoring. Furthermore, among the observational data, we will consider a simple version (where nuisance parameters will be well estimated by parametric and semi-parametric models such as the Cox model, logistic regression ...), a more complex version that will implement non linear relationships between variables and a version with covariate interactions. 
+The proposed data generation processes simulate both RCT and observational data, with two versions: one featuring independent censoring and the other with conditionally independent censoring. For the observational data, we include a simple version (where nuisance parameters are well estimated by parametric and semi-parametric models like the Cox model and logistic regression), a more complex version with nonlinear relationships between variables, and another version incorporating covariate interactions.
 
 ### RCT {#sec-simulation-RCT}
 
@@ -3115,14 +2858,6 @@ data_rct2 <- simulate_data_RCT(n=2000,
                                parsC = c(0.7,0.3,-0.25,-0.1),
                                parsC_A = c(-0.2))
 
-
-# data_rct2 simulate the data from RCT with dependent censoring 
-data_rct2 <- simulate_data_RCT(n=2000,
-                               tau=25,
-                               scenario="RCT2", 
-                               coefC = 0.002, 
-                                parsC =  c(2,-4,-5,0.2),
-                               parsC_A = c(-0.2))
 ```
 
 ### Observational study {#sec-simulation-Obs}
@@ -3146,7 +2881,8 @@ represented in Table @tbl-exemple_data.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 ############ Observational 
 # Obs1:  Treatment assignment dependent on X + independent censoring
-# Obs2:  Treatment assignment dependent on X + dependent censoring (conditional on X)
+# Obs2:  Treatment assignment dependent on X + dependent censoring (conditional 
+# on X)
 
 # Function to simulate observational data for two scenarios: Obs1 and Obs2
 simulate_data_obs <- function(n, 
@@ -3217,7 +2953,6 @@ simulate_data_obs <- function(n,
   
   return(DATA_target_population)
 }
-
 ```
 
 
@@ -3252,7 +2987,7 @@ The maximum follow-up time is $h = 3$.
 Note that for subjects with $X_1 < 0,3$, treatment does not affect survival time. The horizon time $\tau$ is fixed at 2.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-simulate_data_complex <- function(n = 2000, tau, parsC = c(0,0,1)) {
+simulate_data_complex <- function(n = 2000, tau, parsC = c(0,0,1)){
   # Load necessary library
   library(MASS)
   
@@ -3282,7 +3017,9 @@ simulate_data_complex <- function(n = 2000, tau, parsC = c(0,0,1)) {
   T_true <- T1 * A + T0 * (1 - A)
   
   # Generate censoring time
-  lambda_C <- 1 + log(1 + exp(parsC[1]*X_treatment[, "X1"] + parsC[2]*X_treatment[, "X2"] + parsC[3]*X_treatment[, "X3"]))
+  lambda_C <- 1 + log(1 + exp(parsC[1]*X_treatment[, "X1"] + 
+                                parsC[2]*X_treatment[, "X2"] + 
+                                parsC[3]*X_treatment[, "X3"]))
   C <- rpois(n, lambda_C)
   
   # Observed time and status
@@ -3332,11 +3069,11 @@ are generated in the following way:
 
 - C from a Poisson distribution with mean $1 + log(1 + exp(X_3))$. 
 
-- The propensity score is $e(x) = plogis$
+
+- The propensity score is $e(x) = \frac{1}{1+exp(-\sum_{j=1}^{6} X_j  )}$.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # DGP for mis-specification 
-
 simulate_data_mis <- function(n, 
                               mu = c(1, 1, -1, 1, -2, -5), 
                               sigma =  matrix(c(1, 0, 0, 0, 0, 0, 
@@ -3346,15 +3083,10 @@ simulate_data_mis <- function(n,
                                                0, 0, 0, 0, 1, 0,
                                                0, 0, 0, 0, 0, 1), 
                                               nrow = 6, byrow = TRUE),
-                              colnames_cov = c("X1", "X2", "X3", "X4", "X5", "X6"),
-                              parsA = matrix(c(0.1, 0.05, -0.05, 0, 0, 0, 
-                                               0.05, -0.2, 0, 0.05, 0, 0, 
-                                               -0.05, 0, 0.3, -0.05, 0, 0,
-                                               0, 0.05, -0.05, -0.1, 0, 0,
-                                               0, 0, 0, 0, 0, 0,
-                                               0, 0, 0, 0, 0, 0), 
-                                             nrow = 6, byrow = TRUE),
-                              tau) {
+                              colnames_cov = c("X1", "X2", "X3", "X4", "X5", 
+                                               "X6"),
+                              parsA = c(0.1, -0.1, 0.2, -0.1, 0, 0),
+                              tau){
   
   # Generate X from a multivariate normal distribution
   X <- MASS::mvrnorm(n, mu, sigma)
@@ -3369,10 +3101,13 @@ simulate_data_mis <- function(n,
    # Coefficients pour interactions X1:X2, X1:X3, X2:X4, X3:X4
 
 # Calcul du score de propension avec interactions
-  e <- rowSums(as.matrix(X) %*% parsA)
-
-# Transformer en échelle de probabilité
+  e <- parsA[1]*X_treatment[, "X1"] + parsA[2]*X_treatment[, "X2"] + 
+    parsA[3]*X_treatment[, "X3"] + parsA[4]*X_treatment[, "X4"] + 
+    parsA[5]*X_treatment[, "X5"] + parsA[6]*X_treatment[, "X6"] 
+  
+  # Transformer en échelle de probabilité
   e <- plogis(e)
+  C <- rpois(n, lambda_C)
   
   # Treatment assignment based on the propensity score
   A <- sapply(e, FUN = function(p) rbinom(n = 1, size = 1, prob = p))
@@ -4543,7 +4278,7 @@ In considering the simulation of RCT and conditionally independent censoring, ex
 As expected, the unadjusted Kaplan Meier (KM) and its equivalent from SurvRM2 package, the adjusted estimator for treatment Kaplan Meier (IPTW KM)
 and its equivalent from RISCA package are always biased also. These estimators do not correct for the dependent censoring. 
 
-Surprisingly, the IPCW Kaplan-Meier and IPTW-IPCW Kaplan-Meier estimators,appear slightly biased even with 4,000 observations **Peut changer après simu**. This bias can be attributed to the simulation settings involving conditionally independent censoring, where the censoring rate was exaggerated to nearly 70% in the treatment group and 50% in the control group. Although the positivity of censoring is maintained, the probability of censoring in some sub-groups can be very close to 0 or 1. Additionally, the IPCW correction uniquely weights uncensored observations, which, in our case, accounts for only about 30% of the data. This, combined with the instability of weighting (or double-weighting for IPTW-IPCW), likely explains the difficulty of the IPTW-IPCW Kaplan-Meier and IPCW Kaplan-Meier estimators in converging. Additionally, it can explained also the high variability of this estimator.  The estimators using Buckley-James transformation for censoring only (BJ estimator) and using Buckley-James with treatment correction (IPTW-BJ) are converging faster than those using IPC transformation with a better variance for BJ estimator. Both of them are unbiased even at 500 observations. 
+Surprisingly, the IPCW Kaplan-Meier and IPTW-IPCW Kaplan-Meier estimators appear slightly biased until 4,000 observations. This bias can be attributed to the simulation settings involving conditionally independent censoring, where the censoring rate was exaggerated to nearly 70% in the treatment group and 50% in the control group. Although the positivity of censoring is maintained, the probability of censoring in some sub-groups can be very close to 0 or 1. Additionally, the IPCW correction uniquely weights uncensored observations, which, in our case, accounts for only about 30% of the data. This, combined with the instability of weighting (or double-weighting for IPTW-IPCW), likely explains the difficulty of the IPTW-IPCW Kaplan-Meier and IPCW Kaplan-Meier estimators in converging with finite sample size. Additionally, it can explained also the high variability of this estimator. The estimators using Buckley-James transformation for censoring only (BJ estimator) and using Buckley-James with treatment correction (IPTW-BJ) are converging faster than those using IPC transformation with a better variance for BJ estimator. Both of them are unbiased even at 500 observations. 
 
 In the exact same way than RCT with independent censoring, G-formula (S-learner) and its equivalent from RISCA are biased. 
 G-formula (T-learners) plug-in estimator, Causal Survival Forest and AIPCW-AIPTW demonstrate high efficiency
@@ -4618,7 +4353,7 @@ simulation_graph_obs1
 In the simulation of an observational study with independent censoring, the key difference compared to RCT simulation is the introduction of confounding bias. As a result, estimators that do not account for this bias, such as unadjusted Kaplan-Meier and IPCW Kaplan-Meier, along with their equivalents, exhibit the expected bias. In contrast, estimators like IPTW Kaplan-Meier, IPTW-IPCW Kaplan-Meier, IPTW-BJ, G-formula (T-learners), and AIPCW-AIPTW successfully converge. 
 However, the IPTW-BJ estimator displays very high variability, likely due to the direct inverse probability weighting of the propensity score as we focus on observational study. The nuisance model of propensity score can struggle to converge at small sample size and predict probability near 0 or 1. The IPTW-IPCW Kaplan-Meier exibits also a lot of outliers. As before, the double-weighting is known to cause great instability due to the potential product of extrem weighting. The global variability is still less than IPTW-BJ wich has only one weighting correction. 
 
-The Causal Survival Forest from the grf package appears biased, likely due to the introduction of confounding bias, which adds complexity in the data, as well as the linear nature of the simulation **peut changer**. In this context, the top-performing estimators are AIPCW-AIPTW, which converges the fastest (from 500 observations), and the G-formula, which consistently maintains the lowest variance over time and converges from 1,000 observations. The choice between these two estimators can be decided by the confidence in convergence of the nuisance models. While there is great confidence in the specification of outcome model, G-formula can be applied. Otherwise, AIPTW-AIPCW can be used. 
+The Causal Survival Forest from the grf package appears biased, likely due to the introduction of confounding bias, which adds complexity in the data, as well as the linear nature of the simulation. Thanks to the results with 8,000 observations of the Causal Survival Forest, we can see that it tends to converge asymptotically. In this context, the top-performing estimators are AIPCW-AIPTW, which converges the fastest (from 500 observations), and the G-formula, which consistently maintains the lowest variance over time and converges from 1,000 observations. The choice between these two estimators can be decided by the confidence in convergence of the nuisance models. While there is great confidence in the specification of outcome model, G-formula can be applied. Otherwise, AIPTW-AIPCW can be used. 
 
 
 The boxplot below shows the distribution of the $\theta_{RMST}$ estimates for the
@@ -4681,18 +4416,16 @@ In the simulation of observational study with conditionally independent censorin
 estimators which do not consider correction for conditionally independent censoring and for
 confounding bias such as KM, IPCW KM, IPTW KM and their equivalent are biased. 
 Contrary to the exposed properties, IPTW-IPCW Kaplan-Meier and IPTW-BJ estimators are biased even for 4,000
-observations **peut changer**. 
+observations.
 As exposed previously, in the conditionally independent censoring simulation, in addition to conditionally independent censoring, the censoring rate was exaggerated to nearly 80% in the treatment group and 50% in the control group and IPCW considers only uncensored observation. Added to this, the complexity of the data set due to confounding bias and conditionally independent censoring, the nuisance parameters for IPTW-IPCW Kaplan-Meier struggle to converge even if nuisance models are well specified. The bias of IPTW-BJ estimator can be explained, in the same way than before, by the instability of the direct inverse probability weighting on the estimated complete data. This estimator is known to be unstable like IPTW-IPCW Kaplan-Meier. 
 
-AIPTW-AIPCW estimator is fluctuating around the true value with slight bias but tends to converge. This can be explained by the non negligeable number of nuisance model to estimate in a complex setting.
-Causal Survival Forest seems to slowly converge to the true $\theta_{RMST}$ but is still clearly biased. This estimator exhibit its non-parameteric convergence rate in this complex context.  
+AIPTW-AIPCW estimator is fluctuating around the true value with slight bias but appears to converge at 8,000 observations. This can be explained by the non negligeable number of nuisance models to estimate in a complex setting.
+Causal Survival Forest seems to slowly converge to the true $\theta_{RMST}$ but is still clearly biased even at 8,000 observations. This estimator exhibit its non-parameteric convergence rate in this complex context.  
 G-formula single learner and its equivalent from RISCA seems to have a very slight bias compared to the previous simulation. The proportional hazard is still violated but the bias is less important. It would seem that conditionally independent censoring makes it easier for the Cox model, which adjusts for the covariates and the treatment, to converge even if the treatment does not satisfy the proportional hazard hypothesis. This also clearly illustrates that the bias induced by the violation on the nuisance outcome parameter can vary from one to two.  
 Once again, the top-performing estimator in this context is G-formula (T-learners), which converge
 with lower variances compared to others.
 
-The boxplot below shows the distribution of the $\theta_{RMST}$ estimates for the more complex 
-observational study with conditionally independent censoring. The red dashed line represents the true $\theta_{RMST}$ for
-$\tau=2$.
+The boxplot below shows the distribution of the $\theta_{RMST}$ estimates for the observational study with conditionally independent censoring in the context of non-parametric simulation (@sec-nonparametric) when the nuisance models are estimated by Cox model and logistic regression. The red dashed line represents the true $\theta_{RMST}$ for $\tau=2$.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 simulation_complex_para$sample.size <- as.character(simulation_complex_para$sample.size)
@@ -4747,7 +4480,14 @@ simulation_graph_complex_param
 ```
 
 
-**Include there estimation with parametric estimator**
+In this non-parametric simulation, nuisance parameters are estimated using the Cox model and logistic regression, except for the grf function, which uses non-parametric causal survival forests. While the propensity score is well-captured by logistic regression, the conditional probability of survival is not adequately modeled by the Cox model due to the violation of the proportional hazards assumption. Similarly, the violation of proportional hazards affects the modeling of the conditional probability of being uncensored, though less severely.
+
+The estimators expected to converge under observational and dependent censoring include IPTW-IPCW Kaplan-Meier, IPTW-BJ, G-formula, AIPTW-AIPCW, and Causal Survival Forest. IPTW-IPCW shows the largest bias among these, likely due to the Cox model's poor fit for conditional censoring, its instability, and sensitivity to misspecification. Surprisingly, both G-formula S-learner estimates $\theta_{RMST}$ well despite the violation of proportional hazards. As seen in prior simulations, the bias from this violation is unpredictable, but by chance, the S-learner aligns with the true value, unlike the G-formula T-learner, which has a larger bias.
+
+IPTW-BJ converges quickly to the true $\theta_{RMST}$. As mentioned, IPTW is well-estimated by logistic regression, and the small bias from the Cox model's conditional survival estimate is mitigated by the Buckley-James transformation. This transformation introduces conditional survival for censored observations while retaining uncensored data for complete observations. The small proportion of censored data (35%) may explain this estimator’s convergence.
+
+Given these results, it is unsurprising that AIPTW-AIPCW fails to converge, as only the propensity score is well-estimated. This is insufficient for the AIPTW-AIPCW estimator to converge. In this simulation, the only converging estimators are IPTW-BJ, due to specific conditions, and the Causal Survival Forest, which uses flexible regression for nuisance model estimation.
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 simulation_complex_flexible$sample.size <- as.character(simulation_complex_flexible$sample.size)
@@ -4806,18 +4546,6 @@ simulation_graph_complex_flexible <- simulation_complex_flexible %>%
 simulation_graph_complex_flexible
 ```
 
-Similarly, all the unadjusted estimators (unadjusted KM, its equivalent from SurvRM2), the adjusted estimators on only treatment (IPTW KM, its equivalent from RISCA) or only censoring (IPCW KM, BJ estimator) are biased at all time. 
-
-Surprisingly, estimators that apply correction on treatment and censoring without augmented weighting such as IPTW-IPCW Kaplan-Meier is biased at any time. It is not the case for IPTW-BJ estimator which tends to converge after 5,000 observations. 
-
-Our implemented G-formula (S-learner) and our implemented G-formula (two learners) seems to converge towards the true value but is still biased at 5,000 observations. It seems that our S-learner is converging faster than T-learners. 
-AIPTW-AIPCW estimator catchs fast the true $\theta_{RMST}$ but becomes slightly biased at 5,000 observations. It seems that the estimator is fluctating around the true value.
-Causal Survival Forest seems to slowly converge to the true $\theta_{RMST}$ but is still biased at 5,000 observations. It is converging faster than our G-formula. 
-
-In this configuration, the estimator with the only convergent and lowest variability is the IPTW-BJ estimators.
-
-
-As a reminder, all the nuisance parameters are now computed with flexible model such as probability forest or survival forest. Cross-fiting with five-folds has been performed. All the estimators from package that cannot include flexible regression have been removed. 
 
 In the complex setting, all nuisance models are computed using flexible models. This simulation refers to an observational study with conditionally independent censoring also. As expected, all the estimators without correction for conditionally independent censoring and confounding bias are biased. It concerns Naive, KM, IPTW KM, IPCW KM and BJ estimator and their equivalents. 
 The estimator IPTW-BJ has a small bias but tends to converge after 5,000 observations. 
@@ -4832,20 +4560,20 @@ As a result, the asymptotic normality of VT is compromised. Also, the article
 @HTE_causal_survival_forests shows that VT has lower efficiency than
 causal survival forest which can be seen in our simulation.
 Then, G-formula seems not to be the most efficient estimator to use in
-non-parametric setting. Also, S-learner has better behavior than T-learners due to the fact that the learner is not stratified by treatment then it has more observations to learn the ouctome model.
+non-parametric setting. Also, S-learner has better behavior than T-learners due to the fact that the learner is not stratified by treatment then it has more observations to learn the outcome model.
 In general, the finite sample bias of all the estimators can be explained by the convergence rate of non parametric model.
 AIPTW-AIPCW has the same behavior than in observational and conditionally independent censoring with parametric estimation of nuisance models, its finite sample properties are very good but it still has sort of fluctuation around the true value of ATE. Its variability is low and has few outliers. Even if it's fluctuating, the bias is low compared to the other estimators.
 The top-performing estimators in this context are IPTW-BJ asymptotically but AIPTW-AIPCW estimator in finite sample size, which converge sooner but tends to fluctuate.
-
 
 
 ### Mis-specification of the nuisance parameters
 
 In this section, we will challenge the estimators in introducing mis-specification for the nuisance parameters. To do so, the simulation with interaction will be used and mis-specification is introduced by selecting only one covariate with the less impact on the model. All functions that cannot introduce mis-specification specifically on treatment, censoring or outcome are removed of the following graph. It concerns G-formula from RISCA package and the causal survival forest from grf. 
 First, we will introduce mis-specification for the treatment model only, for the censoring model only, for the outcome model only, then for treatment and censoring, for treatment and outcome , for outcome and censoring and finally for all the nuisance models.  
+The nuisance models are estimated with flexible model such as probability forest and survival forest. 
 
 ```{r eval=FALSE}
-n_sim <- 10
+n_sim <- 100
 tau <- 0.45
 simulation_mis <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
@@ -4859,7 +4587,7 @@ simulation_mis <- compute_estimator(
   parsC = NULL,
   n.folds = 5,
   mis_specification = "none",
-  sample_size = 4000
+  sample_size = c(500,1000,4000)
 )
 
 
@@ -4900,12 +4628,9 @@ simulation_graph_mis <- simulation_mis %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis
-```
 
 ```{r eval=FALSE}
-n_sim <- 10
+n_sim <- 100
 tau <- 0.45
 simulation_mis_mistreat <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
@@ -4923,10 +4648,10 @@ simulation_mis_mistreat <- compute_estimator(
 )
 
 
-
 save(simulation_mis_mistreat,file="simulation_mis_mistreat.RData")
 
 ```
+
 ```{r}
 load("simulation_mis_mistreat.RData")
 ```
@@ -4961,12 +4686,9 @@ simulation_graph_mis_mistreat <- simulation_mis_mistreat %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_mistreat
-```
 
 ```{r eval=FALSE}
-n_sim <- 20
+n_sim <- 100
 tau <- 0.45
 simulation_mis_miscens <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
@@ -4980,7 +4702,7 @@ simulation_mis_miscens <- compute_estimator(
   parsC = NULL,
   n.folds = 5,
   mis_specification = "none",
-  sample_size = 6000
+  sample_size = 4000
 )
 
 
@@ -5022,12 +4744,9 @@ simulation_graph_mis_miscens <- simulation_mis_miscens %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_miscens
-```
 
 ```{r eval=FALSE}
-n_sim <- 10
+n_sim <- 100
 tau <- 0.45
 simulation_mis_misout <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
@@ -5082,13 +4801,18 @@ simulation_graph_mis_misout <- simulation_mis_misout %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_misout
-```
-
 ```{r fig.width=25, fig.height=25}
 grid.arrange(simulation_graph_mis, simulation_graph_mis_miscens, simulation_graph_mis_misout, simulation_graph_mis_mistreat, ncol = 2, nrow = 2)
 ```
+
+We refer to an observational and dependent censoring study, thus the expected consistent estimators are IPTW-IPCW Kaplan-Meier, IPTW-BJ estimator, G-formula, AIPTW-AIPCW and Causal survival forest. 
+
+In globality, when one nuisance model is mis-specified, the consistent estimators are AIPTW-AIPCW and causal survival forest. In all these setup, the two estimators are convergent at 4,000 observations. 
+
+When the censoring model is mis-specified, the estimators with censoring correction are biased. **The variation of G-formula estimator and other compared to the simulation without mis-specification can be due to the low repetitions**. 
+
+G-formula and IPTW-BJ estimator seems to converge when the mis-specification of the outcome model is present but in comparing it to the simulation without mis-specification, the results is different. It shows that it goes near the true value this time but only by chance. 
+As expected, when the treatment model is mis-specified, IPTW-BJ estimator is biased. 
 
 
 ```{r eval=FALSE}
@@ -5149,9 +4873,6 @@ simulation_graph_mis_mistreat_out <- simulation_mis_mistreat_out %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_mistreat_out
-```
 
 ```{r eval=FALSE}
 n_sim <- 10
@@ -5210,9 +4931,6 @@ simulation_graph_mis_miscens_out <- simulation_mis_miscens_out %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_miscens_out
-```
 
 ```{r eval=FALSE}
 n_sim <- 10
@@ -5270,18 +4988,15 @@ simulation_graph_mis_mistreat_cens <- simulation_mis_mistreat_cens %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_mistreat_cens
-```
 
 ```{r eval=FALSE}
 n_sim <- 10
 tau <- 0.45
 simulation_mis_misall<- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
-  X.names.propensity = c("X5"), 
+  X.names.propensity = c("X6"), 
   X.names.outcome = c("X6"),
-  X.names.censoring = c("X5"),
+  X.names.censoring = c("X6"),
   nuisance_propensity = "probability forest",
   nuisance_censoring = "survival forest",
   nuisance_survival = "survival forest",
@@ -5331,9 +5046,8 @@ simulation_graph_mis_all <- simulation_mis_misall %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_all
-```
+The combined graph regroup the $\theta_{RMST}$ value of 4 different setting when there is mis-specification on all nuisance parameters (bottom right) or when two nuisance models are mis-specified either the censoring and the treatment models (top left), the outcome and treatment models (top right) or the outcome and censoring models (bottom left). The dot line represents the true value of the ATE.
+
 
 ```{r fig.width=25, fig.height=25}
 grid.arrange(simulation_graph_mis_mistreat_out, simulation_graph_mis_miscens_out, simulation_graph_mis_mistreat_cens, simulation_graph_mis_all, ncol = 2, nrow = 2)
@@ -5341,10 +5055,9 @@ grid.arrange(simulation_graph_mis_mistreat_out, simulation_graph_mis_miscens_out
 
 On hold : 
 
-The combined graph regroup the $\theta_{RMST}$ value of 4 different setting when there is mis-specification on all nuisance parameters (bottom right) or when two nuisance models are mis-specified either the censoring and the treatment models (top left), the outcome and treatment models (top right) or the outcome and censoring models (bottom left). The dot line represents the true value of the ATE.
 
 When the censoring and treatment models are mis-specified, G-formula (T-learners) estimator remains unbiased. 
-The estimator IPTW-IPCW which is based on the two nuisance models is completely biased. IPTW-BJ estimator and surprisingly AIPTW-AIPCW estimator become slightly biased.
+The estimator IPTW-IPCW which is based on the two nuisance models is completely biased. Same result for IPTW-BJ estimator. and surprisingly AIPTW-AIPCW estimator become slightly biased.
 
 When the outcome and treatment models are mis-specified, all the estimators are biased. **AIPTW-AIPCW is considered as non convergent because of its huge variability.** It is the same results when the mis-specification concerns outcome and censoring models. *
 
@@ -5413,8 +5126,12 @@ simulation_obs2_positivity<-compute_estimator(n_sim = n_sim,
                                                 sample_sizes = 4000)
 
 save(simulation_obs2_positivity,file="simulation_obs2_positivity.RData")
-  
+```
+
+
+```{r eval=FALSE}
 # obs2
+n_sim <- 100 
 tau <- 3
 simulation_complex_positivity<-compute_estimator(n_sim = n_sim, 
                                                 tau = tau, 
@@ -5576,86 +5293,209 @@ simulation_graph_obs2_positivity <- simulation_obs2_positivity %>%
 grid.arrange(simulation_graph_obs2_only, simulation_graph_obs2_positivity, ncol = 2, nrow = 1)
 ```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_complex_flexible_only <- simulation_complex_flexible %>%
+  dplyr:: filter(sample.size == 4000)
+
+# Update the theme to center the plot title
+theme_update(plot.title = element_text(hjust = 0.5))
+
+
+# Convert sample size to a factor with levels sorted in decreasing order
+simulation_complex_flexible_only$sample.size <- factor(
+  simulation_complex_flexible_only$sample.size, 
+  levels = sort(unique(simulation_complex_flexible_only$sample.size), decreasing = TRUE)
+)
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_complex_flexible_only$estimator <- factor(simulation_complex_flexible_only$estimator, 
+                                    levels = desired_order)
+
+simulation_complex_flexible_only$estimator[is.na(simulation_complex_flexible_only$estimator)] <- "G_formula (S-learner)"
+# Removed package estimator which cannot include flexible regression
+simulation_complex_flexible_only <- simulation_complex_flexible_only %>%
+  dplyr :: filter(!estimator == "RISCA - G_formula (S-learner)")
+
+# Create the plot for Observational + dependent censoring in complex simulation
+simulation_graph_complex_flexible_only <- simulation_complex_flexible_only %>%
+  ggplot(aes(
+    x = estimator, y = estimate,  
+    fill = factor(sample.size, levels = rev(levels(sample.size)))
+  )) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Estimation results of the ATE for the more complex simulation of an observational 
+          study with dependent censoring (with survival and probability forest):") +
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  # Change x-axis label
+  ylab("ATE") +  # Change y-axis label
+  stat_boxplot(geom = "errorbar") +
+  geom_hline(
+    yintercept = truth_complex, linetype = "dashed", color = "red", 
+    alpha = 0.8, size = 0.8
+  ) +
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0, 1))
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+load("simulation_complex_positivity.RData")
+theme_update(plot.title = element_text(hjust = 0.5))
+
+simulation_complex_positivity$sample.size <- factor(simulation_complex_positivity$sample.size, levels = sort(unique(simulation_complex_positivity$sample.size), decreasing = TRUE))
+
+# Convert 'estimator' column to a factor with the specified order
+simulation_complex_positivity$estimator <- factor(simulation_complex_positivity$estimator, levels = desired_order)
+
+simulation_graph_complex_positivity <- simulation_complex_positivity %>%
+  ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
+  scale_fill_brewer(palette = "Accent") +
+  ggtitle("Estimation results of the ATE for the simulation of 
+          an observational study with dependent censoring when 
+          positivity for censoring is violated")+
+  geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
+  xlab("") +  # Changer le label de l'axe x
+  ylab("ATE") +  # Retirer le label de l'axe y
+  stat_boxplot(geom="errorbar")+
+  geom_hline(yintercept = truth_complex, linetype = "dashed", color = "red", alpha = 0.8,
+             size = 0.8) +  # Changer geom_hline en geom_vline
+  theme(legend.title = element_blank(), legend.position = "bottom",
+          legend.box = "vertical", legend.text = element_text(size=18),
+          axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  # Adjust text angle for better visibility
+          axis.text = element_text(size=20, face = "bold"),
+          plot.title = element_text(size=24, face = "bold"),
+          axis.title.x = element_text(size=20, face = "bold"))+
+            coord_cartesian(ylim = c(0, 1))
+```
+
+
+```{r fig.width=25, fig.height=14}
+grid.arrange(simulation_graph_complex_flexible_only, simulation_graph_complex_positivity, ncol = 2, nrow = 1)
+```
+
 **Peut être refaire tourner avec plus de dependence car pas évident ici**
 When the positivity of censoring is violated in our observational context with conditionally independent censoring, all estimators that adjust for censoring using inverse probability weighting (IPW) methods, such as IPTW-IPCW Kaplan-Meier,  AIPTW-AIPCW, or Causal Survival Forest, become a bit more biased under this violation. The G-formula (S-learner) and its equivalent exhibit even stronger bias. Conversely, the G-formula (T-learners) and the IPTW-BJ estimator have the same behavior.
 
 # Conclusion and perspective
 
-In the context of correct specification of the nuisance parameter in using parametric and 
-semi-parametric models, for the simulation of RCT and independent censoring , all the estimators
-converge except the Naive estimator and the G-formula estimator from RISCA package.
-Naive estimator is always biased because it does not take
-into account the censored observation at all in removing them. It applies then directly the $\theta_{RMST}$ formula on the uncensored observation. It illustrates well the huge impact of ignoring censoring for estimating $\theta_{RMST}$. 
-The bias of G-formula from RISCA package and our G-formula S-learner is due to the violation of proportional hazard assumption as the treatment effect is additive ($T(1)=T(0)+10$). 
-When comparing the convergence of the G-formula using two learners versus a single learner, it is important to recognize that the use of the G-formula in combination with the Cox model introduces an additional assumption to the existing identifiability assumptions. The S-learner approach is appealing because the Cox model can converge more quickly due to the larger number of observations available for training. However, it is crucial to consider the potential risk of violating the proportional hazards assumption when using Cox model. 
-When examining the variance of the estimators, the G-formula estimator consistently shows the lowest variance. The other estimators also maintain similarly low variances, even with small sample sizes, except for the IPTW-BJ estimator, which exhibits a significantly higher variance in small sample sizes. This increased variance can be attributed to the sensitivity of inverse probability weighting when applied directly to small sample size data without augmented correction.
-Among the convergent estimators AIPCW-AIPTW estimator, causal_survival_forest() from grf and G-formula (in using Two Learners)  are the most efficient
-with a small sample size. They are very close to the true $\theta_{RMST}$ value even with 500 observations. 
-Surprisingly, Causal Survival Forest in this scenario converge as fast as AIPTW-AIPCW estimator. Generally, estimating linear models in using flexible regressions take more time to converge than a simple parametric estimation but this convergence can be explained due to the simple dataset design thanks to RCTs. 
-Even if all these estimators are convergent, in the context of RCT and independent censoring, estimators with weights (such as IPTW KM, IPCW KM, IPTW-IPCW KM, IPTW-BJ or AIPTW-AIPCW) and also Causal Survival Forest don't really make sense to use. Indeed, they don't
-improve convergence, implement unnecessary weights and increase the computational time.
-Thus, in considering the speed of convergence as well as the
-computational time and difficulty of implementation in this simple RCT scenario, 
-G-formula (T-learners) seems to be the most suitable with the smaller
-variance even at small sample size. 
+In this study on causal survival analysis, we examined a broad range of estimators across multiple simulation settings, particularly focusing on treatment and censoring mechanisms. While the majority of the empirical results align well with the theoretical properties, notable exceptions include estimators based on IPCW transformations, such as the IPTW-IPCW Kaplan-Meier, which failed to converge in non-parametric settings, and the IPCW Kaplan-Meier, which showed some bias under high censoring conditions.
+
+In this study, we made available our code for the estimators tested, addressing a significant gap in current resources. Despite the growing need for causal survival analysis tools, few packages exist that offer robust implementations of various estimators. By providing these codes, we aim to support further research and practical applications of causal inference in survival contexts, where available software is currently limited.
+
+For users, we recommend different estimators based on the context of their data and modeling assumptions. In a parametric setting with correctly specified nuisance parameters, the G-formula is highly efficient due to its low variance and quick convergence, especially in simpler scenarios like randomized controlled trials. In non-parametric settings with no misspecification, estimators like the IPTW-BJ estimator, Causal Survival Forest or AIPTW-AIPCW perform well, though the latter two may require more computing resources. When uncertainty exists around nuisance parameters, robust estimators like AIPTW-AIPCW or Causal Survival Forest are preferable due to their resilience to mis-specification.
+
+Notably, the G-formula and IPTW-BJ estimators implicitly rely on the positivity assumption, although it is not explicitly included in their identifiability conditions. In parametric settings, violations of positivity tend to have minimal impact, as the extrapolation needed to handle these violations is feasible  but risky. However, in non-parametric contexts, violating the positivity assumption can lead to erroneous extrapolations, making these estimators unsuitable for use.
+
+Based on all our simulations, we can propose this decision tree to compute $\theta_{RMST}$: 
+
+```{r}
+library(DiagrammeR)
+
+# Construction de l'arbre de décision avec texte sur les flèches
+grViz("
+digraph decision_tree {
+
+  # Set up the nodes (shapes)
+  node [shape = box, style = filled, fillcolor = lightgray]
+
+  # First level (Observational Study / RCT)
+  RCT[label = 'Randomized Clinical Trial', shape = oval]
+  Obs[label = 'Observational study', shape = oval]
 
 
-In considering the simulation of RCT and conditionally independent censoring, 
-estimators without correction for censoring bias, such as KM, its equivalent, IPTW
-KM and its equivalent exhibit bias. 
-Surprisingly, the IPCW Kaplan-Meier and IPTW-IPCW Kaplan-Meier estimators, both of them include censoring correction, appear slightly biased even with 4,000 observations. This bias can be attributed to the simulation settings involving conditionally independent censoring, where the censoring rate was exaggerated to nearly 70% in the treatment group and 50% in the control group. Although the positivity of censoring is maintained, the probability of censoring in some sub-groups can be very close to 0 or 1. Additionally, the IPCW correction uniquely weights uncensored observations, which, in our case, accounts for only about 30% of the data. This, combined with the instability of weighting (or double-weighting for IPTW-IPCW), likely explains the difficulty of the IPTW-IPCW Kaplan-Meier and IPCW Kaplan-Meier estimators in converging. Additionally, it can explained also the high variability of this estimator. Indeed, the convergence of nuisance parameters becomes challenging when only 30% of the observations are events, further contributing to the increased variance for IPTW-IPCW Kaplan-Meier.
-Therefore, in a context of conditionally independent censoring with a high censoring rate, IPCW weighting is not recommended. It's then preferable to use other censoring transformation such as Buckley-James which shows good convergence (but high variability) even in a context of high censoring as IPTW BJ and BJ estimators appears to converge from 2,000 observations. As a reminder, the convergence of the IPTW-BJ estimator is dependent on the convergence of the nuisance outcome model. 
-In the exact same way than RCT with independent censoring, G-formula (S-learner) and its equivalent from RISCA are biased. 
-G-formula (T-learners) plug-in estimator, Causal Survival Forest and AIPCW-AIPTW demonstrate high efficiency
-even with small sample sizes. However, exactly than RCT with independent censoring it seems excessive to use
-AIPCW-AIPTW which includes 3 nuisances parameters or Causal Survival Forest which uses flexible regressions 
-to compute $\theta_{RMST}$ of a RCT with conditionally independent censoring. Then, in this context of good specification of nuisance model in RCT, G-formula (T-learners) is the estimator to use. 
- 
+  # Second level (Independent vs Dependent Censoring for both Obs and RCT)
+  Obs_Ind[label = 'Independent Censoring']
+  Obs_Dep[label = 'Dependent Censoring']
+  RCT_Ind[label = 'Independent Censoring']
+  RCT_Dep[label = 'Dependent Censoring']
 
-In the simulation of an observational study with independent censoring, the key difference compared to RCT simulation is the introduction of confounding bias. As a result, estimators that do not account for this bias, such as unadjusted Kaplan-Meier and IPCW Kaplan-Meier, along with their equivalents, exhibit the expected bias. In contrast, estimators like IPTW Kaplan-Meier, IPTW-IPCW Kaplan-Meier, IPTW-BJ, G-formula (T-learners), and AIPCW-AIPTW successfully converge. However, the IPTW-BJ estimator displays very high variability, likely due to the direct inverse probability weighting of the propensity score, which can lead to instability due to probability near 0 or 1. The IPTW-IPCW Kaplan-Meier exibits also a lot of outliers. The double-weighting is known to cause great instability due to the potential product of extrem weighting. The global variability is still less than IPTW-BJ wich has only one weighting correction. Kaplan-Meier's construction can play a role in smoothing the results. 
-The Causal Survival Forest from the grf package appears biased, likely due to the introduction of confounding bias, which adds complexity in the data, as well as the linear nature of the simulation. In this context, the top-performing estimators are AIPCW-AIPTW, which converges the fastest, and the G-formula, which consistently maintains the lowest variance over time. The choice between these two estimators can be decided by the confidence in convergence of the nuisance models or positivity assumption. While there is great confidence in the specification of outcome model or if the positivity assumption is questioned, G-formula can be applied. Otherwise, AIPTW-AIPCW can be used. 
+  # Third level for Independent Censoring (Obs)
+  Obs_Ind_Ver[label = 'Verify Positivity of \n Treatment']
+  Obs_Ind_Ver_tau[label = 'Lower horizon time']
+  Obs_Ind_Formula[label = 'Parametric G-formula + IPTW KM']
+  Obs_Ind_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
+  Obs_Ind_Results2[label = 'Non paramétric AIPTW-AIPCW\nEstimator + CSF']
+  Obs_Ind_Stop[label = 'Stop']
+  Obs_Ind_Results_ok[label = 'RMST Estimator correct']
+
+  # Third level for Dependent Censoring (Obs)
+  Obs_Dep_Ver[label = 'Verify Positivity of \n Cens + Treat']
+  Obs_Dep_Formula[label = 'Parametric G-formula + IPTW-IPCW KM']
+  Obs_Dep_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
+  Obs_Dep_Results2[label = 'Non parametric AIPTW-AIPCW\nEstimator + CSF']
+  
+  Obs_Ind_Formula[label = 'Parametric G-formula + IPTW KM']
+  Obs_Ind_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
+  Obs_Ind_Results2[label = 'Non parametric AIPTW-AIPCW\nEstimator + CSF']
+  Obs_Ind_Results_ok[label = 'RMST Estimator correct']
+  Obs_Dep_Stop[label = 'Stop']
+
+  # Third level for Independent Censoring (RCT)
+  RCT_Ind_Unadj[label = 'Unadjusted KM']
+
+  # Third level for Dependent Censoring (RCT)
+  RCT_Dep_Ver[label = 'Verify Positivity of \nCensoring']
+  RCT_Dep_Ver_tau[label = 'Lower horizon time']
+  RCT_Dep_Formula[label = 'Parametric G-formula + Para IPCW KM']
+  RCT_Dep_Results[label = 'Non-parametric AIPTW-AIPCW\nEstimator + CSF']
+  RCT_Dep_Stop[label = 'Stop']
+  RCT_Dep_Results_ok[label = 'RMST Estimator correct']
+
+  # Connections with labels (text on arrows)
+  RCT -> RCT_Ind
+  RCT_Ind -> RCT_Ind_Unadj [label = 'No Adj needed']
+
+  RCT -> RCT_Dep
+  RCT_Dep -> RCT_Dep_Ver
+  RCT_Dep_Ver -> RCT_Dep_Formula [label = 'If verified']
+  RCT_Dep_Ver -> RCT_Dep_Ver_tau [label = 'If not verified']
+  RCT_Dep_Ver_tau -> RCT_Dep_Ver
+  RCT_Dep_Formula -> RCT_Dep_Results_ok [label = 'If the results are =']
+  RCT_Dep_Formula -> RCT_Dep_Results [label = 'Otherwise']
+  RCT_Dep_Results -> RCT_Dep_Stop [label = 'Otherwise']
+  RCT_Dep_Results -> RCT_Dep_Results_ok [label = 'If the results are =']
+  
+  
+  Obs -> Obs_Ind
+  Obs_Ind -> Obs_Ind_Ver
+  Obs_Ind_Ver -> Obs_Ind_Ver_tau [label = 'If not verified']
+  Obs_Ind_Ver_tau -> Obs_Ind_Ver
+  Obs_Ind_Ver -> Obs_Ind_Formula [label = 'If verified']
+  Obs_Ind_Formula -> Obs_Ind_Results_ok [label = 'If the results are=']
+  Obs_Ind_Formula -> Obs_Ind_Results [label = 'Otherwise']
+  Obs_Ind_Results -> Obs_Ind_Results_ok [label = 'If AIPTW-AIPCW = G-f or = IPTW-KM']
+  Obs_Ind_Results -> Obs_Ind_Results2 [label = 'Otherwise']
+  Obs_Ind_Results2 -> Obs_Ind_Results_ok [label = 'If the results are =']
+  Obs_Ind_Results2 -> Obs_Ind_Stop [label = 'Otherwize']
+  
+  Obs -> Obs_Dep
+  Obs_Dep -> Obs_Dep_Ver
+  Obs_Dep_Ver -> Obs_Ind_Ver_tau [label = 'If not verified']
+  Obs_Ind_Ver_tau -> Obs_Dep_Ver
+  Obs_Ind_Ver -> Obs_Dep_Formula [label = 'If verified']
+  Obs_Dep_Formula -> Obs_Dep_Results_ok [label = 'If the results are=']
+  Obs_Dep_Formula -> Obs_Dep_Results [label = 'Otherwise']
+  Obs_Dep_Results -> Obs_Dep_Results_ok [label = 'If AIPTW-AIPCW = G-f or = IPTW-KM']
+  Obs_Dep_Results -> Obs_Dep_Results2 [label = 'Otherwise']
+  Obs_Dep_Results2 -> Obs_Dep_Results_ok [label = 'If the results are =']
+  Obs_Dep_Results2 -> Obs_Dep_Stop [label = 'Otherwize']
+
+}
+")
+```
 
 
-In the simulation of observational study with conditionally independent censoring, all
-estimators which do not consider correction for conditionally independent censoring and for
-confounding bias such as KM, IPCW KM, IPTW KM and their equivalent are biased. 
-Contrary to the exposed properties, IPTW-IPCW Kaplan-Meier and IPTW-BJ estimators are biased even for 4,000
-observations. 
-As exposed previously, in the conditionally independent censoring simulation, in addition to conditionally independent censoring, the censoring rate was exaggerated to nearly 80% in the treatment group and 50% in the control group and IPCW considers only uncensored observation. Added to this, the complexity of the data set due to confounding bias and conditionally independent censoring, the nuisance parameters for IPTW-IPCW Kaplan-Meier struggle to converge even if nuisance models are well specified. The bias of IPTW-BJ estimator can be explained, in the same way than before, by the instability of the direct inverse probability weighting on the estimated complete data. This estimator is known to be instable like IPTW-IPCW Kaplan-Meier. 
-AIPTW-AIPCW estimator is fluctuating around the true value with slight bias but tends to converge.  
-G-formula single learner and its equivalent from RISCA seems to have a very slight bias compared to the previous simulation. The proportional hazard is still violated but the bias is less important. It would seem that conditionally independent censoring makes it easier for the Cox model, which adjusts for the covariates and the treatment, to converge even if the treatment does not satisfy the proportional hazard hypothesis. This also clearly illustrates that the bias induced by the violation on the nuisance outcome parameter can vary from one to two.  
-Once again, the top-performing estimator in this context is G-formula (T-learners), which converge
-with lower variances compared to others.
 
 
-In the complex setting, all nuisance models are computed using flexible models. This simulation refers to an observational study with conditionally independent censoring also. As expected, all the estimators without correction for conditionally independent censoring and confounding bias are biased. It concerns Naive, KM, IPTW KM, IPCW KM and BJ estimator and their equivalents. 
-The estimator IPTW-BJ has a small bias but tends to converge after 5,000 observations. 
-G-formula (T-learners), G-formula (S-learner) and Causal Survival Forest tend to converge after 5,000 observations. Causal Survival Forest has less bias than the others. In @Foster2011, 
-they introduce the estimator Virtual Twins (VT) which
-corresponds to our G-formula with survival random forest to estimate
-conditional survival probability. It has proved that this estimator lacks orthogonality
-properties [@DML]. Additionally, if ML algorithms are not from Donsker
-class or ML algorithms whose entropy increases with the size of the
-sample used, this estimator becomes predisposed to bias [@Vaart_1998].
-As a result, the asymptotic normality of VT is compromised. Also, the article
-@HTE_causal_survival_forests shows that VT has lower efficiency than
-causal survival forest which can be seen in our simulation.
-Then, G-formula seems not to be the most efficient estimator to use in
-non-parametric setting. Also, S-learner has better behavior than T-learners due to the fact that the learner is not stratified by treatment then it has more observations to learn the ouctome model.
-In general, the finite sample bias of all the estimators can be explained by the convergence rate of non parametric model.
-AIPTW-AIPCW has the same behavior than in observational and conditionally independent censoring with parametric estimation of nuisance models, its finite sample properties are very good but it still has sort of fluctuation around the true value of ATE. Its variability is low and has few outliers. Even if it's fluctuating, the bias is low compared to the other estimators.
-The top-performing estimators in this context are IPTW-BJ asymptotically but AIPTW-AIPCW estimator in finite sample size, which converge sooner but tends to fluctuate.
 
-When mis-specification is introduced for one of nuisance models, the only robust estimator is AIPTW-AIPCW. All the other estimators which used at least one of the nuisance parameters exposed (censoring, treatment or outcome) which corresponds to IPTW Kaplan-Meier, IPCW Kaplan-Meier, BJ estimator, IPTW-IPCW Kaplan-Meier, IPTW-BJ estimator and G-formula are sensible to mis-specification. 
+A key limitation of our simulations is the use of larger datasets with relatively simple relationships, which may not reflect the complexity of real-world scenarios. Most survival analysis datasets are smaller and more intricate, so the stability of certain estimators observed here may not fully generalize. It would be valuable to test these methods on real-world datasets to better assess their performance in practical applications.
 
-When introducing additional mis-specifications, specifically when 2 out of the 3 nuisance models are mis-specified, AIPTW-AIPCW loses its robustness—contrary to our expectations **seems WEIRD** regarding mis-specifications in the censoring and treatment models. We anticipated that the outcome model might compensate for these issues, but under these conditions, the combined estimation errors $\| \widehat{e}-e\|$, $\|\widehat{F}-F \|$ and $\|\widehat{S_c}-S_c \|$ likely do not converge to $o_\mathbb{P}(\frac{1}{\sqrt{n}})$, which could be a contributing factor. This scenario appears particularly challenging when two nuisance models are mis-specified.
-
-When the positivity assumption for censoring is violated, estimators that rely on inverse probability weighting for censoring correction can become biased. This occurs because the probability of remaining uncensored may approach zero, leading to extremely high weights that distort the estimators. conditionally independent censoring can easily violate the positivity assumption, particularly when the censoring model includes a large number of covariates. To address this, one might consider lowering the threshold time $\tau$ so that each subject has a reasonable probability of remaining uncensored at their restricted time, or using alternatives such as the G-formula plug-in or the IPTW-BJ estimator, which can still converge even if the positivity assumption for censoring is violated.
-
-
-The G-formula has demonstrated noteworthy properties in this study, particularly due to its impressive convergence speed under parametric conditions and its robustness with respect to positivity assumptions on censoring. However, this estimator also introduces additional assumptions related to its nuisance parameters that must be considered, such as the proportional hazards assumption when using the Cox model. It’s important to note that the G-formula is not suitable for all scenarios. Specifically, it is sensitive to any mis-specification of the outcome model, in contrast to the AIPTW-AIPCW estimator, which is more resilient to such mis-specifications. Additionally, the G-formula may be less appropriate in non-parametric contexts, where the AIPTW-AIPCW or the causal survival forest performs better. These factors should be carefully weighed in order to make the best compromise in the choice of the most appropriate estimator.
-
-We have observed that in certain cases, the positivity assumption for censoring can be compromised, particularly when the model includes a large number of covariates. The same concerns apply to the positivity of treatment. We have also seen the impact of violating these assumptions on the convergence of estimators even to the most robust AIPTW-AIPCW estimator. In causal models, it is common to include a large number of variables to avoid mis-specification. However, this raises the question of whether it is necessary to include all variables that appear to have an impact on censoring, given the risk of violating the assumptions required for estimator identifiability.
+Looking ahead, one promising avenue for improving these estimators is through optimizing variable selection for the conditional censoring, conditional survival, and treatment models. It has been shown that adding precision variables in causal inference enhances the variance of G-formula-like estimators. A potential area of exploration would be to investigate whether similar improvements can be made in causal survival analysis by refining the selection of covariates that influence censoring and survival outcomes.
 
 
 # References {.unnumbered}
@@ -5801,7 +5641,79 @@ The second term $I\{C> T\}. I\{T \leq \tau\}$ is equal to
 $I\{\widetilde{T} \leq \tau\}.I\{C \geq \widetilde{T}\}$ because when
 $C$ is superior to $T$, then $\widetilde{T}=T$.
 
-## Buckley-James trasnformation 
+## Notion of censoring unbiased transformation
+
+The method consists in transforming the observed data mentioned in
+@sec-notations : $O_i=(X_{i},A_{i},\Delta_{i},\tilde{T_{i}})$ into
+$(X_{i},A_{i},T_i^*)$ according to:
+
+$$
+\begin{aligned}
+T^* & =\Delta \phi_1(\mathbf{X},A, \tilde{T})+(1-\Delta) \phi_2(\mathbf{X},A, \tilde{T})
+\end{aligned}
+$$ {#eq-censtransf}
+
+with $\phi_1(.,.)=$ and $\phi_2(.,.)$ the transformation functions on
+respectively uncensored and censored observations.\
+
+
+### IPC transformation 
+
+The IPC transformation can be identified by the following formula:
+
+$$
+\begin{aligned}
+E\left[ T \wedge \tau \mid A, X \right] &= E\left[ \textcolor{blue}{E\left[ 1{\{T \wedge \tau < C\}} \mid A, X, T \right]} \cdot \frac{T \wedge \tau}{\textcolor{blue}{S_C(\widetilde{T} \wedge \tau \mid A, X)}} \middle| A, X \right]  \tiny\quad (1) \\ 
+& \tiny\text{(In color, the terms are equal)}  \\
+&= E\left[ E\left[ \Delta^\tau \mid A, X, T \right] \cdot \frac{T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X \right] \tiny\quad (2) \\
+&= E\left[ E\left[ \Delta^\tau \mid A, X, T \right] \cdot E\left[ \frac{T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X, T \right] \middle| A, X \right] \tiny\quad (3)\\
+&= E\left[ E\left[ \Delta^\tau \cdot \frac{T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X, T \right] \middle| A, X \right] \tiny\text{(By conditional censoring As.3)} \tiny\quad (4) \\
+&= E\left[ \frac{\Delta^\tau \cdot T \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X \right] \tiny\text{(Law of total probability)}  \tiny\quad (5)\\
+&= E\left[ \frac{\Delta^\tau \cdot \widetilde{T} \wedge \tau}{S_C(\widetilde{T} \wedge \tau \mid A, X)} \middle| A, X \right] \tiny (\Delta^\tau \cdot T\wedge\tau=\Delta^\tau \cdot \widetilde{T} \wedge \tau) \quad (6)\\
+    &= \mathbb{E}[T^*|A,X] \tiny\quad (7)
+\end{aligned}
+$$ {#eq-IPCW_transf}
+
+The term in color are equal because $E\left[ 1\{T \wedge \tau < C\} \mid A, X, T \right]=E\left[ 1\{\widetilde{T} \wedge \tau < C\} \mid A, X, T \right]= S_C(\widetilde{T} \wedge \tau \mid A, X)$. Also, the equality in the line 6 of @eq-IPCW_transf is easily proven by the fact that
+$\Delta^\tau$, the indicator of censoring, selects observations which
+declare the event:
+
+$$
+\begin{aligned}
+  (\widetilde{T} \wedge \tau)*\Delta^\tau &= (\widetilde{T} \wedge \tau)*I\{T \wedge \tau < C|A=0\} \\
+  &= min(T\wedge \tau,C) *I\{T \wedge \tau < C|A=0\} \\
+  &= (T \wedge \tau) * I\{T \wedge \tau < C|A=0\} 
+\end{aligned}
+$$ {#eq-T_to_tild}
+
+
+### Buckley-James transformation 
+
+Considering @eq-censtransf, this transformation can be expressed as: 
+
+$$
+\begin{aligned}
+T^* &= \begin{cases} 
+    \phi_1(X,A,\widetilde{T} \wedge \tau)=\tilde{T}\wedge \tau \quad \text{if} \quad \Delta^{\tau} = 1 \\
+    \phi_2(X,A,\widetilde{T} \wedge \tau)=\mathbb{E}[T\wedge \tau | X, A,  T\wedge \tau \geq \tilde{T}\wedge \tau ]& \text{else  } \Delta^{\tau} = 0
+    \end{cases}
+\end{aligned}
+$$
+
+$\mathbb{E}[T\wedge \tau | X, A,  T\wedge \tau \geq \tilde{T}\wedge \tau ]$ can be expressed as:
+
+$$
+\begin{aligned}
+Q_S(t|x,a)&=E[T\wedge \tau \mid X=x, A=a, T\wedge \tau> t]\\
+&=\frac{E[T\wedge \tau . I\{T\wedge \tau > t\}  \mid X=x, A=a]}{P(T\wedge \tau>t|X,A)} \quad \tiny\text{(by the law of conditional expectation)}\\
+&= \int_{-\infty}^{+\infty}{\frac{t. I\{T\wedge \tau > t\}.dF(T\wedge \tau|X,A)}{P(T\wedge \tau>t|X,A)}} \quad \tiny\text{(by def of Riemann–Stieltjes integral)}\\
+&= \frac{1}{P(T\wedge \tau>t|X,A)}\int_{t}^{+\infty}{t. dF(T\wedge \tau|X,A) }\\
+&= \frac{1}{S(T\wedge \tau|X,A)}\int_{t}^{+\infty}{t. dF(T\wedge \tau|X,A) }\\
+Q_{S}(t|x,a) &= \frac{1}{S(T\wedge \tau|X=x,A=a)}\int_{t}^{+\infty}{t. d(1-S(T\wedge \tau|X=x,A=a)) }\\
+\end{aligned}
+$$ 
+
+The Buckley-James transformation can be identified by the following formula:
 
 $$
 \begin{aligned}
