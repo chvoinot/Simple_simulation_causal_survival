@@ -46,7 +46,7 @@ draft:  true # set to false once the build is running
 published:  false # will be set to true once accepted
 format:  
   computo-html:  default
-  computo-pdf:  default
+  computo-pdf: default
 editor:  
   markdown:  
     wrap:  72
@@ -1291,6 +1291,7 @@ estimation of the conditional restricted mean survival time.
 
 
 An illustration of G-formula computation is displayed below:
+
 ![Illustration of the G-formula Process for calculating $\theta_{RMST}$](G_formula.png){#fig-gf}
 
 $S_a(t, x)$ can be estimated through parametric (e.g., Weibull), semi-parametric (e.g., Cox), or non-parametric models (e.g., survival random forests). Two methods can be used:
@@ -1898,7 +1899,7 @@ inference [@1994_robinsAIPW; @1995_robinsAIPW; @DML].
 
 ##### Properties of AIPTW estimator {#sec-AIPTWproperties}
 
-Semi-parametric estimators, like AIPTW, are doubly robust, meaning that AIPTW remains consistent if either the treatment model $\hat{F}(X,A)$ or the outcome model $\hat{e}(X)$ is correctly specified. This robustness can be explained by the decomposition of $\hat{\psi} - \psi$
+Semi-parametric estimators, like AIPTW, are doubly robust, meaning that AIPTW remains consistent if either the treatment model $\hat{F}(X,A)=E[T \wedge \tau |X]$ or the outcome model $\hat{e}(X)$ is correctly specified. This robustness can be explained by the decomposition of $\hat{\psi} - \psi$
 
 $$
 \begin{aligned}
@@ -2357,7 +2358,7 @@ The following function is based on the package
 to compute the RMST under @eq-randomization (random treatment
 assignment) and @eq-independantcensoring (independent censoring). 
 It performs two-sample comparisons using the restricted mean survival time (RMST) as a summary
-measure of the unadjusted survival time distribution presented in @sec-unadjusted_KM.
+measure of the unadjusted survival time distribution presented in @sec-unadjusted_KM. The arguments for this function are the observed time to event, status, arm (treatment in our case) and $\tau$.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 library(survRM2)
@@ -2372,7 +2373,7 @@ RMST_survRM2 <- function(data, tau) {
 
 The RISCA package [@Foucher_Le_Borgne_Chatton_2019] enables the computation of $\theta_{RMST}$ through various methods: unadjusted survival functions (as discussed in @sec-unadjusted_KM), $S_{IPTW}$-adjusted survival functions (from @sec-est_IPTWKM), and g-computation, a maximum-likelihood estimator based on the g-formula (from @sec-gformula) [@Chatton_22]. For adjusted IPTW survival functions, the weights must be calculated prior to using the relevant function.
 
-- The rmst() function computes the RMST for a specified time horizon $\tau$ based on a survival function, which must be pre-calculated. To match @eq-unadjKM, the survival function is stratified by treatment group, and the RMST is computed for both treated and control groups, followed by calculating $\theta_{RMST}$ as the difference.
+- The rmst() function computes the RMST for a specified time horizon $\tau$ based on a survival function, which must be pre-calculated. To match @eq-unadjKM, the survival function is stratified by treatment group, and the RMST is computed for both treated and control groups, followed by calculating $\theta_{RMST}$ as the difference. The argument type in this function informs if the survival curve is a step-funtion ("s") or a continous function ("l").
 
 - The ipw.survival() function estimates confounder-adjusted survival curves by weighting individual contributions based on the inverse probability of being in the treatment group (as in @eq-IPTWKM). This function also supports other weights, such as IPTW-IPCW (as in @eq-IPTW_IPCWKM), provided the propensity scores are computed beforehand.
 
@@ -2462,6 +2463,7 @@ RISCA_gf <- function(data,
   
   # Define the outcome formula for the Cox model
   outcome <- paste(c('Surv(', "T_obs", ',', "status", ')'), collapse = "")
+  # Single learner : the treatment arm is a predictor
   formula <- as.formula(paste(outcome, paste(c(X.names.outcome, 'A'), 
                                              collapse = " + "), sep = " ~ "))
   
@@ -3065,12 +3067,11 @@ are generated in the following way:
 
 - $X \sim \mathcal{N}\left(\mu=[1,1,-1,1,-2,-5]^{\top}, \Sigma=I_6\right)$.
 
-- T is generated from a Poisson distribution with mean $X_2+X_3+max(0;X_1-0,3)A$.
+- T is generated from an exponential distribution with mean $X_1^2 + X_2^2 + X_1 * X_2 + X_1 * X_3 + X_2 * X_4$.
 
-- C from a Poisson distribution with mean $1 + log(1 + exp(X_3))$. 
+- C from an exponential distribution with mean $|2*X_1^2 - X_2^2 + 1.5*X_1 * X_3 - X_2 * X_4|$
 
-
-- The propensity score is $e(x) = \frac{1}{1+exp(-\sum_{j=1}^{6} X_j  )}$.
+- The propensity score is $e(x) = \frac{1}{1+exp(0.1.X_1-0.1.X_2+0.2.X_3-0.1X_4)}$.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # DGP for mis-specification 
@@ -3127,8 +3128,8 @@ simulate_data_mis <- function(n,
   C <- -log(epsilon) / censoring_lambda
   C <- pmax(C, 1e-8) 
   
-  # T(1) = T(0) + 10
-  T1 <- T0 + 0.1
+  # T(1) = T(0) + 1
+  T1 <- T0 + 1
   
   # True survival time
   T_true <- A * T1 + (1 - A) * T0
@@ -3152,27 +3153,7 @@ simulate_data_mis <- function(n,
 ```
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-mis <- simulate_data_mis(n=1000,tau=0.45)
-summary(mis)
-
-
-group_0 <- mis %>%
-  dplyr:: filter(A == 0)%>%
-  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status_tau,T_tild=T_obs)
-
-group_1 <- mis %>%
-  dplyr:: filter(A == 1)%>%
-  dplyr:: select(X1,X2,X3,X4,C,T1,T0,status_tau,T_tild=T_obs)
-
-# Summary statistics
-summary_group_0 <- summary(group_0)
-summary_group_1 <- summary(group_1)
-
-print(paste("Descriptive statistics for group A=0:  ",nrow(group_0)))
-print(summary_group_0)
-
-print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
-print(summary_group_1)
+mis <- simulate_data_mis(n=2000,tau=0.45)
 ```
 
 
@@ -3266,7 +3247,6 @@ print(summary_group_0)
 print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
 print(summary_group_1)
 
-
 ```
 
 The covariates between the two groups of treatment are unbalanced because of dependent treatment assignation. The mean of $X1$, $X2$, $X3$ and $X4$ is bigger in the control group than in the treated group. The censoring times have the same distribution (independent censoring). There are more censored observation in the
@@ -3310,7 +3290,7 @@ unbalanced. In particular, the mean of $X1$, $X2$, $X3$ and $X4$ is bigger in th
 
 ### Observational study with nonlinear relationships and conditionally independent censoring (Non parametric scenario)
 
-The summary of the generated (observed and unobserved) data set complex observational study (conditionally independent censoring) stratified by treatment is displayed below. 
+The summary of the generated (observed and unobserved) data set observational study with nonlinear relationships and conditionally independent censoring, stratified by treatment is displayed below. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Stratification by treatment 
@@ -3332,13 +3312,42 @@ print(summary_group_0)
 print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
 print(summary_group_1)
 
+```
 
+The observations are the same than the previous scenario: The covariates and the censoring time between the two groups are unbalanced. 
+
+To be able to evaluate the estimators, we need to know the true $\theta_{RMST}$ at time $\tau$. 
+
+### Observational study with interaction and conditionally independent censoring (Non parametric scenario 2)
+
+The summary of the generated (observed and unobserved) data set complex observational study (conditionally independent censoring) stratified by treatment is displayed below. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Stratification by treatment 
+group_0 <- mis %>%
+  dplyr:: filter(A == 0)%>%
+  dplyr:: select(X1,X2,X3,C,T1,T0,status,T_obs,status_tau,e)
+
+group_1 <- mis %>%
+  dplyr:: filter(A == 1)%>%
+  dplyr:: select(X1,X2,X3,C,T1,T0,status,T_obs,status_tau,e)
+
+# Summary statistics
+summary_group_0 <- summary(group_0)
+summary_group_1 <- summary(group_1)
+
+print(paste("Descriptive statistics for group A=0:  ",nrow(group_0)))
+print(summary_group_0)
+
+print(paste("Descriptive statistics for group A=1:  ",nrow(group_1)))
+print(summary_group_1)
 
 ```
 
 The observations are the same than the previous scenario: The covariates and the censoring time between the two groups are unbalanced. 
 
 To be able to evaluate the estimators, we need to know the true $\theta_{RMST}$ at time $\tau$. 
+
 
 ### True value of RMST 
 
@@ -3385,8 +3394,6 @@ plot_ground_truth <- function(data, vec_tau, tau, ylim, title_text) {
   abline(v = tau, col = "red", lty = 2)
   abline(h = truth[vec_tau == tau], col = "red", lty = 2)
   title(title_text, cex.main = 0.9)  # Adjusting title text size
-  
-  return(truth[vec_tau == tau])
 }
 
 # Simulation for scenario RCT1
@@ -3465,7 +3472,7 @@ plot_ground_truth(data_mis,
 
 truth_complex_mis <- ground_truth(data_mis, tau = tau_mis)
 
-print(paste0("The ground truth for mis scenario at time 0.45 is ", round(truth_complex_mis)))
+print(paste0("The ground truth for mis scenario at time 0.45 is ", round(truth_complex_mis,2)))
 ```
 
 The following section will apply the previous estimator on the presented simulation to evaluate their performances. 
@@ -3507,76 +3514,6 @@ all_estimates <- function(data, sample.size, tau,
     "nuisance" = character()
   )
 
-  # # Case of mis-specification
-  # if (mis_specification == "treatment") {
-  #   
-  #   # The covariates for model estimating propensity are modified
-  #   data <- data %>%
-  #     mutate(across(all_of(X.names.propensity), ~ .^2, .names = "{.col}_squared"))
-  #   
-  #   X.names.propensity <- paste0(X.names.propensity, "_squared")
-  #   X.names <- X.names.propensity
-  # }
-  # if (mis_specification == "outcome") {
-  #   # The covariates for model estimating survival are modified
-  #   data <- data %>%
-  #     mutate(across(all_of(X.names.outcome), ~ .^2, .names = "{.col}_squared"))
-  #   
-  #   X.names.outcome <- paste0(X.names.outcome, "_squared")
-  #   X.names <- X.names.outcome
-  # }
-  # 
-  # if (mis_specification == "censoring") {
-  #   # The covariates for model estimating censoring are modified
-  #   data <- data %>%
-  #     mutate(across(all_of(X.names.censoring), ~ .^2, .names = "{.col}_squared"))
-  #   
-  #   X.names.censoring <- paste0(X.names.censoring, "_squared")
-  #   X.names <- X.names.censoring
-  # }
-  # if (mis_specification == "outcome + censoring") {
-  #   # The covariates for model estimating survival and censoring are modified
-  #   data <- data %>%
-  #     mutate(across(all_of(X.names.censoring), ~ .^2, .names = "{.col}_squared"))%>%
-  #     mutate(across(all_of(X.names.outcome), ~ .^2, .names = "{.col}_squared"))
-  #   
-  #   X.names.censoring <- paste0(X.names.censoring, "_squared")
-  #   X.names.outcome <- paste0(X.names.outcome, "_squared")
-  #   X.names <- X.names.censoring
-  # }
-  # if (mis_specification == "outcome + treatment") {
-  #   # The covariates for model estimating survival and treatment are modified
-  #   data <- data %>%
-  #     mutate(across(all_of(X.names.outcome), ~ .^2, .names = "{.col}_squared"))%>%
-  #     mutate(across(all_of(X.names.propensity), ~ .^2, .names = "{.col}_squared"))
-  #   
-  #   X.names.propensity <- paste0(X.names.propensity, "_squared")
-  #   X.names.outcome <- paste0(X.names.outcome, "_squared")
-  #   X.names <- X.names.outcome
-  # }
-  # if (mis_specification == "censoring + treatment") {
-  #   # The covariates for model estimating censoring and treatment are modified
-  #   data <- data %>%
-  #     mutate(across(all_of(X.names.censoring), ~ .^2, .names = "{.col}_squared"))%>%
-  #     mutate(across(all_of(X.names.propensity), ~ .^2, .names = "{.col}_squared"))
-  #   
-  #   X.names.propensity <- paste0(X.names.propensity, "_squared")
-  #   X.names.censoring <- paste0(X.names.censoring, "_squared")
-  #   X.names <- X.names.censoring
-  # }
-  # if (mis_specification == "all") {
-  #   # The covariates for all nuisance models are modified
-  #   union_12 <- union(X.names.outcome,X.names.propensity)
-  #   X.names <- union(union_12, X.names.censoring)
-  #   
-  #   data <- data %>%
-  #     mutate(across(all_of(X.names), ~ .^2, .names = "{.col}_squared"))
-  #     
-  #   X.names.propensity <- paste0(X.names.propensity, "_squared")
-  #   X.names.outcome <- paste0(X.names.outcome, "_squared")
-  #   X.names.censoring <- paste0(X.names.censoring, "_squared")
-  #   }
-    
 
   ## Package estimators
   if (estimator == "all") {
@@ -4130,7 +4067,6 @@ load("simulation_complex_para_csf_aiptwaipcw.RData")
 ```
 
 
-
 The results are presented in boxplot for each sample size. The true value of $\theta_{RMST}$ is presented as red dotted line for $\tau=25$. RCT scenario 1 results are displayed bellow:
 
 
@@ -4194,27 +4130,15 @@ simulation_graph_rct1
 
 The boxplot above shows the distribution of the $\theta_{RMST}$ estimates for the RCT scenario 1 (with independent censoring). 
 
-In the context of correct specification of the nuisance parameter in using parametric and 
-semi-parametric models, for the simulation of RCT and independent censoring , all the estimators
-converge except the Naive estimator and the G-formula estimator from RISCA package.
-Naive estimator is always biased because it does not take
-into account the censored observation at all in removing them. It applies then directly the $\theta_{RMST}$ formula on the uncensored observation. 
-The bias of G-formula from RISCA package and our G-formula S-learner is due to the violation of proportional hazard assumption as the treatment effect is additive ($T(1)=T(0)+10$). 
+In the case of correct nuisance parameter specification using parametric and semi-parametric models, all estimators converge except for the Naive and G-formula estimators from the RISCA package. The Naive estimator is consistently biased as it excludes censored observations, directly applying the $\theta_{RMST}$ formula on uncensored data. The bias in the G-formula (RISCA) and G-formula S-learner is due to a violation of the proportional hazards assumption, as the treatment effect is additive ($T(1) = T(0) + 10$).
 
-When examining the variance of the estimators, the G-formula estimator consistently shows the lowest variance. The other estimators also maintain similarly low variances, even with small sample sizes, except for the IPTW-BJ estimator, which exhibits a significantly higher variance in small sample sizes. This increased variance can be attributed to the sensitivity of inverse probability weighting when applied directly to small sample size data without augmented correction.
-Among the convergent estimators AIPCW-AIPTW estimator, causal_survival_forest() from grf and G-formula (in using Two Learners)  are the most efficient
-with a small sample size. They are very close to the true $\theta_{RMST}$ value even with 500 observations. 
+Regarding variance, the G-formula exhibits the lowest, with other estimators maintaining low variance except for the IPTW-BJ estimator, which shows significantly higher variance in small samples. This is likely due to the sensitivity of inverse probability weighting in small samples without correction. Among the converging estimators, AIPCW-AIPTW, Causal Survival Forest from the grf package, and G-formula (Two Learners) are the most efficient, achieving convergence even with 500 observations.
 
-Surprisingly, Causal Survival Forest in this scenario converge as fast as AIPTW-AIPCW estimator. Generally, estimating linear models in using flexible regressions take more time to converge than a simple parametric estimation but this convergence can be explained due to the simple dataset design thanks to RCTs. 
-Even if all these estimators are convergent, in the context of RCT and independent censoring, estimators with weights (such as IPTW KM, IPCW KM, IPTW-IPCW KM, IPTW-BJ or AIPTW-AIPCW) and also Causal Survival Forest don't really make sense to use. Indeed, they don't
-improve convergence, implement unnecessary weights and increase the computational time.
-Thus, in considering the speed of convergence as well as the
-computational time and difficulty of implementation in this simple RCT scenario, 
-G-formula (T-learners) seems to be the most suitable with the smaller
-variance even at small sample size. 
+Surprisingly, the Causal Survival Forest converges as quickly as the AIPTW-AIPCW estimator. This is likely due to the simplicity of the RCT design. However, despite convergence, the use of weighted estimators (IPTW KM, IPCW KM, IPTW-IPCW KM, IPTW-BJ, and AIPTW-AIPCW) or the Causal Survival Forest is unnecessary in this RCT and independent censoring scenario. These methods do not improve convergence and increase computational time.
 
+Considering both convergence speed and computational complexity, the G-formula (T-learner) is the most suitable estimator, offering low variance even in small sample sizes.
 
-In the exact same way, the estimations in the context of RCT with conditionally independent censoring is displayed below. The red dashed line represents the true $\theta_{RMST}$ for $\tau=25$.
+The results for the RCT with conditionally independent censoring are shown below, with the red dashed line indicating the true $\theta_{RMST}$ for $\tau = 25$.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 simulation_rct2$sample.size <- as.character(simulation_rct2$sample.size)
@@ -4222,7 +4146,6 @@ simulation_rct2$sample.size <- as.character(simulation_rct2$sample.size)
 simulation_rct2$sample.size <- as.numeric(simulation_rct2$sample.size)
 
 simulation_rct2 <- rbind(simulation_rct2,simulation_rct2_ipcw)
-
 
 # Update the theme to center the plot title
 theme_update(plot.title = element_text(hjust = 0.5))
@@ -4273,23 +4196,16 @@ simulation_graph_rct2
 
 
 
-In considering the simulation of RCT and conditionally independent censoring, exactly as before, the naive estimator is always biased.
-As expected, the unadjusted Kaplan Meier (KM) and its equivalent from SurvRM2 package, the adjusted estimator for treatment Kaplan Meier (IPTW KM)
-and its equivalent from RISCA package are always biased also. These estimators do not correct for the dependent censoring. 
+In the RCT simulation with conditionally independent censoring, as before, the Naive estimator remains biased. Similarly, both the unadjusted Kaplan-Meier (KM) and its SurvRM2 equivalent, as well as the treatment-adjusted IPTW KM and its RISCA equivalent, are biased due to their failure to account for dependent censoring.
 
-Surprisingly, the IPCW Kaplan-Meier and IPTW-IPCW Kaplan-Meier estimators appear slightly biased until 4,000 observations. This bias can be attributed to the simulation settings involving conditionally independent censoring, where the censoring rate was exaggerated to nearly 70% in the treatment group and 50% in the control group. Although the positivity of censoring is maintained, the probability of censoring in some sub-groups can be very close to 0 or 1. Additionally, the IPCW correction uniquely weights uncensored observations, which, in our case, accounts for only about 30% of the data. This, combined with the instability of weighting (or double-weighting for IPTW-IPCW), likely explains the difficulty of the IPTW-IPCW Kaplan-Meier and IPCW Kaplan-Meier estimators in converging with finite sample size. Additionally, it can explained also the high variability of this estimator. The estimators using Buckley-James transformation for censoring only (BJ estimator) and using Buckley-James with treatment correction (IPTW-BJ) are converging faster than those using IPC transformation with a better variance for BJ estimator. Both of them are unbiased even at 500 observations. 
+Surprisingly, IPCW Kaplan-Meier and IPTW-IPCW Kaplan-Meier estimators exhibit slight bias up to 4,000 observations. This bias stems from the simulation's conditionally independent censoring mechanism, where censoring rates reached nearly 70% in the treatment group and 50% in the control group. Despite maintaining censoring positivity, some subgroups faced near-extreme censoring probabilities (close to 0 or 1). The IPCW correction applies only to uncensored data, representing just 30% of observations, and the instability of weighting—especially double-weighting for IPTW-IPCW—explains their slower convergence and higher variability.
 
-In the exact same way than RCT with independent censoring, G-formula (S-learner) and its equivalent from RISCA are biased. 
-G-formula (T-learners) plug-in estimator, Causal Survival Forest and AIPCW-AIPTW demonstrate high efficiency
-even with small sample sizes. 
-The estimator with the lowest variability is the G-formula (T-learners) and the Causal Survival Forest. 
-Overall, the variability of all the estimators is greater than in the context of independent censoring.
+In contrast, the Buckley-James estimators (BJ) and IPTW-BJ, which address censoring using the Buckley-James transformation, converge faster and are unbiased even with as few as 500 observations. The BJ estimator also demonstrates better variance than IPCW methods.
 
-However, exactly than RCT with independent censoring it seems excessive to use
-AIPCW-AIPTW which includes 3 nuisances parameters or Causal Survival Forest which uses flexible regressions 
-to compute $\theta_{RMST}$ of a RCT with conditionally independent censoring. Then, in this context of good specification of nuisance model in RCT, G-formula (T-learners) is the estimator to use. 
+As with RCTs under independent censoring, G-formula (S-learner) and its RISCA equivalent remain biased. However, the G-formula (T-learners), Causal Survival Forest, and AIPCW-AIPTW estimators show high efficiency, even in small samples, with G-formula (T-learners) and Causal Survival Forest displaying the lowest variability. Notably, all estimators exhibit higher variability compared to the independent censoring scenario.
+
+While AIPCW-AIPTW and Causal Survival Forest perform well, they seem excessive in the context of RCT with conditionally independent censoring, as they involve complex nuisance parameters and flexible regressions. Therefore, when nuisance models are well-specified in RCTs, the G-formula (T-learners) remains the most suitable estimator.
  
-
 The boxplot below shows the distribution of the $\theta_{RMST}$ estimates for the
 Observational study with independent censoring. The red dashed line represents the true $\theta_{RMST}$ for
 $\tau=25$.
@@ -4348,11 +4264,13 @@ simulation_graph_obs1 <- simulation_obs1 %>%
 simulation_graph_obs1
 ```
 
+In the simulation of an observational study with independent censoring, confounding bias is introduced, setting it apart from RCT simulations. As expected, estimators that fail to adjust for this bias, such as unadjusted Kaplan-Meier, IPCW Kaplan-Meier, and their equivalents, are biased. However, estimators like IPTW Kaplan-Meier, IPTW-IPCW Kaplan-Meier, IPTW-BJ, G-formula (T-learners), and AIPCW-AIPTW converge successfully.
 
-In the simulation of an observational study with independent censoring, the key difference compared to RCT simulation is the introduction of confounding bias. As a result, estimators that do not account for this bias, such as unadjusted Kaplan-Meier and IPCW Kaplan-Meier, along with their equivalents, exhibit the expected bias. In contrast, estimators like IPTW Kaplan-Meier, IPTW-IPCW Kaplan-Meier, IPTW-BJ, G-formula (T-learners), and AIPCW-AIPTW successfully converge. 
-However, the IPTW-BJ estimator displays very high variability, likely due to the direct inverse probability weighting of the propensity score as we focus on observational study. The nuisance model of propensity score can struggle to converge at small sample size and predict probability near 0 or 1. The IPTW-IPCW Kaplan-Meier exibits also a lot of outliers. As before, the double-weighting is known to cause great instability due to the potential product of extrem weighting. The global variability is still less than IPTW-BJ wich has only one weighting correction. 
+The IPTW-BJ estimator shows high variability, likely due to inverse probability weighting in observational settings. With small sample sizes, the propensity score model struggles to converge, especially when predicting near-extreme probabilities (close to 0 or 1). IPTW-IPCW Kaplan-Meier also has many outliers, as double-weighting amplifies instability due to extreme weights. Despite this, its overall variability is lower than IPTW-BJ, which applies a single weighting correction.
 
-The Causal Survival Forest from the grf package appears biased, likely due to the introduction of confounding bias, which adds complexity in the data, as well as the linear nature of the simulation. Thanks to the results with 8,000 observations of the Causal Survival Forest, we can see that it tends to converge asymptotically. In this context, the top-performing estimators are AIPCW-AIPTW, which converges the fastest (from 500 observations), and the G-formula, which consistently maintains the lowest variance over time and converges from 1,000 observations. The choice between these two estimators can be decided by the confidence in convergence of the nuisance models. While there is great confidence in the specification of outcome model, G-formula can be applied. Otherwise, AIPTW-AIPCW can be used. 
+The Causal Survival Forest from the grf package appears biased, likely due to the presence of confounding and the linear nature of the simulation. With larger samples (8,000 observations), the forest tends to converge asymptotically. The top-performing estimators in this scenario are AIPCW-AIPTW, which converges the fastest (from 500 observations), and G-formula (T-learners), which maintains the lowest variance and converges from 1,000 observations.
+
+The choice between AIPCW-AIPTW and G-formula depends on the confidence in the nuisance models. If the outcome model is well-specified, G-formula is preferred; otherwise, AIPCW-AIPTW offers a more robust alternative.
 
 
 The boxplot below shows the distribution of the $\theta_{RMST}$ estimates for the
@@ -4411,18 +4329,17 @@ simulation_graph_obs2
 ```
 
 
-In the simulation of observational study with conditionally independent censoring, all
-estimators which do not consider correction for conditionally independent censoring and for
-confounding bias such as KM, IPCW KM, IPTW KM and their equivalent are biased. 
-Contrary to the exposed properties, IPTW-IPCW Kaplan-Meier and IPTW-BJ estimators are biased even for 4,000
-observations.
-As exposed previously, in the conditionally independent censoring simulation, in addition to conditionally independent censoring, the censoring rate was exaggerated to nearly 80% in the treatment group and 50% in the control group and IPCW considers only uncensored observation. Added to this, the complexity of the data set due to confounding bias and conditionally independent censoring, the nuisance parameters for IPTW-IPCW Kaplan-Meier struggle to converge even if nuisance models are well specified. The bias of IPTW-BJ estimator can be explained, in the same way than before, by the instability of the direct inverse probability weighting on the estimated complete data. This estimator is known to be unstable like IPTW-IPCW Kaplan-Meier. 
+Here’s a refined version of your text:
 
-AIPTW-AIPCW estimator is fluctuating around the true value with slight bias but appears to converge at 8,000 observations. This can be explained by the non negligeable number of nuisance models to estimate in a complex setting.
-Causal Survival Forest seems to slowly converge to the true $\theta_{RMST}$ but is still clearly biased even at 8,000 observations. This estimator exhibit its non-parameteric convergence rate in this complex context.  
-G-formula single learner and its equivalent from RISCA seems to have a very slight bias compared to the previous simulation. The proportional hazard is still violated but the bias is less important. It would seem that conditionally independent censoring makes it easier for the Cox model, which adjusts for the covariates and the treatment, to converge even if the treatment does not satisfy the proportional hazard hypothesis. This also clearly illustrates that the bias induced by the violation on the nuisance outcome parameter can vary from one to two.  
-Once again, the top-performing estimator in this context is G-formula (T-learners), which converge
-with lower variances compared to others.
+In the simulation of an observational study with conditionally independent censoring, estimators that do not account for both censoring and confounding bias, such as KM, IPCW KM, IPTW KM, and their equivalents, are biased. Notably, the IPTW-IPCW Kaplan-Meier and IPTW-BJ estimators remain biased, even with 4,000 observations.
+
+As in prior scenarios, the high censoring rate—approximately 80% in the treatment group and 50% in the control group—complicates convergence, especially since IPCW only accounts for uncensored data. The combination of confounding bias and conditionally independent censoring makes it difficult for the nuisance models in IPTW-IPCW Kaplan-Meier to converge, even when correctly specified. Similarly, the bias in the IPTW-BJ estimator can be attributed to instability from inverse probability weighting on the estimated complete data, a challenge shared with IPTW-IPCW Kaplan-Meier.
+
+The AIPTW-AIPCW estimator fluctuates around the true value with a slight bias but shows convergence at around 8,000 observations, reflecting the complexity of estimating multiple nuisance parameters in this setting. Causal Survival Forest exhibits slow convergence but remains biased, even with 8,000 observations, highlighting its non-parametric convergence rate in this complex scenario.
+
+Interestingly, the G-formula (S-learner) and its equivalent from the RISCA package show a slight bias compared to previous simulations. While the proportional hazards assumption remains violated, the bias is less pronounced, suggesting that conditionally independent censoring might aid Cox model convergence, even when the treatment effect does not strictly adhere to proportional hazards. This demonstrates that bias from violating the outcome model's assumptions can vary depending on the context.
+
+Once again, the top-performing estimator is the G-formula (T-learners), which achieves convergence with lower variance compared to the other estimators.
 
 The boxplot below shows the distribution of the $\theta_{RMST}$ estimates for the observational study with conditionally independent censoring in the context of non-parametric simulation (@sec-nonparametric) when the nuisance models are estimated by Cox model and logistic regression. The red dashed line represents the true $\theta_{RMST}$ for $\tau=2$.
 
@@ -4479,13 +4396,13 @@ simulation_graph_complex_param
 ```
 
 
-In this non-parametric simulation, nuisance parameters are estimated using the Cox model and logistic regression, except for the grf function, which uses non-parametric causal survival forests. While the propensity score is well-captured by logistic regression, the conditional probability of survival is not adequately modeled by the Cox model due to the violation of the proportional hazards assumption. Similarly, the violation of proportional hazards affects the modeling of the conditional probability of being uncensored, though less severely.
+In this non-parametric simulation, most nuisance parameters are estimated using the Cox model and logistic regression, except for the grf function, which employs non-parametric causal survival forests. While the propensity score is well captured by logistic regression, the Cox model struggles to accurately estimate the conditional survival probability due to the violation of the proportional hazards assumption. This issue also affects the conditional censoring probability but to a lesser extent.
 
-The estimators expected to converge under observational and dependent censoring include IPTW-IPCW Kaplan-Meier, IPTW-BJ, G-formula, AIPTW-AIPCW, and Causal Survival Forest. IPTW-IPCW shows the largest bias among these, likely due to the Cox model's poor fit for conditional censoring, its instability, and sensitivity to misspecification. Surprisingly, both G-formula S-learner estimates $\theta_{RMST}$ well despite the violation of proportional hazards. As seen in prior simulations, the bias from this violation is unpredictable, but by chance, the S-learner aligns with the true value, unlike the G-formula T-learner, which has a larger bias.
+The estimators expected to converge under observational and dependent censoring include IPTW-IPCW Kaplan-Meier, IPTW-BJ, G-formula, AIPTW-AIPCW, and Causal Survival Forest. IPTW-IPCW shows the most bias, likely due to the instability of the Cox model in handling conditional censoring. Despite the proportional hazards violation, the G-formula S-learner performs well by chance, unlike the T-learner, which exhibits greater bias.
 
-IPTW-BJ converges quickly to the true $\theta_{RMST}$. As mentioned, IPTW is well-estimated by logistic regression, and the small bias from the Cox model's conditional survival estimate is mitigated by the Buckley-James transformation. This transformation introduces conditional survival for censored observations while retaining uncensored data for complete observations. The small proportion of censored data (35%) may explain this estimator’s convergence.
+IPTW-BJ quickly converges to the true $\theta_{RMST}$, benefiting from logistic regression's strong performance in estimating the propensity score and the Buckley-James transformation’s correction for censored data. With only 35% of data censored, this estimator converges effectively even with violation of proportional hazard.
 
-Given these results, it is unsurprising that AIPTW-AIPCW fails to converge, as only the propensity score is well-estimated. This is insufficient for the AIPTW-AIPCW estimator to converge. In this simulation, the only converging estimators are IPTW-BJ, due to specific conditions, and the Causal Survival Forest, which uses flexible regression for nuisance model estimation.
+Given the results, AIPTW-AIPCW fails to converge as accurately, since the well-estimated propensity score alone is insufficient. Overall, only IPTW-BJ and Causal Survival Forest manage to converge under these conditions, the latter benefiting from its flexible regression approach to nuisance estimation.
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -4545,25 +4462,13 @@ simulation_graph_complex_flexible <- simulation_complex_flexible %>%
 simulation_graph_complex_flexible
 ```
 
+This time, flexible models are used for all nuisance parameters. The simulation involves an observational study with conditionally independent censoring. As expected, estimators without corrections for confounding and censoring (Naive, KM, IPTW KM, IPCW KM, BJ, and their equivalents) remain biased. The IPTW-BJ estimator shows some bias but converges after 5,000 observations.
 
-In the complex setting, all nuisance models are computed using flexible models. This simulation refers to an observational study with conditionally independent censoring also. As expected, all the estimators without correction for conditionally independent censoring and confounding bias are biased. It concerns Naive, KM, IPTW KM, IPCW KM and BJ estimator and their equivalents. 
-The estimator IPTW-BJ has a small bias but tends to converge after 5,000 observations. 
-G-formula (T-learners), G-formula (S-learner) and Causal Survival Forest tend to converge after 5,000 observations. Causal Survival Forest has less bias than the others. In @Foster2011, 
-they introduce the estimator Virtual Twins (VT) which
-corresponds to our G-formula with survival random forest to estimate
-conditional survival probability. It has proved that this estimator lacks orthogonality
-properties [@DML]. Additionally, if ML algorithms are not from Donsker
-class or ML algorithms whose entropy increases with the size of the
-sample used, this estimator becomes predisposed to bias [@Vaart_1998].
-As a result, the asymptotic normality of VT is compromised. Also, the article
-@HTE_causal_survival_forests shows that VT has lower efficiency than
-causal survival forest which can be seen in our simulation.
-Then, G-formula seems not to be the most efficient estimator to use in
-non-parametric setting. Also, S-learner has better behavior than T-learners due to the fact that the learner is not stratified by treatment then it has more observations to learn the outcome model.
-In general, the finite sample bias of all the estimators can be explained by the convergence rate of non parametric model.
-AIPTW-AIPCW has the same behavior than in observational and conditionally independent censoring with parametric estimation of nuisance models, its finite sample properties are very good but it still has sort of fluctuation around the true value of ATE. Its variability is low and has few outliers. Even if it's fluctuating, the bias is low compared to the other estimators.
-The top-performing estimators in this context are IPTW-BJ asymptotically but AIPTW-AIPCW estimator in finite sample size, which converge sooner but tends to fluctuate.
+Both G-formula (T-learners and S-learners) and Causal Survival Forest converge after 5,000 observations, with Causal Survival Forest showing the least bias. As noted by @Foster2011, the Virtual Twins (VT) estimator (similar to G-formula with survival random forest) lacks orthogonality [@DML], which compromises its asymptotic properties and predisposes to bias [@Vaart_1998]. This is supported by @HTE_causal_survival_forests, showing VT's lower efficiency compared to causal survival forests, which is consistent with our findings. Thus, G-formula is not the most efficient estimator in non-parametric settings.
 
+The S-learner performs better than T-learners, as it uses more observations by not stratifying by treatment. The finite sample bias seen across estimators can be attributed to the slower convergence rates of non-parametric models.
+
+AIPTW-AIPCW continues to perform well, with low variability and few outliers, though it fluctuates slightly around the true ATE. Despite this, its bias is smaller compared to other estimators. In this context, IPTW-BJ performs best asymptotically, while AIPTW-AIPCW converges faster with finite samples, despite some fluctuations.
 
 ### Mis-specification of the nuisance parameters
 
@@ -4572,9 +4477,9 @@ First, we will introduce mis-specification for the treatment model only, for the
 The nuisance models are estimated with flexible model such as probability forest and survival forest. 
 
 ```{r eval=FALSE}
-n_sim <- 100
+n_sim <- 50
 tau <- 0.45
-simulation_mis <- compute_estimator(
+simulation_mis_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X1","X2","X3","X4"), 
   X.names.outcome = c("X1", "X2", "X3", "X4"),
@@ -4589,25 +4494,24 @@ simulation_mis <- compute_estimator(
   sample_size = c(500,1000,4000)
 )
 
-
- save(simulation_mis,file="simulation_mis.RData")
+save(simulation_mis_test,file="simulation_mis_test.RData")
 ```
 
 
 ```{r}
-load("simulation_mis.RData")
+load("simulation_mis_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis$sample.size <- factor(simulation_mis$sample.size, levels = sort(unique(simulation_mis$sample.size), decreasing = TRUE))
+simulation_mis_test$sample.size <- factor(simulation_mis_test$sample.size, levels = sort(unique(simulation_mis_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis$estimator <- factor(simulation_mis$estimator, levels = desired_order)
+simulation_mis_test$estimator <- factor(simulation_mis_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis <- simulation_mis %>%
+simulation_graph_mis <- simulation_mis_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("No mis-specification:  ")+
@@ -4623,15 +4527,15 @@ simulation_graph_mis <- simulation_mis %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.15,0.35))
 
 ```
 
 
 ```{r eval=FALSE}
-n_sim <- 100
+n_sim <- 50
 tau <- 0.45
-simulation_mis_mistreat <- compute_estimator(
+simulation_mis_mistreat_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X5"), 
   X.names.outcome = c("X1", "X2", "X3", "X4"),
@@ -4647,25 +4551,25 @@ simulation_mis_mistreat <- compute_estimator(
 )
 
 
-save(simulation_mis_mistreat,file="simulation_mis_mistreat.RData")
+save(simulation_mis_mistreat_test,file="simulation_mis_mistreat_test.RData")
 
 ```
 
 ```{r}
-load("simulation_mis_mistreat.RData")
+load("simulation_mis_mistreat_test.RData")
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis_mistreat$sample.size <- factor(simulation_mis_mistreat$sample.size, levels = sort(unique(simulation_mis_mistreat$sample.size), decreasing = TRUE))
+simulation_mis_mistreat_test$sample.size <- factor(simulation_mis_mistreat_test$sample.size, levels = sort(unique(simulation_mis_mistreat_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_mistreat$estimator <- factor(simulation_mis_mistreat$estimator, levels = desired_order)
+simulation_mis_mistreat_test$estimator <- factor(simulation_mis_mistreat_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis_mistreat <- simulation_mis_mistreat %>%
+simulation_graph_mis_mistreat <- simulation_mis_mistreat_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Mis-specification of treatment model:  ")+
@@ -4681,15 +4585,15 @@ simulation_graph_mis_mistreat <- simulation_mis_mistreat %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.15,0.35))
 
 ```
 
 
 ```{r eval=FALSE}
-n_sim <- 100
+n_sim <- 50
 tau <- 0.45
-simulation_mis_miscens <- compute_estimator(
+simulation_mis_miscens_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X1", "X2", "X3", "X4"), 
   X.names.outcome = c("X1", "X2", "X3", "X4"),
@@ -4706,24 +4610,24 @@ simulation_mis_miscens <- compute_estimator(
 
 
 
-save(simulation_mis_miscens,file="simulation_mis_miscens.RData")
+save(simulation_mis_miscens_test,file="simulation_mis_miscens_test.RData")
 ```
 
 ```{r}
-load("simulation_mis_miscens.RData")
+load("simulation_mis_miscens_test.RData")
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis_miscens$sample.size <- factor(simulation_mis_miscens$sample.size, levels = sort(unique(simulation_mis_miscens$sample.size), decreasing = TRUE))
+simulation_mis_miscens_test$sample.size <- factor(simulation_mis_miscens_test$sample.size, levels = sort(unique(simulation_mis_miscens_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_miscens$estimator <- factor(simulation_mis_miscens$estimator, levels = desired_order)
+simulation_mis_miscens_test$estimator <- factor(simulation_mis_miscens_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis_miscens <- simulation_mis_miscens %>%
+simulation_graph_mis_miscens <- simulation_mis_miscens_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Mis-specification of censoring model:  ")+
@@ -4739,15 +4643,15 @@ simulation_graph_mis_miscens <- simulation_mis_miscens %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.15,0.35))
 
 ```
 
 
 ```{r eval=FALSE}
-n_sim <- 100
+n_sim <- 50
 tau <- 0.45
-simulation_mis_misout <- compute_estimator(
+simulation_mis_misout_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X1", "X2", "X3", "X4"), 
   X.names.outcome = c("X5"),
@@ -4763,24 +4667,23 @@ simulation_mis_misout <- compute_estimator(
 )
 
 
-
-save(simulation_mis_misout,file="simulation_mis_misout.RData")
+save(simulation_mis_misout_test,file="simulation_mis_misout_test.RData")
 ```
 
 ```{r}
-load("simulation_mis_misout.RData")
+load("simulation_mis_misout_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis_misout$sample.size <- factor(simulation_mis_misout$sample.size, levels = sort(unique(simulation_mis_misout$sample.size), decreasing = TRUE))
+simulation_mis_misout_test$sample.size <- factor(simulation_mis_misout_test$sample.size, levels = sort(unique(simulation_mis_misout_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_misout$estimator <- factor(simulation_mis_misout$estimator, levels = desired_order)
+simulation_mis_misout_test$estimator <- factor(simulation_mis_misout_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis_misout <- simulation_mis_misout %>%
+simulation_graph_mis_misout <- simulation_mis_misout_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Mis-specification of outcome model:  ")+
@@ -4796,7 +4699,7 @@ simulation_graph_mis_misout <- simulation_mis_misout %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.15,0.35))
 
 ```
 
@@ -4806,18 +4709,19 @@ grid.arrange(simulation_graph_mis, simulation_graph_mis_miscens, simulation_grap
 
 We refer to an observational and dependent censoring study, thus the expected consistent estimators are IPTW-IPCW Kaplan-Meier, IPTW-BJ estimator, G-formula, AIPTW-AIPCW and Causal survival forest. 
 
-In globality, when one nuisance model is mis-specified, the consistent estimators are AIPTW-AIPCW and causal survival forest. In all these setup, the two estimators are convergent at 4,000 observations. 
+In globality, when one nuisance model is mis-specified, as expected the consistent estimators are AIPTW-AIPCW and causal survival forest. In all these setup, the two estimators are convergent at 4,000 observations. 
 
-When the censoring model is mis-specified, the estimators with censoring correction are biased. **The variation of G-formula estimator and other compared to the simulation without mis-specification can be due to the low repetitions**. 
+When the censoring model is mis-specified, the estimators with censoring correction are still biased as they already struggle to converge without mis-specification. The other estimators still have the same behavior than without mis-specification.
 
-G-formula and IPTW-BJ estimator seems to converge when the mis-specification of the outcome model is present but in comparing it to the simulation without mis-specification, the results is different. It shows that it goes near the true value this time but only by chance. 
-As expected, when the treatment model is mis-specified, IPTW-BJ estimator is biased. 
+When the outcome model is mis-specified, IPTW-BJ estimator becomes slightly biased. This estimator is not strongly impacted because it uses the the mis-specified conditional survival function for estimating only the outcome of censored observation which represents 45% of observations. Also, the conditional survival is not strongly impacted by this mis-specification. 
+
+As expected, when the treatment model is mis-specified, IPTW-BJ estimator is biased.
 
 
 ```{r eval=FALSE}
-n_sim <- 10
+n_sim <- 50
 tau <- 0.45
-simulation_mis_mistreat_out <- compute_estimator(
+simulation_mis_mistreat_out_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X5"), 
   X.names.outcome = c("X6"),
@@ -4832,27 +4736,24 @@ simulation_mis_mistreat_out <- compute_estimator(
   sample_size = 4000
 )
 
-
-
-save(simulation_mis_mistreat_out,file="simulation_mis_mistreat_out.RData")
-
+save(simulation_mis_mistreat_out_test,file="simulation_mis_mistreat_out_test.RData")
 ```
 
 ```{r}
-load("simulation_mis_mistreat_out.RData")
+load("simulation_mis_mistreat_out_test.RData")
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis_mistreat_out$sample.size <- factor(simulation_mis_mistreat_out$sample.size, levels = sort(unique(simulation_mis_mistreat_out$sample.size), decreasing = TRUE))
+simulation_mis_mistreat_out_test$sample.size <- factor(simulation_mis_mistreat_out_test$sample.size, levels = sort(unique(simulation_mis_mistreat_out_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_mistreat_out$estimator <- factor(simulation_mis_mistreat_out$estimator, levels = desired_order)
+simulation_mis_mistreat_out_test$estimator <- factor(simulation_mis_mistreat_out_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis_mistreat_out <- simulation_mis_mistreat_out %>%
+simulation_graph_mis_mistreat_out <- simulation_mis_mistreat_out_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Mis-specification of outcome and treatment model:  ")+
@@ -4868,15 +4769,15 @@ simulation_graph_mis_mistreat_out <- simulation_mis_mistreat_out %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.2,0.4))
 
 ```
 
 
 ```{r eval=FALSE}
-n_sim <- 10
+n_sim <- 50
 tau <- 0.45
-simulation_mis_miscens_out <- compute_estimator(
+simulation_mis_miscens_out_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X1", "X2", "X3", "X4"), 
   X.names.outcome = c( "X5"),
@@ -4892,25 +4793,26 @@ simulation_mis_miscens_out <- compute_estimator(
 )
 
 
+# attention à changer
+save(simulation_mis_miscens_out_test,file="simulation_mis_miscens_out_test.RData")
 
-save(simulation_mis_miscens_out,file="simulation_mis_miscens_out.RData")
 ```
 
 ```{r}
-load("simulation_mis_miscens_out.RData")
+load("simulation_mis_miscens_out_test.RData")
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis_miscens_out$sample.size <- factor(simulation_mis_miscens_out$sample.size, levels = sort(unique(simulation_mis_miscens_out$sample.size), decreasing = TRUE))
+simulation_mis_miscens_out_test$sample.size <- factor(simulation_mis_miscens_out_test$sample.size, levels = sort(unique(simulation_mis_miscens_out_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_miscens_out$estimator <- factor(simulation_mis_miscens_out$estimator, levels = desired_order)
+simulation_mis_miscens_out_test$estimator <- factor(simulation_mis_miscens_out_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis_miscens_out <- simulation_mis_miscens_out %>%
+simulation_graph_mis_miscens_out <- simulation_mis_miscens_out_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Mis-specification of censoring and outcome model:  ")+
@@ -4926,15 +4828,15 @@ simulation_graph_mis_miscens_out <- simulation_mis_miscens_out %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.2,0.4))
 
 ```
 
 
 ```{r eval=FALSE}
-n_sim <- 10
+n_sim <- 50
 tau <- 0.45
-simulation_mis_mistreat_cens <- compute_estimator(
+simulation_mis_mistreat_cens_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X5"), 
   X.names.outcome = c("X1", "X2", "X3", "X4"),
@@ -4951,23 +4853,23 @@ simulation_mis_mistreat_cens <- compute_estimator(
 
 
 
-save(simulation_mis_mistreat_cens,file="simulation_mis_mistreat_cens.RData")
+save(simulation_mis_mistreat_cens_test,file="simulation_mis_mistreat_cens_test.RData")
 ```
 
 ```{r}
-load("simulation_mis_mistreat_cens.RData")
+load("simulation_mis_mistreat_cens_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis_mistreat_cens$sample.size <- factor(simulation_mis_mistreat_cens$sample.size, levels = sort(unique(simulation_mis_mistreat_cens$sample.size), decreasing = TRUE))
+simulation_mis_mistreat_cens_test$sample.size <- factor(simulation_mis_mistreat_cens_test$sample.size, levels = sort(unique(simulation_mis_mistreat_cens_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_mistreat_cens$estimator <- factor(simulation_mis_mistreat_cens$estimator, levels = desired_order)
+simulation_mis_mistreat_cens_test$estimator <- factor(simulation_mis_mistreat_cens_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis_mistreat_cens <- simulation_mis_mistreat_cens %>%
+simulation_graph_mis_mistreat_cens <- simulation_mis_mistreat_cens_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Mis-specification of censoring and treatment model:  ")+
@@ -4983,15 +4885,15 @@ simulation_graph_mis_mistreat_cens <- simulation_mis_mistreat_cens %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.2,0.4))
 
 ```
 
 
 ```{r eval=FALSE}
-n_sim <- 10
+n_sim <- 50
 tau <- 0.45
-simulation_mis_misall<- compute_estimator(
+simulation_mis_misall_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X6"), 
   X.names.outcome = c("X6"),
@@ -5008,24 +4910,24 @@ simulation_mis_misall<- compute_estimator(
 
 
 
-save(simulation_mis_misall,file="simulation_mis_misall.RData")
+save(simulation_mis_misall_test,file="simulation_mis_misall_test.RData")
 ```
 
 ```{r}
-load("simulation_mis_misall.RData")
+load("simulation_mis_misall_test.RData")
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 theme_update(plot.title = element_text(hjust = 0.5))
 
-simulation_mis_misall$sample.size <- factor(simulation_mis_misall$sample.size, levels = sort(unique(simulation_mis_misall$sample.size), decreasing = TRUE))
+simulation_mis_misall_test$sample.size <- factor(simulation_mis_misall_test$sample.size, levels = sort(unique(simulation_mis_misall_test$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_misall$estimator <- factor(simulation_mis_misall$estimator, levels = desired_order)
+simulation_mis_misall_test$estimator <- factor(simulation_mis_misall_test$estimator, levels = desired_order)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
-simulation_graph_mis_all <- simulation_mis_misall %>%
+simulation_graph_mis_all <- simulation_mis_misall_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Mis-specification of all models:  ")+
@@ -5041,7 +4943,7 @@ simulation_graph_mis_all <- simulation_mis_misall %>%
           axis.text = element_text(size=20, face = "bold"),
           plot.title = element_text(size=24, face = "bold"),
           axis.title.x = element_text(size=20, face = "bold"))+
-            coord_cartesian(ylim = c(0.05,0.12))
+            coord_cartesian(ylim = c(0.2,0.4))
 
 ```
 
@@ -5052,19 +4954,7 @@ The combined graph regroup the $\theta_{RMST}$ value of 4 different setting when
 grid.arrange(simulation_graph_mis_mistreat_out, simulation_graph_mis_miscens_out, simulation_graph_mis_mistreat_cens, simulation_graph_mis_all, ncol = 2, nrow = 2)
 ```
 
-On hold : 
-
-
-When the censoring and treatment models are mis-specified, G-formula (T-learners) estimator remains unbiased. 
-The estimator IPTW-IPCW which is based on the two nuisance models is completely biased. Same result for IPTW-BJ estimator. and surprisingly AIPTW-AIPCW estimator become slightly biased.
-
-When the outcome and treatment models are mis-specified, all the estimators are biased. **AIPTW-AIPCW is considered as non convergent because of its huge variability.** It is the same results when the mis-specification concerns outcome and censoring models. *
-
-When all the nuisance models are mis-specified, all the converging estimators in the context of no mis-specification are biased.
-
-**Résultats pas trop normaux pour les biais de AIPTW-AIPCW surtout dans le contexte "censoring and treatment models mis-specified", il devrait converger. Je refais avec 100 simulations </span> --> Peut-être dû au fait que l'outcome model converge lentement (à étudier après avoir fait tourner avec plus de simulations)**
-
-**Résultats pas normaux pour la convergence de AIPTW-AIPCW "outcome and censoring models mis-specified", il ne devrait pas converger (mais il a une forte variabilité, je refais avec 100 simulations --> Va prendre du temps)**
+**On hold**
 
 
 ### Violation of positivity assumption for censoring
@@ -5174,7 +5064,7 @@ simulation_graph_rct2_only <- simulation_rct2_only %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the simulation of 
-          a RCT with dependent censoring: ")+
+          a RCT with dependent censoring (parametric relationship): ")+
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Changer le label de l'axe x
   ylab("ATE") +  # Retirer le label de l'axe y
@@ -5202,8 +5092,8 @@ simulation_graph_rct2_positivity<- simulation_rct2_positivity %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the simulation of 
-          a RCT with dependent censoring when positivity for 
-          censoring is violated")+
+          a RCT with dependent censoring (parametric relationship) 
+          when positivity for censoring is violated")+
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Changer le label de l'axe x
   ylab("ATE") +  # Retirer le label de l'axe y
@@ -5224,7 +5114,9 @@ simulation_graph_rct2_positivity<- simulation_rct2_positivity %>%
 grid.arrange(simulation_graph_rct2_only, simulation_graph_rct2_positivity, ncol = 2, nrow = 1)
 ```
 
-When the positivity of censoring is violated in our RCT context with conditionally independent censoring, all estimators that adjust for censoring using inverse probability weighting (IPW) methods, such as IPCW Kaplan-Meier, IPTW-IPCW Kaplan-Meier, AIPTW-AIPCW, or Causal Survival Forest, become biased under this violation. The G-formula (S-learner) and its equivalent exhibit even stronger bias. Conversely, the G-formula (T-learners), the IPTW-BJ estimator, and the BJ estimator continue to converge accurately.
+When the positivity of censoring is violated in our RCT context (parametric simulation) with conditionally independent censoring, all estimators that adjust for censoring using inverse probability weighting (IPCW) methods, such as IPCW Kaplan-Meier, IPTW-IPCW Kaplan-Meier become biased. 
+The causal survival forest exhibits a small bias while surprisingly the G-formula (T-learner), BJ and IPTW-BJ  converge. 
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 simulation_obs2_only <- simulation_obs2 %>%
@@ -5243,7 +5135,7 @@ simulation_graph_obs2_only <- simulation_obs2_only %>%
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the simulation of 
           an observational study with dependent 
-          censoring")+
+          censoring (parametric relationship")+
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Changer le label de l'axe x
   ylab("ATE") +  # Retirer le label de l'axe y
@@ -5272,7 +5164,8 @@ simulation_graph_obs2_positivity <- simulation_obs2_positivity %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the simulation of 
-          an observational study with dependent censoring when 
+          an observational study with dependent censoring 
+          (parametric relationship) when 
           positivity for censoring is violated")+
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Changer le label de l'axe x
@@ -5293,6 +5186,9 @@ simulation_graph_obs2_positivity <- simulation_obs2_positivity %>%
 ```{r fig.width=25, fig.height=14}
 grid.arrange(simulation_graph_obs2_only, simulation_graph_obs2_positivity, ncol = 2, nrow = 1)
 ```
+
+Similarly, estimators that correct for censoring using inverse probability weighting show bias, but IPTw-BJ and the G-formula (T-learner) still converge. The positivity assumption for censoring is implicit in these estimators. However, estimating survival time in a group of individuals who only experience censoring is possible when the relationship between covariates and survival time is linear and can be extrapolated by the model.
+The below boxplot presents the impact of the violation of positivity in the non-parametric context. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 simulation_complex_flexible_only <- simulation_complex_flexible %>%
@@ -5325,7 +5221,7 @@ simulation_graph_complex_flexible_only <- simulation_complex_flexible_only %>%
   )) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the more complex simulation of an observational 
-          study with dependent censoring (with survival and probability forest):") +
+          study with dependent censoring (non parametric relationship):") +
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Change x-axis label
   ylab("ATE") +  # Change y-axis label
@@ -5357,7 +5253,8 @@ simulation_graph_complex_positivity <- simulation_complex_positivity %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the simulation of 
-          an observational study with dependent censoring when 
+          an observational study with dependent censoring 
+          (non-parametric relationship) when 
           positivity for censoring is violated")+
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Changer le label de l'axe x
@@ -5379,8 +5276,7 @@ simulation_graph_complex_positivity <- simulation_complex_positivity %>%
 grid.arrange(simulation_graph_complex_flexible_only, simulation_graph_complex_positivity, ncol = 2, nrow = 1)
 ```
 
-**Peut être refaire tourner avec plus de dependence car pas évident ici**
-When the positivity of censoring is violated in our observational context with conditionally independent censoring, all estimators that adjust for censoring using inverse probability weighting (IPW) methods, such as IPTW-IPCW Kaplan-Meier,  AIPTW-AIPCW, or Causal Survival Forest, become a bit more biased under this violation. The G-formula (S-learner) and its equivalent exhibit even stronger bias. Conversely, the G-formula (T-learners) and the IPTW-BJ estimator have the same behavior.
+The impact of positivity violation is stronger as all the estimators exhibit bias. It confirms the fact that this violation can be overcome when the relationship between covariates and survival time is linear.  
 
 # Conclusion and perspective
 
@@ -5392,9 +5288,9 @@ For users, we recommend different estimators based on the context of their data 
 
 Notably, the G-formula and IPTW-BJ estimators implicitly rely on the positivity assumption, although it is not explicitly included in their identifiability conditions. In parametric settings, violations of positivity tend to have minimal impact, as the extrapolation needed to handle these violations is feasible  but risky. However, in non-parametric contexts, violating the positivity assumption can lead to erroneous extrapolations, making these estimators unsuitable for use.
 
-Based on all our simulations, we can propose this decision tree to compute $\theta_{RMST}$: 
+In practice, uncertainty around specification of nuisance parameters is real (parametric/non-parametric relationship, variable sélections…) but use always the most complicated estimator is not feasible. Based on all our simulations, we can propose this decision tree to compute $\theta_{RMST}$ (**DRAFT**): 
 
-```{r}
+```{r eval=FALSE}
 library(DiagrammeR)
 
 # Construction de l'arbre de décision avec texte sur les flèches
@@ -5426,6 +5322,7 @@ digraph decision_tree {
 
   # Third level for Dependent Censoring (Obs)
   Obs_Dep_Ver[label = 'Verify Positivity of \n Cens + Treat']
+  Obs_Dep_Ver_tau[label = 'Lower horizon time']
   Obs_Dep_Formula[label = 'Parametric G-formula + IPTW-IPCW KM']
   Obs_Dep_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
   Obs_Dep_Results2[label = 'Non parametric AIPTW-AIPCW\nEstimator + CSF']
@@ -5443,7 +5340,8 @@ digraph decision_tree {
   RCT_Dep_Ver[label = 'Verify Positivity of \nCensoring']
   RCT_Dep_Ver_tau[label = 'Lower horizon time']
   RCT_Dep_Formula[label = 'Parametric G-formula + Para IPCW KM']
-  RCT_Dep_Results[label = 'Non-parametric AIPTW-AIPCW\nEstimator + CSF']
+  RCT_Dep_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
+  RCT_Dep_Results2[label = 'Non-parametric AIPTW-AIPCW\nEstimator + CSF']
   RCT_Dep_Stop[label = 'Stop']
   RCT_Dep_Results_ok[label = 'RMST Estimator correct']
 
@@ -5458,7 +5356,8 @@ digraph decision_tree {
   RCT_Dep_Ver_tau -> RCT_Dep_Ver
   RCT_Dep_Formula -> RCT_Dep_Results_ok [label = 'If the results are =']
   RCT_Dep_Formula -> RCT_Dep_Results [label = 'Otherwise']
-  RCT_Dep_Results -> RCT_Dep_Stop [label = 'Otherwise']
+  RCT_Dep_Results -> RCT_Dep_Results2
+  RCT_Dep_Results2 -> RCT_Dep_Stop [label = 'Otherwise']
   RCT_Dep_Results -> RCT_Dep_Results_ok [label = 'If the results are =']
   
   
@@ -5476,9 +5375,9 @@ digraph decision_tree {
   
   Obs -> Obs_Dep
   Obs_Dep -> Obs_Dep_Ver
-  Obs_Dep_Ver -> Obs_Ind_Ver_tau [label = 'If not verified']
-  Obs_Ind_Ver_tau -> Obs_Dep_Ver
-  Obs_Ind_Ver -> Obs_Dep_Formula [label = 'If verified']
+  Obs_Dep_Ver -> Obs_Dep_Ver_tau [label = 'If not verified']
+  Obs_Dep_Ver_tau -> Obs_Dep_Ver
+  Obs_Dep_Ver -> Obs_Dep_Formula [label = 'If verified']
   Obs_Dep_Formula -> Obs_Dep_Results_ok [label = 'If the results are=']
   Obs_Dep_Formula -> Obs_Dep_Results [label = 'Otherwise']
   Obs_Dep_Results -> Obs_Dep_Results_ok [label = 'If AIPTW-AIPCW = G-f or = IPTW-KM']
@@ -6134,26 +6033,9 @@ sessionInfo()
 # TO DO LIST
 
 - Problème sur mis-spec simulation
-- Correct mis-specification, ajouter des détails: 
-  - RCT 2: Ajouter 8,000 obs pour IPCW KM + IPTW-IPCW KM qui ne convergent pas franchement
-  - OBS 1: 
-    - Ajouter 8,000 obs pour Causal_survival_forest qui ne converge pas franchement
-    - Ajouter un autre plot avec g-formula forest et aiptw-aipcw forest 
-  - OBS 2: AJouter 8,000 observations pour causal_survival_forest
   - Complex: 
-    - Ajouter 8,000 obs pour AIPTW-AIPCW et Causal_survival forest 
-    - Ajouter g-formula parametric
     - Investiguer pourquoi IPTW-IPCW est biaisé
-- Prendre en compte les commentaires (jsq page 57)
-- Refaire toutes les propriétés après avoir lu cours
-- Refaire mis-specification sur le DGP avec interaction 
-- Faire une violation de positivité sur le DGP non linéaire pour voir si l'extrapolation est ok 
 
-
-ON HOLD:
-- Refaire tourner simulation avec mis-specification avec 100 simulations chacune (pour le moment que 10)
-- Refaire tourner la positivité RCT 2 avec 100 simulations pour que ce soit comparable 
-- Intensifié la violation à la positivité de la censure pour Obs 2 et faire tourner avec 100 simulations
 
 # Question 
 - Faut-il appeler les packages à chaque fois qu'ils sont utilisés ? 
