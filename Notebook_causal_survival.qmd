@@ -400,6 +400,8 @@ $$
 \end{aligned}
 $$ {#eq-RMSTkm}
 
+**Voir si c'est cohérent de pousser un peu plus les équations pour que l'utilisation de Kaplan-Meier soit evident**
+
 $\mathbb{P}(T>t|A=a)$ ($S(t,A=a)$) is the survival function and can be
 estimated using usual estimator of survival function such as Kaplan
 meier estimator, cox model, etc.
@@ -1563,28 +1565,8 @@ be appropriate, and the T-learner would be a better option.
 ##### Properties of G-formula plug-in estimator
 
 @RMST proove the asymptotic normality of the G-estimator assuming a
-proportional hazard relationship. An expression of the asymptotic
-variance of G-formula estimator has been detailed:
-
-$$
-\begin{aligned}
-\hat{var}(\int_0^\tau\mathbb{E}[T \wedge \tau \mid X=x, A=1]-\mathbb{E}[T \wedge \tau \mid X=x, A=0]) &= \frac{n_1}{n} \hat{g}_1^T \hat{\Sigma}_1 \hat{g}_0+\int_0^\tau \frac{\hat{h_1}^2(t) \hat{\lambda_1}(t)}{s_1^{(0)}\left(t, \beta_1\right)} d t \\
-& \quad+ \frac{n_0}{n} \hat{g}_0^T \hat{\Sigma}_0 \hat{g}_0+\int_0^\tau \frac{\hat{h_0}^2(t) \hat{\lambda_0}(t)}{s_0^{(0)}\left(t, \beta_0\right)} d t \\
-& \quad+\operatorname{\hat{var}}\left[\int_0^\tau\left\{S_1\left(u \mid Z_i\right)-S_0\left(u \mid Z_i\right)\right\} d u\right]
-\end{aligned}
-$$
-
-where
-
--   $n_0=\sum_{i=1}^n I\left(A_i=0\right)$ and
-    $n_1=\sum_{i=1}^n I\left(A_i=1\right)$
--   $\hat{\Sigma}_0=n_0^{-1} \sum_{i=1}^n \int_0^\tau\left(1-A_i\right) \times\left[\frac{S_0^{(2)}\left(t, \hat{\beta}_0\right)}{S_0^{(0)}\left(t, \hat{\beta}_0\right)}-\left\{\frac{S_0^{(1)}\left(t, \hat{\beta}_0\right)}{S_0^{(0)}\left(t, \hat{\beta}_0\right)}\right\}^{\otimes 2}\right] \times d N_i(t)$
--   $\hat{g}_0=n_0{ }^{-1} \hat{\Sigma}_0^{-1} \sum_{i=1}^n \int_0^\tau \int_0^u \hat{S}_0\left(u \mid Z_i\right) e^{\hat{\beta}_0^T Z_i} \times\left\{\bar{Z}_0\left(t, \hat{\beta}_0\right)-Z_i\right\} d \hat{\Lambda}_0(t) d u$
--   $\hat{h}_0(t)=n^{-1} \sum_{i=1}^n \int_t^\tau \hat{S}_0\left(u \mid Z_i\right) e^{\hat{\beta}_0^T Z_i} d u$
--   $\widehat{\operatorname{var}}\left\{\int_0^\tau S_0\left(u \mid Z_i\right) d u\right\}$
-    is obtained using the moment estimator: $$
-    n^{-1} \sum_{i=1}^n\left\{\int_0^\tau \hat{S}_0\left(u \mid Z_i\right) d u-n^{-1} \sum_{j=1}^n \int_0^\tau \hat{S}_0\left(u \mid Z_j\right) d u\right\}^2
-    $$
+proportional hazard relationship. The article also derive an expression of the asymptotic
+variance of G-formula estimator.
 
 Moreover, G-formula plug-in estimator is simple to implement and also
 very stable.
@@ -1930,13 +1912,11 @@ very sensitive to positivity for censoring and treatment.
 The following code implements the IPTW-IPCW Kaplan Meier function, which
 uses the previously implemented functions:
 
--   estimate_survival_function (detailed and implemented in
-    @sec-implIPCW) which computes the probability of remaining
+-   estimate_survival_function (detailed and implemented in @sec-implIPCW) which computes the probability of remaining
     uncensored over time $S_c$ using either a Cox model or a survival
     forest.
 
--   estimate_propensity_score (detailed and implemented in
-    @sec-implIPTW) which computes the propensity score of each
+-   estimate_propensity_score (detailed and implemented in @sec-implIPTW) which computes the propensity score of each
     observation using a logistic model or a probability forest.
 
 -   adjusted.KM (detailed and implemented in @sec-implIPCW) which
@@ -2063,13 +2043,11 @@ estimator is easier to implement than the weighting survival function.
 The following code implements the IPTW-BJ function, which uses the
 previously implemented functions:
 
--   estimate_survival_function (detailed and implemented in
-    @sec-implIPCW) which computes the probability of remaining
+-   estimate_survival_function (detailed and implemented in @sec-implIPCW) which computes the probability of remaining
     uncensored over time $S_c$ using either a Cox model or a survival
     forest.
 
--   estimate_propensity_score (detailed and implemented in
-    @sec-implIPTW) which computes the propensity score of each
+-   estimate_propensity_score (detailed and implemented in @sec-implIPTW) which computes the propensity score of each
     observation using a logistic model or a probability forest.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -2386,9 +2364,8 @@ tool functions:
     individuals an integrand also to compute the third term of AIPCW.
 
 -   AIPCW which finally compute pseudo observation based on all previous
-    functions, estimate_survival_function (detailed and implemented in
-    @sec-implIPCW), Q_t_hat function and Q_Y function (implemented in
-    @sec-implBJ). The third term of the transformation is simplified by:
+    functions, estimate_survival_function (detailed and implemented in @sec-implIPCW), 
+    Q_t_hat function and Q_Y function (implemented in @sec-implBJ). The third term of the transformation is simplified by:
     $\int_0^{T_i \wedge \tau} \frac{\lambda_{c}\left(s \mid A_i,X_i\right)}{\hat{S}_{C}\left(s \mid A_i, X_i\right)}*Q_S(s \mid X_i,A_i)ds$
     (detail in @sec-Annexes).
 
@@ -2684,8 +2661,7 @@ AIPTW_AIPCW <- function(data,
 
 ```
 
-This function returns the two estimators introduced previously in
-@sec-AIPTW_AIPCW.
+This function returns the two estimators introduced previously in @sec-AIPTW_AIPCW.
 
 In the previous section, we discussed methods for implementing various
 estimators. However, there are existing packages that can directly
@@ -2951,14 +2927,12 @@ computational efficiency.
 This estimator is Neyman-orthogonal in the sense discussed in @DML, and
 attains a $1 / \sqrt{n}$ rate of convergence for $\tau$ under 4-th root
 rates for the nuisance components, provided we use cross-fitting and
-that assumptions detailed above hold [@HTE_causal_survival_forests;
-@kennedy2023semiparametric].
+that assumptions detailed above hold [@HTE_causal_survival_forests; @kennedy2023semiparametric].
 
 #### Implementation
 
 This causal survival forest is implemented in using
-[grf](https:%20//cran.r-project.org/web/packages/grf/index.html) package
-[@Tibshirani_Athey_Sverdrup_Wager_2017]:
+[grf](https:%20//cran.r-project.org/web/packages/grf/index.html) package [@Tibshirani_Athey_Sverdrup_Wager_2017]:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Function to estimate RMST using Causal Survival Random Forest (CSRF)
@@ -3398,8 +3372,7 @@ well estimated by probability forest for propensity model or survival
 forest for conditional survival or censoring model.
 
 For the simulation, $n$ samples $(X_{i},A_{i},C,T_{i}(0), T_{i}(1))$ are
-generated in the following way (similar to the scenario 4 in
-@HTE_causal_survival_forests):
+generated in the following way (similar to the scenario 4 in @HTE_causal_survival_forests):
 
 -   $X \sim \mathcal{N}\left(\mu=[1,1,1]^{\top}, \Sigma=I_3\right)$.
 
@@ -3585,14 +3558,12 @@ summary(mis)
 ## Data description
 
 This section will present the data description of the presented
-simulation in the @sec-simulation-RCT, @sec-simulation-Obs and
-@sec-nonparametric to enhance their characteristics.
+simulation in the @sec-simulation-RCT, @sec-simulation-Obs and @sec-nonparametric to enhance their characteristics.
 
 ### RCT with independent censoring (RCT scenario 1)
 
 The summary by group of treatment of the generated (observed and
-unobserved) data set RCT with independent censoring (in
-@sec-simulation-RCT) is displayed below:
+unobserved) data set RCT with independent censoring (in @sec-simulation-RCT) is displayed below:
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Stratification by treatment 
@@ -3772,7 +3743,7 @@ and the censoring time between the two groups are unbalanced.
 To be able to evaluate the estimators, we need to know the true
 $\theta_{RMST}$ at time $\tau$.
 
-### Observational study with interaction and conditionally independent censoring (Non parametric scenario 2)
+### Observational study with interaction and conditionally independent censoring (Mis scenario)
 
 The summary of the generated (observed and unobserved) data set complex
 observational study (conditionally independent censoring) stratified by
@@ -3862,8 +3833,12 @@ plot_ground_truth <- function(data, vec_tau, tau, ylim, title_text) {
 data_RCT1 <- simulate_data_RCT(
   n = 100000, tau = tau, scenario = "RCT1")
 
-plot_ground_truth(data_RCT1, vec_tau, tau, c(0, 10), 
-                                "True difference in RMST for RCT scenario 1")
+plot_ground_truth(data_RCT1, 
+                  vec_tau, 
+                  tau, 
+                  c(0, 10), 
+                  "True difference in RMST for RCT scenario 1")
+
 truth_tau1 <- ground_truth(data_RCT1, tau = 25)
 print(paste0("The ground truth for RCT scenario 1 at time 25 is ", round(truth_tau1, 1)))
 
@@ -3915,11 +3890,11 @@ data_complex <- simulate_data_complex(n = 150000, tau = tau_complex)
 plot_ground_truth(data_complex,
                   vec_tau_complex,
                   tau_complex, 
-                  c(0, 10),
-                  "True difference in RMST for Observation with non linear scenario")
+                  c(0, 1),
+                  "True difference in RMST for Obs with non linear scenario")
 
 truth_complex <- ground_truth(data_complex, tau = 2)
-print(paste0("The ground truth for Observation with non linear scenario at time 2 is ", round(truth_complex,1)))
+print(paste0("The ground truth for Observation with non linear scenario at time 2 is ", round(truth_complex,2)))
 
 # Mis scenario 
 tau_mis <- 0.5
@@ -3949,8 +3924,9 @@ positivity assumption.
 
 ### Correct specification of the nuisance parameters
 
-In the case of RCT and observational study presented in
-@sec-simulation-RCT and @sec-simulation-Obs, the nuisance models are
+**Est-ce qu'on ajouterais pas le détail des modèles générés ?**
+
+In the case of RCT and observational study presented in @sec-simulation-RCT and @sec-simulation-Obs, the nuisance models are
 estimated by Cox model for the conditional censoring model and for the
 conditional survival and by logistic regression for the propensity
 model. For the non parametric simulation presented in
@@ -4551,17 +4527,31 @@ The results are presented in boxplot for each sample size. The true
 value of $\theta_{RMST}$ is presented as red dotted line for $\tau=25$.
 RCT scenario 1 results are displayed bellow:
 
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_rct1$estimator <- as.character(simulation_rct1$estimator)
+simulation_rct1$estimator[simulation_rct1$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_rct1$estimator[simulation_rct1$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_rct1$estimator[simulation_rct1$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_rct1$estimator[simulation_rct1$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_rct1$estimator[simulation_rct1$estimator=="BJ"] <- "BJ (Cox)"
+simulation_rct1$estimator[simulation_rct1$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_rct1$estimator[simulation_rct1$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_rct1$estimator[simulation_rct1$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
+
 # Update the theme to center the plot title
 theme_update(plot.title = element_text(hjust = 0.5))
 
 # Define the desired order of the estimators
 desired_order <- c(
-  "Naive", "KM", "SurvRM2 - KM", "IPTW KM", "RISCA - IPTW KM", 
-  "IPCW KM", "BJ", "IPTW-IPCW KM", "IPTW-BJ", 
-  "G_formula (T-learners)", "G_formula (S-learner)", 
-  "RISCA - G_formula (S-learner)", 
-  "AIPTW-AIPCW", "grf - Causal Survival Forest"
+  "Naive", "KM", "SurvRM2 - KM",
+"IPTW KM (Log. reg.)", "RISCA - IPTW KM",
+  "IPCW KM (Cox)", "BJ (Cox)",  "IPTW-BJ (Cox & Log. reg.)", 
+"IPTW-IPCW KM (Cox & Log. reg.)",
+  "G_formula (Cox / T-learners)", "G_formula (Cox / S-learner)",
+"RISCA - G_formula (S-learner)", 
+  "AIPTW-AIPCW (Cox & Log. reg.)", "grf - Causal Survival Forest"
 )
 
 # Convert sample size to a factor with levels sorted in decreasing order
@@ -4605,7 +4595,7 @@ theme(
 
 ```
 
-```{r fig.width=10, fig.height=10}
+```{r fig.width=10, fig.height=10, message=FALSE, warning=FALSE}
 simulation_graph_rct1 
 ```
 
@@ -4653,6 +4643,17 @@ simulation_rct2$sample.size <- as.numeric(simulation_rct2$sample.size)
 
 simulation_rct2 <- rbind(simulation_rct2,simulation_rct2_ipcw)
 
+simulation_rct2$estimator <- as.character(simulation_rct2$estimator)
+
+simulation_rct2$estimator[simulation_rct2$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_rct2$estimator[simulation_rct2$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_rct2$estimator[simulation_rct2$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_rct2$estimator[simulation_rct2$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_rct2$estimator[simulation_rct2$estimator=="BJ"] <- "BJ (Cox)"
+simulation_rct2$estimator[simulation_rct2$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_rct2$estimator[simulation_rct2$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_rct2$estimator[simulation_rct2$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 # Update the theme to center the plot title
 theme_update(plot.title = element_text(hjust = 0.5))
 
@@ -4696,7 +4697,7 @@ simulation_graph_rct2 <- simulation_rct2 %>%
 
 ```
 
-```{r fig.width=10, fig.height=10}
+```{r fig.width=10, fig.height=10, message=FALSE, warning=FALSE}
 simulation_graph_rct2
 ```
 
@@ -4748,6 +4749,17 @@ simulation_obs1$sample.size <- as.numeric(simulation_obs1$sample.size)
 simulation_obs1 <- rbind(simulation_obs1,simulation_obs1_csf)
 
 
+simulation_obs1$estimator <- as.character(simulation_obs1$estimator)
+
+simulation_obs1$estimator[simulation_obs1$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_obs1$estimator[simulation_obs1$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_obs1$estimator[simulation_obs1$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_obs1$estimator[simulation_obs1$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_obs1$estimator[simulation_obs1$estimator=="BJ"] <- "BJ (Cox)"
+simulation_obs1$estimator[simulation_obs1$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_obs1$estimator[simulation_obs1$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_obs1$estimator[simulation_obs1$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 # Update the theme to center the plot title
 theme_update(plot.title = element_text(hjust = 0.5))
 
@@ -4789,7 +4801,7 @@ simulation_graph_obs1 <- simulation_obs1 %>%
 
 ```
 
-```{r fig.width=10, fig.height=10}
+```{r fig.width=10, fig.height=10, message=FALSE, warning=FALSE}
 simulation_graph_obs1
 ```
 
@@ -4834,6 +4846,17 @@ simulation_obs2$sample.size <- as.character(simulation_obs2$sample.size)
 simulation_obs2$sample.size <- as.numeric(simulation_obs2$sample.size)
 
 simulation_obs2 <- rbind(simulation_obs2,simulation_obs2_csf_aiptwaipcw)
+simulation_obs2$estimator <- as.character(simulation_obs2$estimator)
+
+simulation_obs2$estimator[simulation_obs2$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_obs2$estimator[simulation_obs2$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_obs2$estimator[simulation_obs2$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_obs2$estimator[simulation_obs2$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_obs2$estimator[simulation_obs2$estimator=="BJ"] <- "BJ (Cox)"
+simulation_obs2$estimator[simulation_obs2$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_obs2$estimator[simulation_obs2$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_obs2$estimator[simulation_obs2$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 
 # Update the theme to center the plot title
 theme_update(plot.title = element_text(hjust = 0.5))
@@ -4875,7 +4898,7 @@ simulation_graph_obs2 <- simulation_obs2 %>%
 
 ```
 
-```{r fig.width=10, fig.height=10}
+```{r fig.width=10, fig.height=10, message=FALSE, warning=FALSE}
 simulation_graph_obs2
 ```
 
@@ -4929,6 +4952,17 @@ simulation_complex_para$sample.size <- as.numeric(simulation_complex_para$sample
 
 simulation_complex_para <- rbind(simulation_complex_para,simulation_complex_para_csf_aiptwaipcw)
 
+simulation_complex_para$estimator <- as.character(simulation_complex_para$estimator)
+
+simulation_complex_para$estimator[simulation_complex_para$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_complex_para$estimator[simulation_complex_para$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_complex_para$estimator[simulation_complex_para$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_complex_para$estimator[simulation_complex_para$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_complex_para$estimator[simulation_complex_para$estimator=="BJ"] <- "BJ (Cox)"
+simulation_complex_para$estimator[simulation_complex_para$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_complex_para$estimator[simulation_complex_para$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_complex_para$estimator[simulation_complex_para$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 # Update the theme to center the plot title
 theme_update(plot.title = element_text(hjust = 0.5))
 
@@ -4950,8 +4984,8 @@ simulation_graph_complex_param <- simulation_complex_para %>%
     fill = factor(sample.size, levels = rev(levels(sample.size)))
   )) +
   scale_fill_brewer(palette = "Accent") +
-  ggtitle("Estimation results of the ATE for the more complex simulation of an observational 
-          study with dependent censoring (with cox and logistic regression):") +
+  ggtitle("Estimation results of the ATE for an observational 
+          study with dependent censoring (non-linear relationship estimated with cox and logistic regression):") +
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Change x-axis label
   ylab("ATE") +  # Change y-axis label
@@ -4970,7 +5004,7 @@ simulation_graph_complex_param <- simulation_complex_para %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
+```{r fig.width=10, fig.height=8, message=FALSE, warning=FALSE}
 simulation_graph_complex_param
 ```
 
@@ -5004,11 +5038,35 @@ conditions, the latter benefiting from its flexible regression approach
 to nuisance estimation.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+desired_order2 <- c(
+  "Naive", "KM", "SurvRM2 - KM",
+"IPTW KM (Forest)", "RISCA - IPTW KM",
+  "IPCW KM (Forest)", "BJ (Forest)",  "IPTW-BJ (Forest)", 
+"IPTW-IPCW KM (Forest)",
+  "G_formula (Forest / T-learners)", "G_formula (Forest / S-learner)",
+"RISCA - G_formula (S-learner)", 
+  "AIPTW-AIPCW (Forest)", "grf - Causal Survival Forest"
+)
+
+
 simulation_complex_flexible$sample.size <- as.character(simulation_complex_flexible$sample.size)
 
 simulation_complex_flexible$sample.size <- as.numeric(simulation_complex_flexible$sample.size)
 
 simulation_complex_flexible <- rbind(simulation_complex_flexible,simulation_complex_flexible_csf_aiptwaipcw_Gf)
+
+simulation_complex_flexible$estimator <- as.character(simulation_complex_flexible$estimator)
+
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="G_formula (T-learners)"] <- "G_formula (Forest / T-learners)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="G_formula (S-learners)"] <- "G_formula (Forest / S-learner)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="G_formula (S-learner)"] <- "G_formula (Forest / S-learner)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="IPTW KM"] <- "IPTW KM (Forest)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="IPCW KM"] <- "IPCW KM (Forest)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="BJ"] <- "BJ (Forest)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Forest)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Forest)"
+simulation_complex_flexible$estimator[simulation_complex_flexible$estimator=="IPTW-BJ"] <- "IPTW-BJ (Forest)"
 
 # Update the theme to center the plot title
 theme_update(plot.title = element_text(hjust = 0.5))
@@ -5022,12 +5080,7 @@ simulation_complex_flexible$sample.size <- factor(
 
 # Convert 'estimator' column to a factor with the specified order
 simulation_complex_flexible$estimator <- factor(simulation_complex_flexible$estimator, 
-                                    levels = desired_order)
-
-simulation_complex_flexible$estimator[is.na(simulation_complex_flexible$estimator)] <- "G_formula (S-learner)"
-# Removed package estimator which cannot include flexible regression
-simulation_complex_flexible <- simulation_complex_flexible %>%
-  dplyr :: filter(!estimator == "RISCA - G_formula (S-learner)")
+                                    levels = desired_order2)
 
 # Create the plot for Observational + dependent censoring in complex simulation
 simulation_graph_complex_flexible <- simulation_complex_flexible %>%
@@ -5036,8 +5089,8 @@ simulation_graph_complex_flexible <- simulation_complex_flexible %>%
     fill = factor(sample.size, levels = rev(levels(sample.size)))
   )) +
   scale_fill_brewer(palette = "Accent") +
-  ggtitle("Estimation results of the ATE for the more complex simulation of an observational 
-          study with dependent censoring (with survival and probability forest):") +
+  ggtitle("Estimation results of the ATE for an observational 
+          study with dependent censoring (non-linear relationship with survival and probability forest):") +
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Change x-axis label
   ylab("ATE") +  # Change y-axis label
@@ -5056,7 +5109,7 @@ simulation_graph_complex_flexible <- simulation_complex_flexible %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
+```{r fig.width=10, fig.height=8, message=FALSE, warning=FALSE}
 simulation_graph_complex_flexible
 ```
 
@@ -5091,19 +5144,11 @@ with finite samples, despite some fluctuations.
 
 ### Mis-specification of the nuisance parameters
 
-In this section, we will challenge the estimators in introducing
+In this section, we challenge the estimators in introducing
 mis-specification for the nuisance parameters. To do so, the simulation
-with interaction will be used and mis-specification is introduced by
-selecting only one covariate with the less impact on the model. All
-functions that cannot introduce mis-specification specifically on
-treatment, censoring or outcome are removed of the following graph. It
-concerns G-formula from RISCA package and the causal survival forest
-from grf. First, we will introduce mis-specification for the treatment
-model only, for the censoring model only, for the outcome model only,
-then for treatment and censoring, for treatment and outcome , for
-outcome and censoring and finally for all the nuisance models.\
-The nuisance models are estimated with flexible model such as
-probability forest and survival forest.
+with interaction is used and mis-specification is introduced by
+selecting only one covariate with the less impact on the model. G-formula from RISCA package is removed of the following graph as it cannot introduce intercation terms . 
+First, we estimate $\theta_{RMST}$ without any model misspecification to ensure the estimator’s consistency under a correctly specified nuisance model. Then, we introduce misspecification individually for the treatment model, censoring model, and outcome model. We further explore combined misspecifications for the treatment and censoring models, treatment and outcome models, outcome and censoring models, and finally for all nuisance models simultaneously. The nuisance models are estimated using parametric (logitic regression) and semi-parametric approach (cox model).
 
 ```{r eval=FALSE}
 n_sim <- 20
@@ -5131,13 +5176,34 @@ load("simulation_mis_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Define the desired order of the estimators
+desired_order_mis <- c(
+  "Naive", "KM", "SurvRM2 - KM",
+"IPTW KM (Log. reg.)", "RISCA - IPTW KM",
+  "IPCW KM (Cox)", "BJ (Cox)",  "IPTW-BJ (Cox & Log. reg.)", 
+"IPTW-IPCW KM (Cox & Log. reg.)",
+  "G_formula (Cox / T-learners)", "G_formula (Cox / S-learner)",
+  "AIPTW-AIPCW (Cox & Log. reg.)", "grf - Causal Survival Forest"
+)
+
+simulation_mis_test$estimator[simulation_mis_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_test$estimator[simulation_mis_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_test$estimator[simulation_mis_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_test$estimator[simulation_mis_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_test$estimator[simulation_mis_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_test$estimator[simulation_mis_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_test$estimator[simulation_mis_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_test$estimator[simulation_mis_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_test$sample.size <- factor(simulation_mis_test$sample.size, levels = sort(unique(simulation_mis_test$sample.size), decreasing = TRUE))
 
+simulation_mis_test <- simulation_mis_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_test$estimator <- factor(simulation_mis_test$estimator, levels = desired_order)
-#simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
+simulation_mis_test$estimator <- factor(simulation_mis_test$estimator, levels = desired_order_mis)
 
 simulation_graph_mis <- simulation_mis_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
@@ -5159,9 +5225,6 @@ simulation_graph_mis <- simulation_mis_test %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis
-```
 
 ```{r eval=FALSE}
 n_sim <- 20
@@ -5191,13 +5254,24 @@ load("simulation_mis_mistreat_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_mistreat_test$estimator[simulation_mis_mistreat_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_mistreat_test$sample.size <- factor(simulation_mis_mistreat_test$sample.size, levels = sort(unique(simulation_mis_mistreat_test$sample.size), decreasing = TRUE))
 
+simulation_mis_mistreat_test <- simulation_mis_mistreat_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_mistreat_test$estimator <- factor(simulation_mis_mistreat_test$estimator, levels = desired_order)
-#simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
+simulation_mis_mistreat_test$estimator <- factor(simulation_mis_mistreat_test$estimator, levels = desired_order_mis)
 
 simulation_graph_mis_mistreat <- simulation_mis_mistreat_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
@@ -5219,9 +5293,6 @@ simulation_graph_mis_mistreat <- simulation_mis_mistreat_test %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_mistreat
-```
 
 ```{r eval=FALSE}
 n_sim <- 20
@@ -5242,7 +5313,6 @@ simulation_mis_miscens_test <- compute_estimator(
 )
 
 
-
 save(simulation_mis_miscens_test,file="simulation_mis_miscens_test.RData")
 ```
 
@@ -5251,13 +5321,24 @@ load("simulation_mis_miscens_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_miscens_test$estimator[simulation_mis_miscens_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_miscens_test$sample.size <- factor(simulation_mis_miscens_test$sample.size, levels = sort(unique(simulation_mis_miscens_test$sample.size), decreasing = TRUE))
 
+simulation_mis_miscens_test <- simulation_mis_miscens_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_miscens_test$estimator <- factor(simulation_mis_miscens_test$estimator, levels = desired_order)
-#simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
+simulation_mis_miscens_test$estimator <- factor(simulation_mis_miscens_test$estimator, levels = desired_order_mis)
 
 simulation_graph_mis_miscens <- simulation_mis_miscens_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
@@ -5279,9 +5360,6 @@ simulation_graph_mis_miscens <- simulation_mis_miscens_test %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_miscens
-```
 
 ```{r eval=FALSE}
 n_sim <- 20
@@ -5310,13 +5388,24 @@ load("simulation_mis_misout_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_misout_test$estimator[simulation_mis_misout_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_misout_test$sample.size <- factor(simulation_mis_misout_test$sample.size, levels = sort(unique(simulation_mis_misout_test$sample.size), decreasing = TRUE))
 
+simulation_mis_misout_test <- simulation_mis_misout_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_misout_test$estimator <- factor(simulation_mis_misout_test$estimator, levels = desired_order)
-#simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
+simulation_mis_misout_test$estimator <- factor(simulation_mis_misout_test$estimator, levels = desired_order_mis)
 
 simulation_graph_mis_misout <- simulation_mis_misout_test %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
@@ -5338,21 +5427,18 @@ simulation_graph_mis_misout <- simulation_mis_misout_test %>%
 
 ```
 
-```{r fig.width=10, fig.height=8}
-simulation_graph_mis_misout
-```
 
-```{r fig.width=25, fig.height=25}
+```{r fig.width=25, fig.height=25, message=FALSE, warning=FALSE}
 grid.arrange(simulation_graph_mis, simulation_graph_mis_miscens, simulation_graph_mis_misout, simulation_graph_mis_mistreat, ncol = 2, nrow = 2)
 ```
 
 We refer to an observational and dependent censoring study, thus the
-expected consistent estimators are IPTW-IPCW Kaplan-Meier, IPTW-BJ
+expected consistent estimators are IPTW-IPCW Kaplan-Meier **(completly biased)**, IPTW-BJ
 estimator, G-formula, AIPTW-AIPCW and Causal survival forest.
 
 In globality, when one nuisance model is mis-specified, as expected the
 consistent estimators are AIPTW-AIPCW and causal survival forest. In all
-these setup, the two estimators are convergent at 4,000 observations.
+these setup, the two estimators are convergent at 4,000 observations. However, the variance of AIPTW-AIPCW is larger when censoring or treatment is mis-specified. 
 
 When the censoring model is mis-specified, the estimators with censoring
 correction are still biased as they already struggle to converge without
@@ -5395,12 +5481,24 @@ load("simulation_mis_mistreat_out_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_mistreat_out_test$estimator[simulation_mis_mistreat_out_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_mistreat_out_test$sample.size <- factor(simulation_mis_mistreat_out_test$sample.size, levels = sort(unique(simulation_mis_mistreat_out_test$sample.size), decreasing = TRUE))
 
+simulation_mis_mistreat_out_test <- simulation_mis_mistreat_out_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_mistreat_out_test$estimator <- factor(simulation_mis_mistreat_out_test$estimator, levels = desired_order)
+simulation_mis_mistreat_out_test$estimator <- factor(simulation_mis_mistreat_out_test$estimator, levels = desired_order_mis)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
 simulation_graph_mis_mistreat_out <- simulation_mis_mistreat_out_test %>%
@@ -5452,12 +5550,24 @@ load("simulation_mis_miscens_out_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_miscens_out_test$estimator[simulation_mis_miscens_out_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_miscens_out_test$sample.size <- factor(simulation_mis_miscens_out_test$sample.size, levels = sort(unique(simulation_mis_miscens_out_test$sample.size), decreasing = TRUE))
 
+simulation_mis_miscens_out_test <- simulation_mis_miscens_out_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_miscens_out_test$estimator <- factor(simulation_mis_miscens_out_test$estimator, levels = desired_order)
+simulation_mis_miscens_out_test$estimator <- factor(simulation_mis_miscens_out_test$estimator, levels = desired_order_mis)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
 simulation_graph_mis_miscens_out <- simulation_mis_miscens_out_test %>%
@@ -5486,7 +5596,7 @@ tau <- 0.5
 simulation_mis_mistreat_cens_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X2"), 
-  X.names.outcome = c("X1", "X2", "X3", "X4"),
+  X.names.outcome = c("I(X1^2)", "I(X2^2)", "X1:X2"),
   X.names.censoring = c("X3"),
   nuisance_propensity = "glm",
   nuisance_censoring = "cox",
@@ -5508,12 +5618,24 @@ load("simulation_mis_mistreat_cens_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_mistreat_cens_test$sample.size <- factor(simulation_mis_mistreat_cens_test$sample.size, levels = sort(unique(simulation_mis_mistreat_cens_test$sample.size), decreasing = TRUE))
 
+simulation_mis_mistreat_cens_test <- simulation_mis_mistreat_cens_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_mistreat_cens_test$estimator <- factor(simulation_mis_mistreat_cens_test$estimator, levels = desired_order)
+simulation_mis_mistreat_cens_test$estimator <- factor(simulation_mis_mistreat_cens_test$estimator, levels = desired_order_mis)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
 simulation_graph_mis_mistreat_cens <- simulation_mis_mistreat_cens_test %>%
@@ -5564,12 +5686,24 @@ load("simulation_mis_misall_test.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_mis_test$estimator[simulation_mis_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_mis_misall_test$estimator[simulation_mis_misall_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_mis_misall_test$estimator[simulation_mis_misall_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_mis_misall_test$estimator[simulation_mis_misall_test$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_mis_misall_test$estimator[simulation_mis_misall_test$estimator=="BJ"] <- "BJ (Cox)"
+simulation_mis_misall_test$estimator[simulation_mis_misall_test$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_mis_misall_test$estimator[simulation_mis_misall_test$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_mis_misall_test$estimator[simulation_mis_misall_test$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_mis_misall_test$sample.size <- factor(simulation_mis_misall_test$sample.size, levels = sort(unique(simulation_mis_misall_test$sample.size), decreasing = TRUE))
 
+simulation_mis_misall_test <- simulation_mis_misall_test%>%
+ dplyr::filter(!estimator=="RISCA - G_formula (S-learner)")
+
 # Convert 'estimator' column to a factor with the specified order
-simulation_mis_misall_test$estimator <- factor(simulation_mis_misall_test$estimator, levels = desired_order)
+simulation_mis_misall_test$estimator <- factor(simulation_mis_misall_test$estimator, levels = desired_order_mis)
 #simulation_mis$estimator[is.na(simulation_mis$estimator)] <- "G_formula (S-learner)"
 
 simulation_graph_mis_all <- simulation_mis_misall_test %>%
@@ -5599,11 +5733,13 @@ censoring and the treatment models (top left), the outcome and treatment
 models (top right) or the outcome and censoring models (bottom left).
 The dot line represents the true value of the ATE.
 
-```{r fig.width=25, fig.height=25}
+```{r fig.width=25, fig.height=25, message=FALSE, warning=FALSE}
 grid.arrange(simulation_graph_mis_mistreat_out, simulation_graph_mis_miscens_out, simulation_graph_mis_mistreat_cens, simulation_graph_mis_all, ncol = 2, nrow = 2)
 ```
 
-**On hold**
+As expected, when all nuisance models are misspecified, all estimators exhibit bias. Interestingly, AIPTW-AIPCW seems to converge only in cases where either the outcome and treatment models, or the outcome and censoring models, are misspecified, which deviates from initial expectations. It was anticipated that AIPTW-AIPCW would converge solely when both the censoring and treatment models were misspecified.
+
+Additionally, and somewhat unexpectedly, the causal survival forest converges in all cases except when all models are misspecified.
 
 ### Violation of positivity assumption for censoring
 
@@ -5730,6 +5866,16 @@ simulation_graph_rct2_only <- simulation_rct2_only %>%
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+simulation_rct2_positivity$estimator <- as.character(simulation_rct2_positivity$estimator)
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="BJ"] <- "BJ (Cox)"
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_rct2_positivity$estimator[simulation_rct2_positivity$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_rct2_positivity$sample.size <- factor(simulation_rct2_positivity$sample.size, levels = sort(unique(simulation_rct2_positivity$sample.size), decreasing = TRUE))
@@ -5787,7 +5933,7 @@ simulation_graph_obs2_only <- simulation_obs2_only %>%
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the simulation of 
           an observational study with dependent 
-          censoring (parametric relationship")+
+          censoring (parametric relationship)")+
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Changer le label de l'axe x
   ylab("ATE") +  # Retirer le label de l'axe y
@@ -5805,6 +5951,17 @@ simulation_graph_obs2_only <- simulation_obs2_only %>%
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 load("simulation_obs2_positivity.RData")
+simulation_obs2_positivity$estimator <- as.character(simulation_obs2_positivity$estimator)
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="IPCW KM"] <- "IPCW KM (Cox)"
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="BJ"] <- "BJ (Cox)"
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Cox & Log. reg.)"
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Cox & Log. reg.)"
+simulation_obs2_positivity$estimator[simulation_obs2_positivity$estimator=="IPTW-BJ"] <- "IPTW-BJ (Cox & Log. reg.)"
+
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_obs2_positivity$sample.size <- factor(simulation_obs2_positivity$sample.size, levels = sort(unique(simulation_obs2_positivity$sample.size), decreasing = TRUE))
@@ -5839,7 +5996,7 @@ grid.arrange(simulation_graph_obs2_only, simulation_graph_obs2_positivity, ncol 
 ```
 
 Similarly, estimators that correct for censoring using inverse
-probability weighting show bias, but IPTw-BJ and the G-formula
+probability weighting show bias, but IPTW-BJ and the G-formula
 (T-learner) still converge. The positivity assumption for censoring is
 implicit in these estimators. However, estimating survival time in a
 group of individuals who only experience censoring is possible when the
@@ -5848,6 +6005,7 @@ extrapolated by the model. The below boxplot presents the impact of the
 violation of positivity in the non-parametric context.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+
 simulation_complex_flexible_only <- simulation_complex_flexible %>%
   dplyr:: filter(sample.size == 4000)
 
@@ -5863,12 +6021,7 @@ simulation_complex_flexible_only$sample.size <- factor(
 
 # Convert 'estimator' column to a factor with the specified order
 simulation_complex_flexible_only$estimator <- factor(simulation_complex_flexible_only$estimator, 
-                                    levels = desired_order)
-
-simulation_complex_flexible_only$estimator[is.na(simulation_complex_flexible_only$estimator)] <- "G_formula (S-learner)"
-# Removed package estimator which cannot include flexible regression
-simulation_complex_flexible_only <- simulation_complex_flexible_only %>%
-  dplyr :: filter(!estimator == "RISCA - G_formula (S-learner)")
+                                    levels = desired_order2)
 
 # Create the plot for Observational + dependent censoring in complex simulation
 simulation_graph_complex_flexible_only <- simulation_complex_flexible_only %>%
@@ -5878,7 +6031,7 @@ simulation_graph_complex_flexible_only <- simulation_complex_flexible_only %>%
   )) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the more complex simulation of an observational 
-          study with dependent censoring (non parametric relationship):") +
+          study with dependent censoring (non linear relationship):") +
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Change x-axis label
   ylab("ATE") +  # Change y-axis label
@@ -5898,19 +6051,30 @@ simulation_graph_complex_flexible_only <- simulation_complex_flexible_only %>%
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 load("simulation_complex_positivity.RData")
+
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="G_formula (T-learners)"] <- "G_formula (Forest / T-learners)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="G_formula (S-learners)"] <- "G_formula (Forest / S-learner)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="G_formula (S-learner)"] <- "G_formula (Forest / S-learner)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="IPTW KM"] <- "IPTW KM (Forest)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="IPCW KM"] <- "IPCW KM (Forest)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="BJ"] <- "BJ (Forest)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="AIPTW-AIPCW"] <- "AIPTW-AIPCW (Forest)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="IPTW-IPCW KM"] <- "IPTW-IPCW KM (Forest)"
+simulation_complex_positivity$estimator[simulation_complex_positivity$estimator=="IPTW-BJ"] <- "IPTW-BJ (Forest)"
+
 theme_update(plot.title = element_text(hjust = 0.5))
 
 simulation_complex_positivity$sample.size <- factor(simulation_complex_positivity$sample.size, levels = sort(unique(simulation_complex_positivity$sample.size), decreasing = TRUE))
 
 # Convert 'estimator' column to a factor with the specified order
-simulation_complex_positivity$estimator <- factor(simulation_complex_positivity$estimator, levels = desired_order)
+simulation_complex_positivity$estimator <- factor(simulation_complex_positivity$estimator, levels = desired_order2)
 
 simulation_graph_complex_positivity <- simulation_complex_positivity %>%
   ggplot(aes(x = estimator, y = estimate,  fill = factor(sample.size, levels = rev(levels(sample.size))))) +
   scale_fill_brewer(palette = "Accent") +
   ggtitle("Estimation results of the ATE for the simulation of 
           an observational study with dependent censoring 
-          (non-parametric relationship) when 
+          (non-linear relationship) when 
           positivity for censoring is violated")+
   geom_boxplot(alpha = 0.9, show.legend = TRUE, position = "dodge") +
   xlab("") +  # Changer le label de l'axe x
@@ -6005,23 +6169,17 @@ digraph decision_tree {
   Obs_Ind_Ver[label = 'Verify Positivity of \n Treatment']
   Obs_Ind_Ver_tau[label = 'Lower horizon time']
   Obs_Ind_Formula[label = 'Parametric G-formula + IPTW KM']
-  Obs_Ind_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
-  Obs_Ind_Results2[label = 'Non paramétric AIPTW-AIPCW\nEstimator + CSF']
-  Obs_Ind_Stop[label = 'Stop']
-  Obs_Ind_Results_ok[label = 'RMST Estimator correct']
+  Sens_ana[label = 'Sensitivity analysis']
+
 
   # Third level for Dependent Censoring (Obs)
   Obs_Dep_Ver[label = 'Verify Positivity of \n Cens + Treat']
   Obs_Dep_Ver_tau[label = 'Lower horizon time']
-  Obs_Dep_Formula[label = 'Parametric G-formula + IPTW-IPCW KM']
-  Obs_Dep_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
-  Obs_Dep_Results2[label = 'Non parametric AIPTW-AIPCW\nEstimator + CSF']
+  Obs_Dep_Formula[label = 'Parametric G-formula + AIPTW-AIPCW KM']
+
   
   Obs_Ind_Formula[label = 'Parametric G-formula + IPTW KM']
-  Obs_Ind_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
-  Obs_Ind_Results2[label = 'Non parametric AIPTW-AIPCW\nEstimator + CSF']
-  Obs_Ind_Results_ok[label = 'RMST Estimator correct']
-  Obs_Dep_Stop[label = 'Stop']
+
 
   # Third level for Independent Censoring (RCT)
   RCT_Ind_Unadj[label = 'Unadjusted KM']
@@ -6029,11 +6187,7 @@ digraph decision_tree {
   # Third level for Dependent Censoring (RCT)
   RCT_Dep_Ver[label = 'Verify Positivity of \nCensoring']
   RCT_Dep_Ver_tau[label = 'Lower horizon time']
-  RCT_Dep_Formula[label = 'Parametric G-formula + Para IPCW KM']
-  RCT_Dep_Results[label = 'Parametric AIPTW-AIPCW\nEstimator']
-  RCT_Dep_Results2[label = 'Non-parametric AIPTW-AIPCW\nEstimator + CSF']
-  RCT_Dep_Stop[label = 'Stop']
-  RCT_Dep_Results_ok[label = 'RMST Estimator correct']
+  RCT_Dep_Formula[label = 'Parametric G-formula + IPCW KM']
 
   # Connections with labels (text on arrows)
   RCT -> RCT_Ind
@@ -6042,38 +6196,25 @@ digraph decision_tree {
   RCT -> RCT_Dep
   RCT_Dep -> RCT_Dep_Ver
   RCT_Dep_Ver -> RCT_Dep_Formula [label = 'If verified']
+  RCT_Dep_Formula -> Sens_ana
   RCT_Dep_Ver -> RCT_Dep_Ver_tau [label = 'If not verified']
   RCT_Dep_Ver_tau -> RCT_Dep_Ver
-  RCT_Dep_Formula -> RCT_Dep_Results_ok [label = 'If the results are =']
-  RCT_Dep_Formula -> RCT_Dep_Results [label = 'Otherwise']
-  RCT_Dep_Results -> RCT_Dep_Results2
-  RCT_Dep_Results2 -> RCT_Dep_Stop [label = 'Otherwise']
-  RCT_Dep_Results -> RCT_Dep_Results_ok [label = 'If the results are =']
-  
+
   
   Obs -> Obs_Ind
   Obs_Ind -> Obs_Ind_Ver
   Obs_Ind_Ver -> Obs_Ind_Ver_tau [label = 'If not verified']
   Obs_Ind_Ver_tau -> Obs_Ind_Ver
   Obs_Ind_Ver -> Obs_Ind_Formula [label = 'If verified']
-  Obs_Ind_Formula -> Obs_Ind_Results_ok [label = 'If the results are=']
-  Obs_Ind_Formula -> Obs_Ind_Results [label = 'Otherwise']
-  Obs_Ind_Results -> Obs_Ind_Results_ok [label = 'If AIPTW-AIPCW = G-f or = IPTW-KM']
-  Obs_Ind_Results -> Obs_Ind_Results2 [label = 'Otherwise']
-  Obs_Ind_Results2 -> Obs_Ind_Results_ok [label = 'If the results are =']
-  Obs_Ind_Results2 -> Obs_Ind_Stop [label = 'Otherwize']
+  Obs_Ind_Formula -> Sens_ana
+
   
   Obs -> Obs_Dep
   Obs_Dep -> Obs_Dep_Ver
   Obs_Dep_Ver -> Obs_Dep_Ver_tau [label = 'If not verified']
   Obs_Dep_Ver_tau -> Obs_Dep_Ver
   Obs_Dep_Ver -> Obs_Dep_Formula [label = 'If verified']
-  Obs_Dep_Formula -> Obs_Dep_Results_ok [label = 'If the results are=']
-  Obs_Dep_Formula -> Obs_Dep_Results [label = 'Otherwise']
-  Obs_Dep_Results -> Obs_Dep_Results_ok [label = 'If AIPTW-AIPCW = G-f or = IPTW-KM']
-  Obs_Dep_Results -> Obs_Dep_Results2 [label = 'Otherwise']
-  Obs_Dep_Results2 -> Obs_Dep_Results_ok [label = 'If the results are =']
-  Obs_Dep_Results2 -> Obs_Dep_Stop [label = 'Otherwize']
+  Obs_Dep_Formula -> Sens_ana
 
 }
 ")
