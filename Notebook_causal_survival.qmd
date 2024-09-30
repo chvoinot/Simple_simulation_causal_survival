@@ -42,7 +42,7 @@ keywords:  [Causal survival analysis, Weighting, Robustness, Observational study
 bibliography:  references.bib
 github-user:  chvoinot
 repo:  "Simple_simulation_causal_survival"
-draft:  true # set to false once the build is running
+draft:  false # set to false once the build is running
 published:  false # will be set to true once accepted
 format:  
   computo-html:  default
