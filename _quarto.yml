@@ -1,5 +1,10 @@
 project:
-  title: "Simple_simulation_causal_survival2"
+  type: website
 
-
+website:
+  title: "Mon Projet"
+  navbar:
+    left:
+      - text: Home
+        href: index.qmd
 

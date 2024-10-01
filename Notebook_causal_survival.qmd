@@ -4123,14 +4123,22 @@ all_estimates <- function(data, sample.size, tau,
   )
   }
   if (estimator == "CSF"){
+     # Function to extract variable names from I() for squared terms and interaction terms
+    extract_vars <- function(names) {
+      # Extract names from squared terms
+      extracted_squared <- gsub("I\\((.*)\\^2\\)", "\\1", names)  # Replace "I(X^2)" with "X"
+      # Extract names from interaction terms (e.g., "X1:X2" becomes "X1" and "X2")
+      result_vector <- unique(unlist(strsplit(extracted_squared, ":")))
+    return(unique(result_vector))
+    }
+
+    # Apply the extraction function
+    X.names <- extract_vars(all_names)
+  
     # RMST estimate with IPCW KM
     ATE_RF <- tryCatch({
       # If there is no mis-specification, X.names has to be defined as the 
       # union of all the covariates which influence nuisance models
-      if (mis_specification=="none"){
-        union_12 <- union(X.names.outcome,X.names.propensity)
-        X.names <- union(union_12, X.names.censoring)
-      }
       CSRF(data, X.names, tau = tau)
     }, error = function(e) {
       message("Error in ATE_RF: ", e$message)
@@ -4151,19 +4159,28 @@ all_estimates <- function(data, sample.size, tau,
     )
   }
     if (estimator == "CSF + AIPTW-AIPCW"){
-      # RMST estimate with IPCW KM
-      ATE_RF <- tryCatch({
-        # If there is no mis-specification, X.names has to be defined as the 
-        # union of all the covariates which influence nuisance models
-        if (mis_specification=="none"){
-          union_12 <- union(X.names.outcome,X.names.propensity)
-          X.names <- union(union_12, X.names.censoring)
-        }
-        CSRF(data, X.names, tau = tau)
-      }, error = function(e) {
-        message("Error in ATE_RF: ", e$message)
-        return(NA) 
-      })
+      extract_vars <- function(names) {
+    # Extract names from squared terms
+    extracted_squared <- gsub("I\\((.*)\\^2\\)", "\\1", names)  # Replace "I(X^2)" with "X"
+    # Extract names from interaction terms (e.g., "X1:X2" becomes "X1" and "X2")
+    result_vector <- unique(unlist(strsplit(extracted_squared, ":")))
+    return(unique(result_vector))
+  }
+  # Combine all vectors
+  all_names <- c(X.names.propensity, X.names.outcome, X.names.censoring)
+  
+  # Apply the extraction function
+  X.names <- extract_vars(all_names)
+  
+    # RMST estimate with IPCW KM
+    ATE_RF <- tryCatch({
+      # If there is no mis-specification, X.names has to be defined as the 
+      # union of all the covariates which influence nuisance models
+      CSRF(data, X.names, tau = tau)
+    }, error = function(e) {
+      message("Error in ATE_RF: ", e$message)
+      return(NA) 
+    })
       
       # RMST estimate with AIPTW with pseudo observations (AIPCW transformation)
       ATE_AIPCW_AIPTW <- AIPTW_AIPCW(data, tau = tau, 
@@ -4192,20 +4209,55 @@ all_estimates <- function(data, sample.size, tau,
         )
       )
     }
+    if (estimator == "AIPTW-AIPCW"){
+      # RMST estimate with AIPTW with pseudo observations (AIPCW transformation)
+      ATE_AIPCW_AIPTW <- AIPTW_AIPCW(data, tau = tau, 
+                                     X.names.propensity = X.names.propensity, 
+                                     X.names.outcome = X.names.outcome,
+                                     X.names.censoring = X.names.censoring,
+                                     nuisance_propensity = nuisance_propensity, 
+                                     nuisance_regression = nuisance_survival, 
+                                     nuisance_censoring = nuisance_censoring, 
+                                     nuisance_Qt = nuisance_survival, 
+                                     n.folds = n.folds)
+      
+      results <- data.frame(
+        "sample.size" = rep(sample.size, 1),
+        "estimate" = c(
+          ATE_AIPCW_AIPTW$AIPTW_AIPCW_IPW_res
+        ),
+        "estimator" = c(
+          "AIPTW-AIPCW"
+        ),
+        "nuisance" = rep(
+          paste(nuisance_propensity, nuisance_censoring, 
+                nuisance_survival, sep = "+"), 1
+        )
+      )
+    }
       if (estimator == "CSF + AIPTW-AIPCW + G-formula"){
-      # RMST estimate with IPCW KM
-      ATE_RF <- tryCatch({
-        # If there is no mis-specification, X.names has to be defined as the 
-        # union of all the covariates which influence nuisance models
-        if (mis_specification=="none"){
-          union_12 <- union(X.names.outcome,X.names.propensity)
-          X.names <- union(union_12, X.names.censoring)
-        }
-        CSRF(data, X.names, tau = tau)
-      }, error = function(e) {
-        message("Error in ATE_RF: ", e$message)
-        return(NA) 
-      })
+      extract_vars <- function(names) {
+    # Extract names from squared terms
+    extracted_squared <- gsub("I\\((.*)\\^2\\)", "\\1", names)  # Replace "I(X^2)" with "X"
+    # Extract names from interaction terms (e.g., "X1:X2" becomes "X1" and "X2")
+    result_vector <- unique(unlist(strsplit(extracted_squared, ":")))
+    return(unique(result_vector))
+  }
+  # Combine all vectors
+  all_names <- c(X.names.propensity, X.names.outcome, X.names.censoring)
+  
+  # Apply the extraction function
+  X.names <- extract_vars(all_names)
+  
+    # RMST estimate with IPCW KM
+    ATE_RF <- tryCatch({
+      # If there is no mis-specification, X.names has to be defined as the 
+      # union of all the covariates which influence nuisance models
+      CSRF(data, X.names, tau = tau)
+    }, error = function(e) {
+      message("Error in ATE_RF: ", e$message)
+      return(NA) 
+    })
       
       # RMST estimate with AIPTW with pseudo observations (AIPCW transformation)
       ATE_AIPCW_AIPTW <- AIPTW_AIPCW(data, tau = tau, 
@@ -5597,7 +5649,7 @@ simulation_mis_mistreat_cens_test <- compute_estimator(
   n_sim, tau = tau, scenario = "Mis", 
   X.names.propensity = c("X2"), 
   X.names.outcome = c("I(X1^2)", "I(X2^2)", "X1:X2"),
-  X.names.censoring = c("X3"),
+  X.names.censoring = c("X1","X2"),
   nuisance_propensity = "glm",
   nuisance_censoring = "cox",
   nuisance_survival = "cox",
@@ -5608,16 +5660,44 @@ simulation_mis_mistreat_cens_test <- compute_estimator(
   sample_size = 4000
 )
 
-
-
 save(simulation_mis_mistreat_cens_test,file="simulation_mis_mistreat_cens_test.RData")
+
+simulation_mis_mistreat_cens_8000 <- compute_estimator(
+  n_sim, tau = tau, scenario = "Mis", 
+  X.names.propensity = c("X2"), 
+  X.names.outcome = c("I(X1^2)", "I(X2^2)", "X1:X2"),
+  X.names.censoring = c("X1","X2"),
+  nuisance_propensity = "glm",
+  nuisance_censoring = "cox",
+  nuisance_survival = "cox",
+  coefC = NULL, 
+  parsC = NULL,
+  n.folds = NULL,
+  mis_specification = "none",
+  estimator= "CSF + AIPTW-AIPCW + G-formula",
+  sample_size = 8000
+)
+
+save(simulation_mis_mistreat_cens_8000,file="simulation_mis_mistreat_cens_8000.RData")
+
 ```
 
 ```{r}
 load("simulation_mis_mistreat_cens_test.RData")
+load("simulation_mis_mistreat_cens_8000.RData")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+simulation_mis_mistreat_cens_test$sample.size <- as.character(simulation_mis_mistreat_cens_test$sample.size)
+
+simulation_mis_mistreat_cens_test$sample.size <- as.numeric(simulation_mis_mistreat_cens_test$sample.size)
+
+simulation_mis_mistreat_cens_test <- rbind(simulation_mis_mistreat_cens_test,simulation_mis_mistreat_cens_8000)
+
+simulation_mis_mistreat_cens_test$estimator <- as.character(simulation_mis_mistreat_cens_test$estimator)
+
+
 simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="G_formula (T-learners)"] <- "G_formula (Cox / T-learners)"
 simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="G_formula (S-learner)"] <- "G_formula (Cox / S-learner)"
 simulation_mis_mistreat_cens_test$estimator[simulation_mis_mistreat_cens_test$estimator=="IPTW KM"] <- "IPTW KM (Log. reg.)"
@@ -5657,6 +5737,11 @@ simulation_graph_mis_mistreat_cens <- simulation_mis_mistreat_cens_test %>%
             coord_cartesian(ylim = c(0.2,0.4))
 
 ```
+
+```{r  fig.width=25, fig.height=25}
+simulation_graph_mis_mistreat_cens
+```
+
 
 ```{r eval=FALSE}
 n_sim <- 50
