@@ -1,10 +1,7 @@
 project:
   type: website
 
-website:
-  title: "Mon Projet"
-  navbar:
-    left:
-      - text: Home
-        href: index.qmd
+publish:
+  output-dir: _site  # ou un autre dossier spécifique
+
 

@@ -3472,7 +3472,7 @@ generated in the following way:
     $X_1^2 + X_2^2 + X_1 * X_2$.
 
 -   C from an exponential distribution with mean
-    $0.1\*X_1\^2+0.1\*X_3\^2+X_1\*X_3$.
+    $0.1*X_1^2+0.1*X_3^2+X_1*X_3$.
 
 -   The propensity score is
     $e(x) = \frac{1}{1+exp(0.05*X_1-0.01*X_2+1*X_3-0.1X_4)}$.
@@ -6229,7 +6229,7 @@ use always the most complicated estimator is not feasible. Based on all
 our simulations, we can propose this decision tree to compute
 $\theta_{RMST}$ (**DRAFT**):
 
-```{r}
+```{r eval=FALSE}
 library(DiagrammeR)
 
 # Construction de l'arbre de décision avec texte sur les flèches
