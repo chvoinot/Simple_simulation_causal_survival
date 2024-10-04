@@ -2194,10 +2194,10 @@ $$
 \begin{aligned}
 \widehat{\psi}-\psi & =\psi(\widehat{\mathbb{P}})+\mathbb{P}_n\{\varphi(Z ; \widehat{\mathbb{P}})\}-\psi(\mathbb{P}) \\
 & =\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \widehat{\mathbb{P}})\}+R_2(\widehat{\mathbb{P}}, \mathbb{P}) \\
-& =\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \mathbb{P})\}}_\textrm{S*}+\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \widehat{\mathbb{P}})-\varphi(Z ; \mathbb{P})\}}_{\textrm{T}_1}+\underbrace{R_2(\widehat{\mathbb{P}}, \mathbb{P})}_{\textrm{T}_2} \\
+& =\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \mathbb{P})\}}_\textrm{S*}+\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \widehat{\mathbb{P}})-\varphi(Z ; \mathbb{P})\}}_{\textrm{T}_1}+\underbrace{R_2(\widehat{\mathbb{P}}, \mathbb{P})}_{\textrm{T}_2} 
 \end{aligned}
 $$ 
-with $S^*=o_\mathbb{P}(1/\sqrt{n})$ by the central limit theorem.
+with $S^{*}=o_{\mathbb{P}}(1/\sqrt{n})$ by the central limit theorem.
 $T_1$, known as the empirical process, is of smallest order (sample
 average of a short term as $\varphi(Z ; \widehat{\mathbb{P}})$ converge
 to $\varphi(Z ; \mathbb{P})$) when working with not too complex
@@ -2214,8 +2214,8 @@ $$
 
 If $\widehat{e}(x) \geq \epsilon > 0$ and that the combination product
 of $\| \widehat{e}-e\|$ and $\|\widehat{F}-F \|$ give
-$o_\mathbb{P}(\frac{1}{\sqrt{n}})$, thus,
-$\left|R_2(\widehat{\mathbb{P}}, \mathbb{P})\right|=o_\mathbb{P}(\frac{1}{\sqrt{n}})$.
+$o_{\mathbb{P}}(\frac{1}{\sqrt{n}})$, thus,
+$\left|R_2(\widehat{\mathbb{P}}, \mathbb{P})\right|=o_{\mathbb{P}}(\frac{1}{\sqrt{n}})$.
 In other words, the residual term tends towards zero even if one of the
 estimators $widehat{F}(x)$ or $widehat{e}(x)$ converges slowly while the
 other compensates by converging more quickly and vice-versa.
