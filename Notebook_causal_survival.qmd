@@ -2196,7 +2196,8 @@ $$
 & =\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \widehat{\mathbb{P}})\}+R_2(\widehat{\mathbb{P}}, \mathbb{P}) \\
 & =\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \mathbb{P})\}}_\textrm{S*}+\underbrace{\left(\mathbb{P}_n-\mathbb{P}\right)\{\varphi(Z ; \widehat{\mathbb{P}})-\varphi(Z ; \mathbb{P})\}}_{\textrm{T}_1}+\underbrace{R_2(\widehat{\mathbb{P}}, \mathbb{P})}_{\textrm{T}_2} \\
 \end{aligned}
-$$ with $S^*=o_\mathbb{P}(1/\sqrt{n})$ by the central limit theorem.
+$$ 
+with $S^*=o_\mathbb{P}(1/\sqrt{n})$ by the central limit theorem.
 $T_1$, known as the empirical process, is of smallest order (sample
 average of a short term as $\varphi(Z ; \widehat{\mathbb{P}})$ converge
 to $\varphi(Z ; \mathbb{P})$) when working with not too complex
