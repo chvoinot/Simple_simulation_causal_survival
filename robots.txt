@@ -1,0 +1,1 @@
+Sitemap: https://chvoinot.github.io/Simple_simulation_causal_survival/sitemap.xml
