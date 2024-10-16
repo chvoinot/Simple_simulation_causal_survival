@@ -1,6 +1,6 @@
 ---
 title:  "Causal survival analysis"
-subtitle:  "Estimation of the Average Treatment Effect (ATE) in Causal Survival Analysis : Practical Recommendations"
+subtitle:  "Estimation of the Average Treatment Effect (ATE): Practical Recommendations"
 author:  
   - name:  Charlotte Voinot
     corresponding:  true
@@ -50,108 +50,43 @@ format:
 editor:  
   markdown:  
     wrap:  72
+execute:
+  echo: false
+  eval: false
 ---
 
 # Introduction {#sec-intro}
 
-Survival analysis is a key research area with applications in
-biostatistics, engineering, and social sciences. It deals with
-time-to-event data and faces the challenge of censoring, where only
-partial information about an event is known. Removing censored data
-introduces bias, while treating it as complete is equally problematic.
-This so-called censoring can be most effectively handled using survival
-analysis techniques, which depend on the specific characteristics of the
-censoring. The most common type of censoring is right-censoring, where
-the event has not occurred by the last observation, suggesting it
-happens later. Left-censoring occurs when the event predates the study,
-while interval censoring happens when the event occurs between two
-observations. The censoring mechanism also plays a crucial role:
-independent censoring (or non-informative censoring) assumes that
-censoring is unrelated to covariates, a requirement for estimators like
-Kaplan-Meier and Cox models. In contrast, informative censoring depends
-on the survival time and covariates, introducing bias if not accounted
-for, making standard techniques invalid. Causal inference evaluates the
-effect of treatments or interventions on outcomes, a widely used
-approach in health, economics, and social sciences. In a binary
-treatment setting ($A=1$: treated, $A=0$: untreated), outcomes $Y^{a=1}$
-and $Y^{a=0}$ represent potential outcomes under different treatments.
-The individual treatment effect (ITE), defined as $Y^{a=1}-Y^{a=0}$, is
-central to causal inference. However, only one potential outcome can be
-observed per individual. The Average Treatment Effect (ATE) addresses
-this limitation by averaging ITEs. Randomized controlled trials (RCTs)
-are the gold standard for causal effect estimation as they balance
-covariates between treated and untreated groups. However, RCTs often
-lack generalizability due to restrictive inclusion criteria.
-Consequently, observational studies using real-world data (RWD) are
-increasingly used. Unlike RCTs, observational studies must address
-confounding bias, often handled using propensity scores or
-regression-based methods, under strong assumptions like
-unconfoundedness.
+Causal survival analysis is a growing field that integrates causal inference [@rubin_estimating_1974; @hernan2010causal] with survival analysis to evaluate the impact of treatments on time-to-event outcomes, while accounting for censoring—situations where only partial information about an event's occurrence is available. The most common form of censoring is right-censoring, where the event of interest has not occurred by the last observation, implying it may happen later.
 
-This article explores causal survival analysis, which combines causal
-inference and survival analysis to assess the effect of a treatment on
-time-to-event outcomes in the presence of censoring. Specifically, we
-focus on estimating the ATE for time-to-event data with static treatment
-assignment, baseline covariates, and right-censoring. In @sec-notations,
-we define the causal treatment effect for survival outcomes, emphasizing
-the easily interpretable Restricted Mean Survival Time (RMST). In
-@sec-theoryRCT, we discuss identifiability assumptions to address the
-challenges of censoring and treatment assignment, followed by the
-presentation of corresponding estimators in the RCT context. Similarly,
-@sec-theoryOBS extends these estimators to observational studies.
+In this field, the causal effect of a treatment is often measured using the Restricted Mean Survival Time (RMST), which offers an intuitive interpretation of the average survival time over a specific period. RMST addresses the limitations of interpreting the hazard ratio as a causal treatment effect [@martinussen_causality_cox; @Martinussen2013; @HR_Martinussen; @Hernan2010_HR] , which is often debated due to its potential non-causal nature.
 
-Despite extensive literature on causal survival estimators, few software
-packages exist. We provide implementations for each estimator discussed
-in @sec-theoryRCT and @sec-theoryOBS. Finally, in @sec-simulation, we
-evaluate these estimators through simulations representing RCTs and
-observational studies under different conditions: independent or
-conditionally independent censoring, correct or incorrect model
-specifications, and positivity violations. We conclude with practical
-recommendations on estimator selection based on criteria like
-convergence, complexity, and computational efficiency.
+However, causal survival analysis is still a relatively new domain, and the existing literature, though vast, remains fragmented. As a result, a clear understanding of the theoretical properties of various estimators is challenging to obtain. Moreover, the implementation of proposed methods is limited, leaving researchers confronted with a range of available estimators and the need to make numerous methodological decisions. There is a pressing need for a comprehensive survey that organizes the available methods, outlines the underlying assumptions, and provides an evaluation of estimator performance—particularly in finite sample settings.
 
-# Context and Notations {#sec-notations}
+In this paper, we begin by presenting the necessary notations in@sec-notations. We then detail the identifiability assumptions and available estimators within the context of both randomized trials (@sec-theoryRCT) and observational data (@sec-theoryOBS). Finally, in @sec-simulation, we conduct a numerical comparison of these estimators through simulations under various conditions, including independent and conditionally independent censoring, correct and incorrect model specifications, and violations of positivity assumptions. We conclude with practical recommendations on estimator selection, based on criteria such as convergence behavior, computational complexity, and efficiency.
 
-## Notations {#sec-notations1}
 
-Let's consider a sample of $n$ i.i.d observations that are described by:
+## Notations and definition of the estimand {#sec-notations}
 
--   $X_{i}$: the baseline covariates, $X \in \mathbb{R}^p$.
+Let's consider ($X_{i},A_{i},C_{i},\tilde{T_{i}}$)  a sample of $n$ i.i.d realizations of the quadruplet $(X, A, C, \tilde T)$  where $X \in \mathbb{R}^p$ denotes the baseline covariates, $A \in \{0, 1\}$ the binary treatment, $C \in \mathbb{R}^+$ the censoring time and $\tilde T \in \mathbb{R}^+$ the observed survival time. 
 
--   $A_{i}$: the binary treatment, $A \in \{0, 1\}$.
+We consider the potential outcome framework by [@rubin_estimating_1974; @hernan2010causal] and note  $T(0)$ the survival time to the event of interest had the patient received control and $T(1)$ the survival time to the event of interest had the patient received treatment. 
+In practice, we can not have simultaneously access to  $T(0)$ and  $T(1)$, as one patient is either treated or control, but only to $T$ defined as follows 
 
--   $C_{i}$: the time to censoring, $C \in \mathbb{R}^+$.
+::: {#as-Consistency .assumption}
+**Assumption 1: Stable Unit
+Treatment Value Assumption: SUTVA**
 
--   $T_{i}(0)$: the survival time to the event of interest had the
-    patient received control $A_{i}=0$.
+$$ 
+T = AT(1) + (1-A)T(0)
+$$ {#eq-consistency}
+:::
 
--   $T_{i}(1)$: the survival time to the event of interest had the
-    patient received treatment $A_{i}=1$.
+However, due to censoring, the outcome $T$ is not completely observed  [@censoring_effect] and one only observed  $\tilde T= T \wedge C = \min(T,C)$. When an observation is censured, the observed time is  equal to the censoring time. The censoring time considered is type II censoring also known as right censoring.
 
--   $T_{i} =A_{i} T_{i}(1)+(1-A_{i}) T_{i}(0)$, $T \in \mathbb{R}^+$:
-    the observed outcome (see identifiability assumption
-    @eq-consistency).
+We further introduce the notation  $\Delta = I\{T \leq C\}$ the status of censoring, where $I\{\cdot\}$ is the indicator.
 
--   $T_{i} \wedge \tau =min(T_i,\tau)$,: the truncated observed outcome
-    at $\tau$.
-
--   $\Delta_{i}=I\{T_{i} \leq C_{i}\}$: the status of censoring, where
-    $I\{\cdot\}$ is the indicator.
-
--   $\Delta_{i}^\tau=I\{T_{i} \wedge \tau \leq C_{i}\}$: the status of
-    censoring truncated at $\tau$ (introduced later)
-
--   $\tilde{T_{i}}= T_{i} \wedge C_{i} = \min(T_i,C_i)$: the observed
-    time. When an observation is censured, then its observed time is
-    equal to the censoring time. The censoring time is type II censoring
-    (right censoring).
-
--   $S(t)=P(T \geq t)$: the survival curve, which represents a key
-    function in survival analysis. It denotes the probability that an
-    individual will survive beyond a given time $t$.
-
-The observed data can be summarized as a quadruplet
-($X_{i},A_{i},\Delta_{i},\tilde{T_{i}}$) represented in
+The observed and non observed data is represented in
 @tbl-exemple_data.
 
 | ID  | Covariates |         |         | Treatment | Censoring | Status   | Outcomes |      |     |             |
@@ -162,196 +97,43 @@ The observed data can be summarized as a quadruplet
 | 3   | 9          | 0.5     | 3       | 1         | 200       | 0        | ?        | ?    | ?   | 200         |
 
 : Example of survival data with covariates, treatment, the censoring
-time, the status of censoring and the potential outcomes and observed
-outcomes. {#tbl-exemple_data}
+time, the status of censoring and the potential outcomes, the partially observed ouctome and the observed outcomes. {#tbl-exemple_data}
 
-[LB: de manière générale, je trouve qu'il serait pertinent de remplacer cette section notations, où tu parles de notations pour des objets pas encore définis, par une partie définitions qui introduit également les notations + un tableau résumé à la fin]
+[CB: niveau notation, il y a une incoherence dans le notebook entre $P$ et $\mathbb{P}$, $E$ et $\mathbb{E}$.]
 
-[CB: niveau notation, il y a une incoherence dans le notebook entre $P$ et $\bbP$, $E$ et $\bbE$.]
-
-## Definition of treatment effect {#sec-treatment_effect}
-
-In causal inference, the primary goal is to estimate the individual
-causal effect of the treatment denoted as $\theta_i = T_i(1) - T_i(0)$
-[@rubin_estimating_1974; @hernan2010causal]. However, this quantity
-cannot be observed because at most one outcome can be observed per
-sample (see @tbl-exemple_data). Furthermore, censoring may also mask
-outcomes [@censoring_effect].
-
-Despite these challenges, certain identifiability assumptions, described
-in @sec-assumptions, enable us for estimating the average treatment
-effect [@RMST_estimator; @RMST_estimator2] (ATE) which is defined as
-follows:
+Our aim is to estimate the Average Treatment Effect (ATE) defined as the difference between the restricted mean survival time of the treated and controls  [@RMST].
 
 ::: {#def-ATE}
-## Causal effect: Average treatment effect in survival analysis (ATE)
+### Causal effect: Difference between Restricted Mean Survival Time 
 
 $$
-\theta = \mathbb{E}\left[y(T(1)) - y(T(0))\right] 
+\theta_{RMST} = \mathbb{E}\left[y(T(1)) - y(T(0))\right], 
 $$
+with $y(T) = T \wedge \tau = \min(T,\tau)$, the truncated partially outcome
+at $\tau$,  with $\tau$ a fixed time horizon. 
 
--   with $y(T) = T \wedge \tau = \min(T,\tau)$ with $\tau$ a fixed time
-    horizon; then, $E(y(T))$ becomes the restricted mean survival time
-    (RMST) at time $\tau$ [@RMST].
-
--   with $y(T) = I\{T>\tau\}$ the indicator of survival with $\tau$ a
-    fixed time horizon.
 :::
 
-[LB: je trouve + clean d'éviter les listes et bullet points dans un article, et de préférer les phrases rédigées]
-
-In this article, we only focus on restricted mean survival time
-($y(T) = T \wedge \tau = \min(T,\tau)$) as the estimand of interest.
-
-There is a direct relationship between RMST and the survival curve. Because $T \wedge \tau$ is a non-negative random variable, there holds:
-
-[LB: la survival curve n'a pas été définie]
+Let us note $S(t)=P(T \geq t)$ the survival curve, i.e. the probability that an
+individual will survive beyond a given time $t$.
+Because $T \wedge \tau$ is a non-negative random variable, one can express the restricted mean survival time with the survival function:
 
 $$
 E(T \wedge \tau) = \int_{0}^{\infty} P(T\wedge \tau > t)dt = \int_{0}^{\tau}S(t)dt
 $$
-
-With this expression, we can interpret $\theta_{RMST}$ as the mean
+Consequently, $\theta_{RMST}$ can be interpreted as the mean
 difference between the survival function of treated and control until a
-fixed time horizon $\tau$. RMST can be interpreted as the average
-survival time from baseline to a pre-specified time $\tau$. Thus, a
-difference in RMST ($\theta_{RMST}$) value of $10$ days with $\tau=200$
+fixed time horizon $\tau$.  Thus, a
+difference in RMST $\theta_{RMST} = 10$ days with $\tau=200$
 means that on average the treatment increases the survival time by 10
 days at 200 days.
+
+The difference in RMST, illustrated in @fig-RMST is a time-dependent
+measure that vary with the value of $\tau$.
 
 ![Plot of Kaplan-Meier survival curve for treated and control. The
 $\theta_{RMST}$ at $\tau=50$ is represented in
 yellow](KM_RMST.png){#fig-RMST}
-
-The difference in Restricted Mean Survival Time is a time-dependent
-measure that can be easily understood with the help of @fig-RMST. The
-average survival time will naturally vary based on the value of $\tau$.
-
-A very naive (and biased) estimator of the average treatment effect
-could be to compute the difference of the mean of the uncensored
-survival time between the treated and the untreated group:
-
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-# Naive estimator: 
-# Warning, this estimator does not take into account censoring
-# This estimator is in all context biased
-Naive <- function(data, tau) {
-  # Remove censored observations
-  data<- data[data$status == 1, ]
-  # Compute the restricted survival time
-  data$T_obs_tau <- ifelse(data$T_obs >= tau, tau, data$T_obs)
-  
-  # Compute the difference of the restricted mean survival time of treated 
-  # and control
-  mean_naive <- mean(data$T_obs_tau[data$A == 1]) - 
-    mean(data$T_obs_tau[data$A == 0])
-  
-  return(mean_naive)
-}
-```
-
-This estimator eliminates censored observations, which represents a
-considerable loss of information [LB: je crois que c'est possible de montrer que l'estimateur que tu obtiens est biaisé dans ce cas là. A confirmer, je peux éventuellement demander à Agathe Guilloux si tu ne trouves pas la ref]. A reliable [LB: privilégier ici un terme statistique - consistent, asymptotically unbiased, ...] estimator of
-$\theta_{RMST}$ must include censored observations but also be expressed
-with observed quantities. To do this, certain identifiability
-assumptions are necessary to allow the ATE to be identified in different
-contexts. [LB: je ne suis pas expert en biostat, je ne comprends pas bien ici ce que veut dire "identifier un estimateur". Tu veux dire que ton estimateur est consistent ?]
-
-## General identifiability assumptions {#sec-assumptions}
-
-A general identifiability assumption, already well-known in the field of
-causal inference, needs to be introduced:
-
-[LB: je pense qu'il faut garder un style tout au long de l'article: si tu utilises la voix active (we introduce...) il faut le faire partout.]
-
-::: {#as-Consistency .assumption}
-**Assumption 1: Consistency and no-interference Assumption (Stable Unit
-Treatment Value Assumption: SUTVA)**
-
-$$ 
-T = AT(1) + (1-A)T(0)
-$$ {#eq-consistency}
-:::
-
-[LB: Même remarque qu'avant, je pense qu'il vaut mieux une définition avec un peu de texte]
-
-This @eq-consistency means that unit $i$'s potential outcomes do not
-depend on the treatments of other units. This is known as the
-no-interference assumption. Basically, this assumption can be violated
-in cases of infectious diseases [LB: explain]. Additionally, @eq-consistency means
-that there are no other versions of the treatment
-[@ding2023coursecausalinference].
-
-As introduced in @sec-intro, it is crucial to consider the mechanism of
-censoring to identify appropriate estimators of $\theta_{RMST}$.
-
-### Censoring mechanism {#sec-censoringmechan}
-
-This article focuses only on right censoring with two mechanisms of
-censoring considered. The first one is independent censoring:
-
-::: {#as-IndependantCensoring .assumption}
-**Assumption 2: Independent/ Non informative censoring**
-
-$$ 
-C \perp\mkern-9.5mu\perp T(0),T(1),X,A 
-$$ {#eq-independantcensoring}
-:::
-
-Under @eq-independantcensoring, subjects censored at time $t$ are
-representative of all subjects who remain at risk at time $t$. It is as
-if the censored subjects were randomly selected from all subjects.
-
-The case of dependent censoring considers that censoring is
-conditionally independent on covariates.
-
-::: {#as-condindepcensoring .assumption}
-**Assumption 3: Conditionally independent censoring**
-
-$$ 
- C \perp\mkern-9.5mu\perp T(0),T(1)|X_c,A 
-$$ {#eq-condindepcensoring} with $X_c$ is the set of covariables which
-influence the censoring mechanism.
-:::
-
-Under @eq-condindepcensoring, within subgroups represented by $X_c=x$,
-subjects censored at time $t$ are representative of all subjects in
-their subgroup who remain at risk at time $t$. It is as if the censored
-subjects were randomly selected inside each subgroup. [LB: je n'aime pas trop cette tournure de phrase, peut-être écrire mathématiquement ce que tu veux dire ?]
-This assumption is
-very similar to the assumption of uncounfoundedness in causal inference [LB: explain].
-This assumption implies that there are no unmeasured confounders for
-censoring.
-
-Another assumption for identifiability of $\theta_{RMST}$ is required in
-case of conditionally independent censoring: we need to assume that all
-subjects have a positive probability to remain uncensored at their
-failure time.
-
-::: {#as-positivitycensoring .assumption}
-**Assumption 4: Positivity / Overlap for censoring**
-
-$$ 
-0 < P( C > t \mid X_c=x, A=a) < 1, \forall t\leq \tau.
-$$ {#eq-positivitycensoring}
-:::
-[CB: je me pose la question de l'utilité de la borne < 1. Si c'est égale à 1, alors $C > t$ p.s. mais c'est plutôt bien non? Et ça ne fait vriller aucun des estimateurs]
-This assumption ensures that, for any time $t$, the probability of
-censoring is neither 0 nor 1, allowing for balance in the censoring
-mechanism across subgroups. If violated, it means that results are
-either only observed before or after time $t$, which can limit the
-analysis. In practice, adjusting the threshold time $\tau$ can help meet
-this assumption. For example, in a 5-year clinical study, if patients
-leave due to severe side effects or worsening health, censoring becomes
-dependent. In such cases, the likelihood of remaining uncensored for
-severely ill patients at 5 years is zero. To address this, $\tau$ can be
-adjusted so that participants have a chance to remain uncensored up to a
-revised threshold time. Despite its strength, this assumption can be
-verified by modeling the conditional probability of censoring using
-methods like the Cox model or survival forest, and checking for non-zero
-probabilities across covariate subgroups. [LB: pas clair IMO mais ça dépend du public que tu vises] We will next consider the
-identifiability assumptions for randomized clinical trials, starting
-with this simpler but more robust design.
 
 # Causal survival analysis with a Randomized Control Trial {#sec-theoryRCT}
 
@@ -363,66 +145,59 @@ between covariables and treatment. The core assumption in a RCT is the
 random assignment of the treatment [@rubin_estimating_1974].
 
 ::: assumption
-**Assumption 5: Random treatment assignment**
+**Assumption 2: Random treatment assignment**
 
 $$ 
 A \perp\mkern-9.5mu\perp(T(0),T(1),C,X)
 $$ {#eq-randomization}
 :::
 
-@eq-randomization implies that the treatment is given at random and is
-independent of both the potential outcomes and the covariates. It is
-like flipping a coin to decide the treatment assignment. In that case,
-as the covariates are balanced between treated and control (the
-treatment assignment does not depend on covariates), the causal effect
-is direct.[LB: what do you mean by direct ?]
-
-In the context of no censoring, causal effect is straightforward and can
-be measure with one simple estimator (such as OLS estimator). [LB: sentences should not start w "But"] But in our
-case, censoring is present and the censoring mechanism has to be
-considered. In the next section, we will introduce identifiability of
-$\theta_{RMST}$ and the corresponding estimator in the simple case:
-independent censoring.
-
-## Independent censoring {#sec-theoryRCT_indc}
-
-The @fig-RCT_ind_causalgraph illustrates a simple causal graph when the
-study is randomized with independent censoring.
-
-![Illustration of a simple causal graph in RCT survival data with
-independent censoring ($A$ is the treatment, $X$ the precision
-variables, $T$ is the time to event outcome and $C$ is the time of
-censoring)](Causalgraph_rct_ind.png){#fig-RCT_ind_causalgraph
-fig-align="center" width="50%"}
-
-[LB: you did not define "precision variables"]
-
-### Identifiability
-
-Under @eq-randomization (random treatment assignment) and
-@eq-independantcensoring (independent censoring), the difference in
-RMST, $\theta_{RMST}$, can be identified [LB: computed ?] as follows: [CB: j'ai modifié]
+Under @eq-randomization (random treatment assignment) classical causal identifiability equations can be written to express  $\theta_{RMST}$ without potential outcomes. 
 
 $$
 \begin{aligned}
     \theta_{RMST} &=  \mathbb{E}[T(1) \wedge \tau - T(0) \wedge \tau]\\
-    &= \mathbb{E}[T(1) \wedge \tau | A = 1] - \mathbb{E}[ T(0) \wedge \tau| A= 0]  && \tiny\text{(Random treatment assignment As. 5)} \\
-       &= \mathbb{E}[T \wedge \tau | A = 1] - \mathbb{E}[ T \wedge \tau| A= 0]  && \tiny\text{(By consistency As.1)}\\
-    &= \int_{0}^{\tau}{\mathbb{P}(T>t|A=1) - \mathbb{P}(T>t|A=0) dt}
+    &= \mathbb{E}[T(1) \wedge \tau | A = 1] - \mathbb{E}[ T(0) \wedge \tau| A= 0]  && \tiny\text{(Random treatment assignment, As. 2)} \\
+       &= \mathbb{E}[T \wedge \tau | A = 1] - \mathbb{E}[ T \wedge \tau| A= 0]  && \tiny\text{(By consistency, As. 1)}
 \end{aligned}
 $$ {#eq-RMSTkm}
 
-**Voir si c'est cohérent de pousser un peu plus les équations pour que l'utilisation de Kaplan-Meier soit evident**
 
-$\mathbb{P}(T>t|A=a)$ ($S(t,A=a)$) is the survival function and can be
-estimated using usual estimator of survival function such as Kaplan
-meier estimator, cox model, etc. [LB: this definition should be moved up and introduced in greater detail]
+However, @eq-RMSTkm still depends on $T$ which is not fully observed due to censoring. Two mechanisms of censoring are often considered in survival analysis: independent censoring and conditionnaly independent censoring.
+
+## Independent censoring {#sec-theoryRCT_indc}
+
+::: assumption
+**Assumption 2: Independent/ Non informative censoring**
+$$ 
+C \perp\mkern-9.5mu\perp(T(0),T(1),X,A)
+$$ {#eq-independantcensoring}
+:::
+
+Under Equation @eq-independantcensoring, subjects censored at time $t$ are representative of all subjects who remain at risk at time $t$. It is as if the censored subjects were randomly selected from all subjects.
+
+@fig-RCT_ind_causalgraph represents the causal graph when the
+study is randomized with independent censoring.
+
+![Causal graph in RCT survival data with
+independent censoring ($A$ is the treatment, $X$ the covariates, $T$ is the time to event outcome and $C$ is the time of
+censoring)](Causalgraph_rct_ind.png){#fig-RCT_ind_causalgraph
+fig-align="center" width="50%"}
 
 
 ### Estimation with Unadjusted Kaplan-meier {#sec-unadjusted_KM}
 
-The straightforward estimator of the @eq-RMSTkm is the difference of
-Unadjusted Kaplan Meier estimator for the treated and control group:
+The treatment effect $\theta_{RMST}$ in @eq-RMSTkm can be written as:
+
+$$\theta_{RMST} = \int_{0}^{\tau}{  S(t\mid A=1) -   S(t \mid A=0) dt},$$ with $S(t \mid A=a)= \mathbb{P}(T>t|A=a)$.
+
+Under Assumption 2, it can be estimated by integrating from 0 to
+$\tau$ the difference between the Unadjusted Kaplan Meier estimators for the treated and control group. 
+
+
+$$
+\hat{\theta}_{KM}(\tau) = \int_{0}^{\tau}\left( \hat{S}_{KM}(t \mid 1)  - \hat{S}_{KM}(t \mid 0)  \right)dt
+$$
 
 ::: {#def-km}
 ### Unadjusted Kaplan meier estimator
@@ -435,48 +210,29 @@ $$
 $$ {#eq-unadjKM}
 :::
 
-The corresponding $\theta_{RMST}$ is obtained in integrating from 0 to
-$\tau$ the difference between unadjusted Kaplan Meier estimator of the
-treated and controls (@eq-RMSTkm):
+[CB: il faut introduire les $\{t_j\}$: est-on sur une grille? est-ce que ce sont les valeurs prises par les $T_i$ (auquel case ce sont des quantités aléatoires)?]
 
-$$
-\hat{\theta}_{RMST}(\tau) = \int_{0}^{\tau}\left( \hat{S_1}(t) - \hat{S_0}(t) \right)dt
-$$
-[CB: il y a trop de notation différente ($\hat S_{KM}(t|a)$, $\hat S_a(t)$)]
 
-#### Properties of Unadjusted Kaplan Meier estimator
+**Pousser un peu plus les équations pour que l'utilisation de Kaplan-Meier soit evident** 
+[CB: de plus, il me semble que tu devrais clarifier également pourquoi tu reformules l'espérance avec la fonction de survie ici (à strictement parlé, il ne s'agit plus d'une étape d'identification). C'est encore moins clair au niveau de l'IPC quand on passe par KM pour estimer le RMST alors qu'on pouvait directement appliquer... IPC.]
 
-Unadjusted Kaplan Meier for the survival function is a nonparametric MLE
-(maximum likelihood estimator). Its asymptotic properties has been
-derived firstly by @Kaplan_consistency_breslow74. An other simple way of
-deriving the asymptotic properties is to consider Kaplan-Meier estimator
-as a Martingale process [@Aalen2008]  [LB: ref pas propre]. Kaplan-Meier is proved to be:
-
-[LB: le point de vue martingale est un peu complexe à introduire en détail. Es-tu sûre que tu veux en parler ? Est-ce que tu t'en sers plus loin ?][CB: je suis d'accord avec LB, et même pourquoi pas se placer dans un cadre ou T est discret parce que tout est plus facile à montrer (et que j'imagine quand dans des cas concrets T aura toujours une certaine granularité (i.e. un jour))]
-
--   Uniformly consistent:
-    $\sup _{s \in[0, t]}|\hat{S}(s)-S(s)| \xrightarrow{\mathbb{P}} 0$.
-
--   Asymptotically normal for a fixed $t$:
-    $\sqrt{n}\left(\hat{S}\left(t\right)-S\left(t\right)\right) \underset{n \rightarrow \infty}{\stackrel{\mathcal{L}}{\longrightarrow}} \mathcal{N}\left(0, V^2\left(t\right)\right)$
-    with
-    $V^2\left(t\right)=-S^2\left(t_0\right) \int_0^{t} \frac{S(d u)}{S^2(u) G(u)}$.
-
-To derive this asymptotic distribution, we need to assume that the
+Under the assumptions that the
 proportion of the sample at risk at time $t$ becomes stable as the
-sample size increases [@Aalen2008] and that the censoring is not
-informative (independent).
-[LB: quand tu cites un gros bouquin comme celui là, je trouve qu'il est opportun de citer le numéro de page]
-
-Under the same conditions, the Restricted Mean Survival Time
-($F(t)=\int_0^\tau S(t)dt$) derived by an unadjusted Kaplan-Meier is
-proved to be:
+sample size increases [@Aalen2008] and independent censoring @eq-independantcensoring, $\hat{\theta}_{KM}(\tau)$ is 
 
 -   Almost surely consistent estimator of the true RMST [@Andersen1993]
 
 -   Asymptotically normal with a variance that may be estimated by
     $\hat{V}(t)=\sum_{t_j \leq t} \frac{\left(\hat{F}(t)-\hat{F}(t_j)\right)^2}{Y(t_j)^2}$
     [@Aalen2008 ; @Andersen1993].
+    
+These properties come from the asymptotic properties of the KM estimator [@Kaplan_consistency_breslow74]. 
+
+
+[LB: quand tu cites un gros bouquin comme celui là, je trouve qu'il est opportun de citer le numéro de page][CB: d'accord]
+
+[LB: le point de vue martingale est un peu complexe à introduire en détail. Es-tu sûre que tu veux en parler ? Est-ce que tu t'en sers plus loin ?][CB: je suis d'accord avec LB, et même pourquoi pas se placer dans un cadre ou T est discret parce que tout est plus facile à montrer (et que j'imagine quand dans des cas concrets T aura toujours une certaine granularité (i.e. un jour))]
+
 
 #### Implementation {#sec-implunadjusted}
 
@@ -495,16 +251,9 @@ library(forecast)
 library(gridExtra)
 ```
 
-For better interpretability and transparency, we implement an unadjusted
-Kaplan-Meier estimator and apply the rectangle integration method
-(detailed in @sec-Annexes) between 0 and $\tau$ for both survival curves
-(control and treated) to obtain $\theta_{RMST}$ (as shown in @fig-RMST).
-Alternatively, existing packages can be used for these calculations. For
-instance, the Kaplan-Meier curve can be generated with the survfit()
-function from the survival package [@Therneau_2001], and the restricted
-mean survival time can be derived using the rmean() function through the
-same rectangle integration method, followed by calculating the
-difference. Both approaches are equivalent and yield the same results.
+The difference between Restricted Mean Survival time, estimated using KM, $\hat \theta_{KM}$, can be obtained using the functions survfit() and  rmean() from the  survival package [@Therneau_2001]. The former estimate the survival function with KM while the latter perform the integration using the rectangle integration well suited for step functions. 
+
+We also provide a detailed "home made" implementation for better understanding. 
 
 The following code includes several functions :
 
@@ -629,21 +378,31 @@ RMST_1 <- function(data = NULL, A1 = 1, A0 = 0, tau, S_A1 = NULL, S_A0 = NULL) {
 
 ```
 
-It is crucial to adapt the integration method to the type of function
-being integrated. Since the Kaplan-Meier estimator is a step function,
-the rectangle method is the most suitable. However, when the survival
-function comes from a parametric model (e.g., Weibull or Exponential), a
-more precise method like the trapezoidal method is recommended (details
-in @sec-Annexes) to calculate $\theta_{RMST}$.
-
-When censoring becomes conditionally independent on covariates, the
-previously mentioned estimators are insufficient, as they assume
-independent censoring. The next section introduces strategies to address
-this issue.
 
 ## Conditional independent censoring {#sec-condcens}
 
-The @fig-RCT_dep_causalgraph illustrates a simple causal graph when the
+::: assumption
+**Assumption 3: Conditionally independent censoring**
+$$ 
+C \perp\mkern-9.5mu\perp(T(0),T(1))|X,A
+$$ {#eq-condindependantcensoring}
+:::
+
+Under @eq-independantcensoring, within subgroups represented by $X=x$, subjects censored at time $t$ are representative of all subjects in their subgroup who remain at risk at time $t$. It is as if the censored subjects were randomly selected inside each subgroup. [LB: je n’aime pas trop cette tournure de phrase, peut-être écrire mathématiquement ce que tu veux dire ?]. This assumption implies that we observe all variables related to censoring and potential outcomes.
+
+In case of conditionally independent censoring,  we also need to assume that all subjects have a positive probability to remain uncensored at their failure time.
+
+::: {#as-positivitycensoring .assumption}
+**Assumption 4: Positivity / Overlap for censoring**
+
+$$ 
+0 < P( C > t \mid X=x, A=a) < 1, \forall t\leq \tau.
+$$ {#eq-positivitycensoring}
+:::
+[CB: je me pose la question de l'utilité de la borne < 1. Si c'est égale à 1, alors $C > t$ p.s. mais c'est plutôt bien non? Et ça ne fait vriller aucun des estimateurs]
+                                                                  This assumption ensures that, for any time $t$, the probability of
+ censoring is neither 0 nor 1, allowing for balance in the censoring mechanism across subgroups. If violated, it means that results are either only observed before or after time $t$, which can limit the analysis. In practice, adjusting the threshold time $\tau$ can help meet this assumption. For example, in a 5-year clinical study, if patients leave due to severe side effects or worsening health, censoring becomes dependent. In such cases, the likelihood of remaining uncensored for severely ill patients at 5 years is zero. To address this, $\tau$ can be adjusted so that participants have a chance to remain uncensored up to a revised threshold time.                                                                              
+@fig-RCT_dep_causalgraph represents the causal graph when the
 study is randomized with conditionally independent censoring.
 
 ![ Illustration of a simple causal graph in RCT survival data with
@@ -652,136 +411,48 @@ variables of the outcome, $T$ is the time to event outcome, $X_c$
 the covariates which impact the censoring and $C$ is the time of
 censoring)](Causalgraph_rct_dep.png){#fig-RCT_dep_causalgraph fig-align="center" width="50%"}
 
-Under @eq-randomization (random treatment assignment) and
-@eq-condindepcensoring (conditional independent censoring), a strategy
-to make the identification of the $\theta_{RMST}$ possible can be to use
-a censoring unbiased transformation. A notable advantage of this
-transformation is that it enables the use of causal inference estimators
-in the same way as with fully observed data.
+[CB: idem pas de flèche C->T. De plus on utilise jamais la distinction $X_c$ vs $X_t$ dans l'analyse, est-ce qu'on veut vraiment introduire cette nuance?]
 
-### Notion of censoring unbiased transformation {#sec-unbiasedtransf}
-
+**Censoring unbiased transformation** 
+To overcome bias due to conditionally independent censoring @eq-condindependantcensoring, it is common in survival analysis to consider censoring unbiased transformations. A notable advantage of this
+approach is that it enables the use of estimators
+as if the data are fully observed. 
 The concept introduced by @Fan1994LocalPM for local polynomial modeling
-in regression addresses censoring by transforming the data to create an
-unbiased fully observed population. This is achieved by ensuring
-$E(T^*|X,A) = E(T \wedge \tau|X,A)$. [CB: deux questions: pourquoi pas simplement $E(T^*) = E(T \wedge \tau)$ (non biaisé)? et est-ce que $T^*$ est une notation usuelle? pour moi ça m'évoque un paramètre non-observé/une quantité oracle] Transformations such as the
-Buckley-James and inverse probability of censoring (IPC) transformations
-are used for this purpose. The IPC transformation is examined first,
-followed by the Buckley-James transformation. We will define these
-transformations, present the identifiability formula for $\theta_{RMST}$
-using the IPC transformation, and discuss estimation strategies for both
-transformations.
+in regression addresses conditional independent censoring by transforming the observed data $\tilde T$ into $T^*$.  
 
-[LB: ce paragraphe est un peu obscur. Nécessaire ?]
-
-#### The inverse probability of censoring transformation (IPC transformation) {#sec-IPCtrans}
-
-The inverse probability censoring weighting approach has been introduced
-in survival analysis by @IPCtransKoul81 to overcome bias due to
-conditionally independent censoring.
-
-The IPC transformation is given by : 
-
-$$
-T^*(\tau)=\frac{\widetilde{T} \wedge \tau \times \Delta^\tau}{S_c(\widetilde{T}\wedge \tau|X,A)}
-$$ where $$S_c(t|X,A) := P(C > t|X,A)$$ is the survival function of remain
-uncensored truncated at $\tau$ given the covariate $X$ in the treatment
-arm $A=a$ and $\Delta^{\tau}=I\{T \wedge \tau < C\}$ is the status of
-the individual truncated at $\tau$.
-
-IPC transformation verify $E(T^*|X,A)=E(T \wedge \tau|X,A)$ a.s. (proof in
-@sec-Annexes).
-
-Considering @eq-censtransf, this transformation does not consider
-censored observations by weighting only the uncensored observations. It
-exits other censoring unbiased transformation such as Buckley James that
-consider also the censored observations.
-
-#### Buckley James unbiased censoring transformation {#sec-BJtrans}
-
-This transformation has been introduced by @Buckley_james_79 (BJ). This
-is the earliest unbiased censoring transformation: [CB: notation bizarre: c'est quoi O? on ne comprends pas trop ce qu'il vient faire à côté d'un paramètre (\tau)] [CB: j'ai modifié le display]
-
-$$
-\begin{aligned}
-T^*(O,\tau) &= \Delta^\tau*(\widetilde{T}\wedge\tau) + (1-\Delta^\tau)*Q_S(\widetilde T \wedge \tau|X,A)
-\end{aligned}
-$$
-
-where for $t \leq \tau$,
-$$Q_S(t|X,A) :=E[T \wedge \tau | X,A,T \wedge \tau > t]= \frac{1}{S(t|X,A)}\int_{t}^{+\infty}{t  dF(T\wedge \tau|X,A) }$$
-(proof in @sec-Annexes) with $F$ the function of the cumulative
-probability ($F(t) = \mathbb{P}(t \leq T)$) and $\bar{F}$ the
-complementary cumulative probability ($S(t)=1-F(t)$).
-
-This transformation uses the uncensored observed values of the
-time-to-event $\widetilde{T} \wedge \tau$ directly in the formula (as
-uncensored observations are fully complete) while the censored values of
-the time-to-event outcome $\widetilde{T} \wedge \tau$ are extrapolated
-from an estimator $Q_S(t|x,a)$ which corresponds to the expected
-remaining survival time given the covariates and treatment for censored
-observation.
-
-Exactly like the inverse probability of censoring transformation, the
-Buckley James transformation verify $E(T^*|X,A)=E(T \wedge \tau|X,A)$ a.s.
-(proof in @sec-Annexes).
-
-Visually, these two transformations will create fully complete
-population as below:
+The two main transformations are Inverse Probability of Censoring [@IPCtransKoul81] and Buckley-James  @Buckley_james_79
+transformations and illustrated @fig-trans. In the former, only non-censored observations are considered and they are weighted while in the later censored observations are "imputed/predicted". 
 
 ![Illustration on Inverse Probability of Censoring and Buckley-James
 transformation](schema_transformation.png){#fig-trans}
 
 [LB: il faut toujours inclure les figures en format pdf (ou un format vectorisé) dans les articles. Cela permet d'éviter qu'elles ne soient floues comme ici]
 
-Unfortunately, the two previous transformation depends on nuisance
-parameters:
+Both transformations satisfy $E(T^*|X,A) = E(T \wedge \tau|X,A)$ (proof in
+@sec-Annexes).. [CB: deux questions: pourquoi pas simplement $E(T^*) = E(T \wedge \tau)$ (non biaisé)? et est-ce que $T^*$ est une notation usuelle? pour moi ça m'évoque un paramètre non-observé/une quantité oracle] 
 
--   the censoring distribution $S_c(t|x,a)$ for the IPC weighting
-    transformation.
+### The inverse probability of censoring transformation (IPC transformation)  and the IPCW Kaplan Meier estimator {#sec-IPC} 
 
--   the conditional survival distribution $Q_S(t|x,a)$ for the
-    Buckley-James transformation. [Nom bizarre: plutôt conditional survival mean?]
-
-If this nuisance parameters are not well estimated, the estimator using
-the transformation will be biased [@LocalLinear_Fan94].
-
-### Identifiability using IPC transformation
-
-[CB: coucou, je suis pas trop d'accord avec le terme "identifiabilité" ici, sachant qu'on a déjà montrer que le RMST était identifiable sous RCT. Ici, il s'agit plus de montrer que la transformation IPC est belle est bien non biaisé. De ce fait, il me semblerait plus logique de déplacer ce calcul dans la sous-section dédié à l'IPC (et de montrer de même que BJ est non biaisé). J'ai écrit un nouveau display dans ce sens en fin de section]
-
-Thus, under @eq-randomization (random treatment assignment) and
-@eq-condindepcensoring (conditionally independent censoring), the
-$\theta_{RMST}$ can be identified as follows:
+IPC transformation  is defined by: [CB: notation $T^*(\tau)$ un peu dangeureuse: on a deja $T(0)$ et $T(1)$ pour les outcomes. Changer en $T^{(0)}$ et $T^{(1)}$? ou rendre le $\tau$ implicite?]
 
 $$
-\begin{aligned}
-\theta_{\text{RMST}} &= \mathbb{E} \left[ T(1) \wedge \tau - T(0) \wedge \tau \right] \tiny\quad (1)\\
-&= \mathbb{E} \left[ T(1) \wedge \tau \right] - \mathbb{E} \left[ T(0) \wedge \tau \right] \\
-&= \mathbb{E} \left[ \mathbb{E} \left[ T(1) \wedge \tau \mid A = 1, X \right] \right] - \mathbb{E} \left[ \mathbb{E} \left[ T(0) \wedge \tau \mid A = 0, X \right] \right] \tiny\quad (2) \\
-& \tiny\text{(Law of total probability and Ignorability)}  \\
-&= \mathbb{E} \left[ \mathbb{E} \left[ T^*(1) \mid A = 1, X \right] \right] - \mathbb{E} \left[ \mathbb{E} \left[ T^*(0) \mid A = 0, X \right] \right]  \tiny\quad (3)\\
-& \tiny\text{(IPC transformation)}  \\
-&= \mathbb{E} \left[ T^*(1) \mid A = 1\right] - \mathbb{E} \left[ T^*(0) \mid A = 0 \right] \tiny\quad (4)\\
-& \tiny\text{(Law of total probability)} \\
-&= \mathbb{E} \left[ \textcolor{blue}{\frac{\widetilde{T}(1) \wedge \tau \cdot \Delta^\tau}{S_c(T \wedge \tau \mid A = 1, X)}} \mid A=1\right] - \mathbb{E} \left[ \textcolor{blue}{\frac{\widetilde{T} \wedge \tau \cdot \Delta^\tau}{S_c(T \wedge \tau \mid A = 0, X)}}  \mid A=0 \right] \tiny\quad (5)\\ 
-&= \int_0^\tau \mathbb{E} \left[ \frac{1\{ T(1) \geq t \} \cdot \Delta^\tau}{S_c(T \wedge \tau \mid A = 1, X)}  \mid A = 1\right] - \mathbb{E} \left[ \frac{1\{ T(0) \geq t\} \cdot \Delta^\tau}{S_c(T \wedge \tau \mid A = 0, X)}  \mid A = 0\right] dt \tiny\quad (6)
-\end{aligned}
-$$ {#eq-RMSTipcwkm}
+T^*(\tau)=\frac{\widetilde{T} \wedge \tau \times \Delta^\tau}{S_c(\widetilde{T}\wedge \tau|X,A)},
+$$ where $S_c(t|X,A) := P(C > t|X,A)$ is the survival function of remain uncensored truncated at $\tau$ [[JJ pb]] given the covariate $X$ in the treatment arm $A=a$ and $\Delta^{\tau}=I\{T \wedge \tau < C\}$ is the status of
+the individual truncated at $\tau$.
 
-[LB: pourquoi une partie de l'équation en bleu ?]
+More details are given in Appendix @eq-censtransf [[dire quelque chose sur ce que tu montres en appendix]]
 
-The IPC transformation used in this identifiability equation has been
-detailed in the @sec-IPCtrans.
 
-$$
 \begin{align*}
-E[T^*(\tau)|A=1] &= E\left[\frac{ \Delta^\tau \times\widetilde T \wedge \tau}{S_c(\widetilde T \wedge \tau | A,X)} \middle | A = 1\right] = E\left[\frac{ \Delta^\tau \times T^{(1)} \wedge \tau}{S_c(T^{(1)} \wedge \tau | A,X)} \middle | A = 1\right]\\
-&= E\left[ E\left[\frac{ \mathbb{1}_{T^{(1)}\wedge \tau \leq C } \times T^{(1)} \wedge \tau}{S_c(T^{(1)} \wedge \tau | A,X)}\middle| A, X,T^{(1)} \right] \middle | A = 1\right] \\
-&= E\left[T^{(1)} \wedge \tau|A=1\right] = E\left[T^{(1)} \wedge \tau \right].
+E[T^*(\tau)|A=1] 
+&= E\left[\frac{ \Delta^\tau \times\widetilde T \wedge \tau}{S_c(\widetilde T \wedge \tau | A,X)} \middle | A = 1\right]  \\
+&= E\left[\frac{ \Delta^\tau \times T(1) \wedge \tau}{S_c(T(1) \wedge \tau | A,X)} \middle | A = 1\right]\\
+&= E\left[ E\left[\frac{ I\{T(1)\wedge \tau \leq C \} \times T(1) \wedge \tau}{S_c(T(1) \wedge \tau | A,X)}\middle| A, X,T(1) \right] \middle | A = 1\right] \\
+&= E\left[T(1) \wedge \tau|A=1\right] = E\left[T(1) \wedge \tau \right].
 \end{align*} 
-$$
-where we used in equality 2 that one the event $\{A=1, \Delta^\tau=1\}$, we have $\widetilde T \wedge \tau =  T \wedge \tau = T^{(1)} \wedge \tau$ and in equality 4 that $S_c(T^{(1)} \wedge \tau | A,X) = E[\ind_{T^{(1) \wedge \tau \leq C}|X,T^{(1)},A] because $C$ and $T^{(1)}$ are independent conditionally on $X$ and $A$.
+
+where we used in the second equality that on the event $\{A=1, \Delta^\tau=1\}$, there holds $\widetilde T \wedge \tau =  T \wedge \tau = T(1) \wedge \tau$, in the fourth equality that $S_c(T(1) \wedge \tau | A,X) = E[I\{T(1) \wedge \tau \leq C\}|X,T(1),A]$ because $C$ and $T(1)$ are independent conditionally on $X$ and $A$, and in the final one that $A$ and $T(1)$ are independent.
+
 
 #### Estimation with IPCW Kaplan Meier {#sec-est_IPCWKM}
 [CB: attention il n'y a pas de section 3.2.2.2 ?]
@@ -798,11 +469,12 @@ $\frac{\Delta^\tau}{S_c(T \wedge \tau \mid A = 1, X)}$ to observations
 in the KM estimator:
 
 ::: {#def-ipcwkm}
-#### IPCW adjusted Kaplan Meier estimator
+
+[CB: j'ai réécrit en fonction des observables]
 
 $$
 \begin{aligned}
-\hat{S}_{IPCW-KM}(t \mid A=a) &= \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w}_{i}(t_j,X_i)*I\left\{T_i=t_j, C_i \geq t_j, A_i=a\right\}}{\sum_k \hat{w}_{k}(t_j,X_k)*I\left\{T_k \geq t_j, C_k \geq t_j, A_k=a\right\}}\right) 
+\hat{S}_{IPCW-KM}(t \mid A=a) &= \prod_{j=1, t_j<=t}\left(1-\frac{\sum_i \hat{w}_{i}(t_j,X_i) \times I\left\{\widetilde T_i=t_j, \Delta_i=1, A_i=a\right\}}{\sum_k \hat{w}_{k}(t_j,X_k) \times I\left\{\widetilde T_i \geq t_j, A_k=a\right\}}\right) 
 \end{aligned}
 $$
 
@@ -811,11 +483,12 @@ $$
     covariates $X_{i}$ (IPC transformation) .
 -   $\Delta^\tau = I\{T \wedge \tau < C\}= I\{\widetilde{T} \geq \tau\}+ I\{\widetilde{T} \leq \tau\}.\Delta$
     (proof in @sec-Annexes).
+:::
+
 -   $\hat{S_{c}}(t|X_{i},A_{i})$ is based on the fit of parametric,
     semi-parametric (for example a Cox model) or even non-parametric
     model (such as survival forest) for censoring with $X_i$ and $A_i$
     the covariates.
-:::
 
 This estimator assigns higher weights to uncensored subjects within the
 same covariate group, correcting for conditionally independent censoring
@@ -829,7 +502,7 @@ $$
   \hat{\theta}_{RMST}= \int_{0}^{\tau}{\hat{S}_{IPCW-KM}(t,A=1) - \hat{S}_{IPCW-KM}(t,A=0) dt}
 $$ {#eq-RMSTipcw}
 
-##### Properties of IPCW Kaplan Meier
+**Properties of IPCW Kaplan Meier** 
 
 @robins1993 **(fameuse publi introuvable mais très cité)** [LB: https://scholar.google.com/scholar_lookup?journal=Proceedings+of+the+Biopharmaceutical+Section,+American+Statistical+Association&title=Information+recovery+and+bias+adjustment+in+proportional+hazards+regression+analysis+of+randomized+trials+using+surrogate+markers&author=JM+Robins&publication_year=1993&pages=24-33& c'est pas ça ?] shows that
 our IPCW estimate $\hat{S}_{IPCW-KM}(t,a)$ is guaranteed to be
@@ -840,7 +513,7 @@ than the standard Kaplan-Meier estimator for failure in treatment arm a
 whenever the latter estimator is consistent (i.e., whenever censoring is
 independent).
 
-##### Implementation {#sec-implIPCW}
+#### Implementation {#sec-implIPCW}
 
 The following code includes several functions :
 
@@ -1078,7 +751,45 @@ identifiability formulae using Buckley-James transformation known as the
 best restoration transformation  [LB: what do you mean by known as the best... ?]. It will give us another estimator
 described in @sec-estBJmin to estimate $\theta_{RMST}$.
 
-### Identifiability using BJ transformation {#sec-idcondind}
+
+
+### Buckley James unbiased censoring transformation and the BJ estimator
+
+BJ transformation is defined as [CB: notation bizarre: c'est quoi O? on ne comprends pas trop ce qu'il vient faire à côté d'un paramètre ($\tau$)] [CB: j'ai modifié le display]
+
+$$
+\begin{aligned}
+T^*(O,\tau) &= \Delta^\tau \times (\widetilde{T}\wedge\tau) + (1-\Delta^\tau)\times Q_S(\widetilde T \wedge \tau|X,A)
+\end{aligned}
+$$
+
+where for $t \leq \tau$,
+$$Q_S(t|X,A) :=E[T \wedge \tau | X,A,T \wedge \tau > t]= \frac{1}{S(t|X,A)}\int_{t}^{+\infty}{t  dF(T\wedge \tau|X,A) }$$
+(proof in @sec-Annexes) [CB: proof for what?] with $F$ the function of the cumulative
+probability ($F(t) = \mathbb{P}(t \leq T)$) and $S$ the
+complementary cumulative probability ($S(t)=1-F(t)$). [CB: à reformuler: $S$ is the conditional survival function?]
+
+This transformation uses directly the uncensored observed values of the
+time-to-event $\widetilde{T} \wedge \tau$  (as
+uncensored observations are fully complete) while the censored values of
+the time-to-event outcome $\widetilde{T} \wedge \tau$ are "extrapolated"
+from an estimator $Q_S(t|x,a)$ which corresponds to the expected
+remaining survival time given the covariates and treatment for censored
+observation.
+
+Unfortunately, the two previous transformation depends on nuisance
+parameters:
+
+-   the censoring distribution $S_c(t|x,a)$ for the IPC weighting
+    transformation.
+
+-   the conditional survival distribution $Q_S(t|x,a)$ for the
+    Buckley-James transformation. [CB: Nom bizarre: plutôt conditional survival mean?]
+
+If this nuisance parameters are not well estimated, the estimator using
+the transformation will be biased [@LocalLinear_Fan94].
+
+identifiability using BJ transformation 
 
 Under @eq-randomization (random treatment assignment) and
 @eq-condindepcensoring (conditionally independent censoring), another
@@ -1130,7 +841,7 @@ average of the RMST using fully complete pseudo-observation from
 Buckley-James transformation of each group. This estimator behaves as if
 there is no censoring.
 
-##### Properties of Buckley-James estimator
+**Properties of Buckley-James estimator**
 
 BJ transformation is considered as the best predictor of the original
 response in the sens that
@@ -1144,7 +855,7 @@ unbiased transformation.
 [LB: ça mérite peut-être un théorème et une comparaison avec le théorème de Gauss-Markov ?]
 
 
-##### Implementation {#sec-implBJ}
+#### Implementation {#sec-implBJ}
 
 The following code includes several functions :
 
@@ -3964,8 +3675,34 @@ This section provides an evaluation of the previous estimators when the
 nuisance parameter specification is correct, as well as when there are
 mis-specifications of nuisance models or violations of the censoring
 positivity assumption.
+[_BS_ lister ici tous les estimateurs, que tu vas évaluer, en expliquant les modèles/méthodes utilisées en estimation:
+Naive
+KM (possibly Kaplan-Meier)
+SurvRM2 - KM
+IPTW KM (Log. reg.)
+RISCA - IPTW KM
+IPCW KM (Cox)
+BJ (Cox)
+IPTW-BJ (Cox & Log. reg.)
+IPTW-IPCW KM (Cox & Log. reg.)
+G_formula (Cox / T-learners)
+G_formula (Cox / S-learner)
+RISCA - G_formula (S-learner)
+AIPTW-AIPCW (Cox & Log. reg.)
+grf - Causal Survival Forest
+IPTW KM (Forest)
+IPCW KM (Forest)
+BJ (Forest)
+IPTW-BJ (Forest)
+IPTW-IPCW KM (Forest)
+G_formula (Forest / T-learners)
+G_formula (Forest / S-learner)
+AIPTW-AIPCW (Forest)]
 
 ### Correct specification of the nuisance parameters
+
+[_BS_: je propose un autre titre: "Scenarios with data simulated by linear models"
+expliquer que 'linear models' veut dire propensity score simulés par régression logistique et outcome models définis pour modeèle de Cox)]
 
 **Est-ce qu'on ajouterais pas le détail des modèles générés ?**
 
@@ -4832,6 +4569,8 @@ censoring, as they involve complex nuisance parameters and flexible
 regressions. Therefore, when nuisance models are well-specified in RCTs,
 the G-formula (T-learners) remains the most suitable estimator.
 
+[_BS_: il faudrait créer une autre section:
+7.3.2. Scenarios with data simulated by non-linear models]
 The boxplot below shows the distribution of the $\theta_{RMST}$
 estimates for the Observational study with independent censoring. The
 red dashed line represents the true $\theta_{RMST}$ for $\tau=25$.
@@ -5102,8 +4841,7 @@ simulation_graph_complex_param <- simulation_complex_para %>%
 ```{r fig.width=10, fig.height=8, message=FALSE, warning=FALSE}
 simulation_graph_complex_param
 ```
-[_BS: je changerais le titre du graphique car dans le graphe précédent, les propensity score et les modèles d'outcome sont aussi estimés par "cox and logistic regression"; j'indiquerais plutôt que les données sont simulées par des modèles non-linéaires; je mettrais un titre comme 'Estimation results of the ATE for an observational 
-          study with dependent censoring and non-linear propensity scores and outcome relationships - linear estimators' . Pour le graphique d'après je mettrais un titre comme 'Estimation results of the ATE for an observational        study with dependent censoring and non-linear propensity scores and outcome relationships - non linear estimators'._]
+
 In this non-parametric simulation, most nuisance parameters are
 estimated using the Cox model and logistic regression, except for the
 grf function, which employs non-parametric causal survival forests.
@@ -5209,6 +4947,10 @@ simulation_graph_complex_flexible <- simulation_complex_flexible %>%
 simulation_graph_complex_flexible
 ```
 
+[_BS_: je ferais un graphique montrant sur un même les estimateurs suivants:
+IPTW-BJ (Cox & Log. reg.); IPTW-IPCW KM (Cox & Log. reg.); G_formula (Cox / T-learners); AIPTW-AIPCW (Cox & Log. reg.); grf - Causal Survival Forest	IPTW-BJ (Forest); IPTW-IPCW KM (Forest); G_formula (Forest / T-learners); AIPTW-AIPCW (Forest)]
+
+et si possible à la fois dans le scénarion linéaire et le scénario non-linéaire]
 This time, flexible models are used for all nuisance parameters. The
 simulation involves an observational study with conditionally
 independent censoring. As expected, estimators without corrections for
@@ -5245,6 +4987,8 @@ mis-specification for the nuisance parameters. To do so, the simulation
 with interaction is used and mis-specification is introduced by
 selecting only one covariate with the less impact on the model. G-formula from RISCA package is removed of the following graph as it cannot introduce intercation terms . 
 First, we estimate $\theta_{RMST}$ without any model misspecification to ensure the estimator’s consistency under a correctly specified nuisance model. Then, we introduce misspecification individually for the treatment model, censoring model, and outcome model. We further explore combined misspecifications for the treatment and censoring models, treatment and outcome models, outcome and censoring models, and finally for all nuisance models simultaneously. The nuisance models are estimated using parametric (logitic regression) and semi-parametric approach (cox model).
+
+[_BS_: il vaut mieux écrire mathématiquement les modèles utilisés en simulation, ce sera plus facile à suivre; et ce sera plus facile de comparer les modèles de simulation avec ceux utilisés en estimation]
 
 ```{r eval=FALSE}
 n_sim <- 20
@@ -5529,7 +5273,7 @@ grid.arrange(simulation_graph_mis, simulation_graph_mis_miscens, simulation_grap
 ```
 
 We refer to an observational and dependent censoring study, thus the
-expected consistent estimators are IPTW-IPCW Kaplan-Meier **(completly biased)**, IPTW-BJ
+expected consistent estimators are IPTW-IPCW Kaplan-Meier **(completly biased)**[_BS_: puut-être die autrement que "completely biased"], IPTW-BJ
 estimator, G-formula, AIPTW-AIPCW and Causal survival forest.
 
 In globality, when one nuisance model is mis-specified, as expected the
@@ -6236,7 +5980,7 @@ treatment and censoring mechanisms. While the majority of the empirical
 results align well with the theoretical properties, notable exceptions
 include estimators based on IPCW transformations, such as the IPTW-IPCW
 Kaplan-Meier, which failed to converge in non-parametric settings, and
-the IPCW Kaplan-Meier, which showed some bias under high censoring
+the IPCW Kaplan-Meier [_BS_: cela ne contredit pas nécessairement la théorie: la théorie impose que les modèles d'estimation coincident avec les vrais modèles (censure & propensity score) - cela veut peut-être simplement dire que les forêts n'estiment pas suffisamment bien les data.], which showed some bias under high censoring
 conditions.
 
 In this study, we made available our code for the estimators tested,
@@ -6254,10 +5998,11 @@ efficient due to its low variance and quick convergence, especially in
 simpler scenarios like randomized controlled trials. In non-parametric
 settings with no misspecification, estimators like the IPTW-BJ
 estimator, Causal Survival Forest or AIPTW-AIPCW perform well, though
-the latter two may require more computing resources. When uncertainty
+the latter two may require more computing resources.[_BS_: je reformulerais en évitant les termes 'parametric setting' et 'non-parametric setting' car on a l'impression que tu décris un contexte que le modeler peut reconnaitre alors que cela fait référence aux vrais modèles (qu'il ne connait pas et sur lesquels le modeler n'a aucune influence).] When uncertainty
 exists around nuisance parameters, robust estimators like AIPTW-AIPCW or
 Causal Survival Forest are preferable due to their resilience to
-mis-specification.
+mis-specification. [_BS_: je propose de reformuler ce paragraphe de cette façon (tu me diras si tu es d'accord):
+"The parametric G-formula shows very good performance, in terms of bias and variability, when the estimation models are well specified.  When the estimation models are mis-specified  the parametric G-formula shows limited bias and not of  a larger magnitude of the non-parametric G formula estimator. The parametric AIPTW-AIPCW estimator, and even more the non-parametric AIPTW-AIPCW show slightly reduced bias, as compared to the parametric G-formula estimator, but at the price of a larger uncertainty."]
 
 Notably, the G-formula and IPTW-BJ estimators implicitly rely on the
 positivity assumption, although it is not explicitly included in their
