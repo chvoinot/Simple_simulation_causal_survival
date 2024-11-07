@@ -55,6 +55,17 @@ contributes:
       template-partials:
         - "partials/html/title-block.html"
         - "partials/html/title-metadata.html"
+      # number-sections: true
+      # code-blocks:
+      #   theorem: 
+      #     label: "Theorem"
+      #     auto-number: true
+      #   definition:
+      #     label: "Definition"
+      #     auto-number: true
+      #   assumption:
+      #     label: "Assumption"
+      #     auto-number: true
     pdf:
       echo: false
       pdf-engine: lualatex
@@ -75,3 +86,14 @@ contributes:
         - "partials/pdf/before-body.tex"
       format-resources:
         - logo_text_white.pdf
+      # number-sections: true
+      # code-blocks:
+      #   theorem: 
+      #     label: "Theorem"
+      #     auto-number: true
+      #   definition:
+      #     label: "Definition"
+      #     auto-number: true
+      #   assumption:
+      #     label: "Assumption"
+      #     auto-number: true
