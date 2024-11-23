@@ -1,3 +1,19 @@
+library(survival) # Implementation of Kaplan-Meier
+
+library(survRM2)
+library(RISCA)
+library(grf) # causal_survival_forest function and also 
+# survival_forest and probability_forest
+
+
+library(MASS) # mvrnorm function for simulation
+library(rms) # cph function and predict for cph object
+
+library(dplyr)
+library(ggplot2)
+library(gridExtra) # to plot multiple graph on a page
+
+
 # Function to calculate the integral of a decreasing function using 
 # the rectangle method
 # x corresponds to the x coordinate of the function to integrate
@@ -401,3 +417,136 @@ integrate <- function(integrand, Y.grid, times) {
   return(integrated_value)
 }
 
+
+theta_rmst_survrm2 <- function(data, tau) {
+  ATE_pack <- rmst2(data$T_obs, data$status, arm = data$A, tau = tau)
+  RMST <- ATE_pack[[5]][1]
+  return(RMST)
+}
+
+# Function to estimate RMST using unadjusted Kaplan-Meier
+RISCA_unadj <- function(data, 
+                        tau) {
+  # Fit survival curves using Kaplan-Meier stratified by treatment group
+  fit <- survfit(Surv(T_obs, status) ~ A, data = data)
+  res <- summary(fit)
+  
+  # Estimate RMST for treatment group A=1
+  RMST_A1 <- rmst(
+    times = res$time[as.character(res$strata) == "A=1"],
+    surv.rates = res$surv[as.character(res$strata) == "A=1"],
+    max.time = tau, 
+    type = "s" # for step-function
+  )
+  
+  # Estimate RMST for treatment group A=0
+  RMST_A0 <- rmst(
+    times = res$time[as.character(res$strata) == "A=0"],
+    surv.rates = res$surv[as.character(res$strata) == "A=0"],
+    max.time = tau, 
+    type = "s" # for step-function
+  )
+  
+  # Estimate ATE as the difference in RMST between groups
+  ATE_RISCA_unadj <- RMST_A1 - RMST_A0
+  return(ATE_RISCA_unadj)
+}
+
+
+
+# Function to estimate RMST using IPTW Kaplan-Meier
+RISCA_iptw <- function(data, 
+                       tau, 
+                       X.names.propensity, 
+                       nuisance_propensity = "glm", 
+                       n.folds = NULL) {
+  
+  # Estimate propensity scores
+  e_hat <- estimate_propensity_score(
+    data, 
+    treatment_covariates = X.names.propensity,
+    type_of_model = nuisance_propensity, 
+    n.folds = n.folds
+  )
+  
+  # Compute inverse probability weights
+  weighted <- (data$A / e_hat) + ((1 - data$A) / (1 - e_hat))
+  
+  # Fit weighted survival curves
+  IPW_pack <- ipw.survival(
+    times = data$T_obs, 
+    failures = data$status,
+    variable = data$A, 
+    weights = weighted
+  )
+  
+  # Calculate RMST for treatment group A=1 using weighted survival curve
+  RMST_RISCA_A1 <- rmst(
+    times = IPW_pack$table.surv$times[IPW_pack$table.surv$variable == 1],
+    surv.rates = IPW_pack$table.surv$survival[IPW_pack$table.surv$variable == 1],
+    max.time = tau, 
+    type = "s"
+  )
+  
+  # Calculate RMST for treatment group A=0 using weighted survival curve
+  RMST_RISCA_A0 <- rmst(
+    times = IPW_pack$table.surv$times[IPW_pack$table.surv$variable == 0],
+    surv.rates = IPW_pack$table.surv$survival[IPW_pack$table.surv$variable == 0],
+    max.time = tau, 
+    type = "s"
+  )
+  
+  # Compute ATE as the difference in RMST between groups
+  ATE_RISCA_IPW <- RMST_RISCA_A1 - RMST_RISCA_A0
+  return(ATE_RISCA_IPW)
+}
+
+
+# Function to estimate RMST using single learner G-formula with Cox model
+RISCA_gf <- function(data, 
+                     tau, 
+                     X.names.outcome) {
+  
+  # Define the outcome formula for the Cox model
+  outcome <- paste(c('Surv(', "T_obs", ',', "status", ')'), collapse = "")
+  # Single learner : the treatment arm is a predictor
+  formula <- as.formula(paste(outcome, paste(c(X.names.outcome, 'A'), 
+                                             collapse = " + "), sep = " ~ "))
+  
+  # Fit the Cox proportional hazards model
+  cox.cdt <- coxph(formula, data = data, x = TRUE)
+  summary(cox.cdt)
+  
+  # Compute the effect of the treatment (ATE) using the G-formula
+  gc.ate <- gc.survival(
+    object = cox.cdt, 
+    data = data, 
+    group = "A", 
+    times = "T_obs",
+    failures = "status", 
+    max.time = tau, 
+    iterations = 100,
+    effect = "ATE",
+    n.cluster = 1
+  )
+  
+  # Extract the ATE
+  ATE_RISCA_gf <- gc.ate$delta[[1]]
+  return(ATE_RISCA_gf)
+}
+
+
+# Function to estimate RMST using Causal Survival Random Forest (CSRF)
+CSRF <- function(data, X.names, tau) {
+  # Fit a causal survival forest
+  cf <- causal_survival_forest(X = as.matrix(data[, X.names]), Y = as.matrix(data$T_obs), W = as.matrix(data$A), D = as.matrix(data$status), horizon = tau)
+  
+  # Predict using the fitted forest
+  cf.predict <- predict(cf)
+  
+  # Estimate the average treatment effect (ATE)
+  ATE_csf <- average_treatment_effect(cf)
+  
+  # Return the estimated ATE
+  return(ATE_csf[[1]])
+}
