@@ -20,12 +20,13 @@ author:
   - name: Clément Berenfeld
     corresponding: true 
     email: clement.berenfeld@uni-potsdam.de
+    url: https://cberenfeld.github.io
     affiliations: 
       - name: Universität Potsdam, Potsdam, Germany
         departement: Institut für Mathematik
         url: https://www.uni-potsdam.de/en/university-of-potsdam
   - name: Imke Mayer
-    corresponding: false 
+    corresponding: true 
     email: imke.mayer@owkin.com, now affiliated with Owkin
     affiliations: 
       - name: Charité -- Universität Berlin, Berlin, Germany
@@ -53,7 +54,7 @@ author:
  
 date:  last-modified
 date-modified:  last-modified
-abstract: Estimating the Average Treatment Effect (ATE) is one of the fundamental measures in causal inference, aimed at assessing the causal impact of a treatment on an outcome variable. Causal survival analysis is at the heart of this approach, seeking to evaluate the effect of a treatment on patient survival over time. However, despite the abundance of literature on causal survival, the use of Cox methods remains predominant for assessing this effect. The main objective of this research is to estimate the causal effect of a treatment using survival data which not necessarily derived from randomized trials. Its main aim is to provide users with practical recommendations in the face of the multitude of information available, and to highlight the advantages and differences compared with the classic correlation approaches still widely used such as Hazard ratio to measure the impact of a treatment. To this end, we will begin by presenting the state of the art in causal survival methods, describing identifiable assumptions and the main estimators, including weighting, regression and triply/doubly robust approaches. Then, an extensive simulation study will then be carried out to compare the different estimators, their preferred regimes and illustrate their theoretical properties on finite sample sizes. Finally, we will examine how the addition of certain variables in the censoring, survival or treatment models can impact the variance of the estimators. Results will be discussed with a particular focus on the validity of the estimators and its robustness to misspecification on finite sample sizes simulated datasets for practical recommendations in non-randomized settings.
+abstract: Causal survival analysis combines survival analysis and causal inference to evaluate the effect of a treatment or intervention on a time-to-event outcome, such as survival time. It offers an alternative to relying solely on Cox models for assessing these effects. In this paper, we present a comprehensive review of estimators for the average treatment effect measured with the restricted mean survival time, including regression-based methods, weighting approaches, and hybrid techniques. We investigate their theoretical properties and compare their performance through extensive numerical experiments. Our analysis focuses on the finite-sample behavior of these estimators, the influence of nuisance parameter selection, and their robustness and stability under model misspecification. By bridging theoretical insights with practical evaluation, we aim to equip practitioners with both state-of-the-art implementations of these methods and practical guidelines for selecting appropriate estimators for treatment effect estimation. Among the approaches considered, G-formula two-learners, AIPCW-AIPTW, Buckley-James estimators, and causal survival forests emerge as particularly promising.
 keywords: [Restricted Mean Survival Time, Randomized Control Trial, Observational Study, Censoring]
 bibliography:  references.bib
 github-user:  chvoinot
@@ -63,49 +64,62 @@ published:  false # will be set to true once accepted
 format:  
   computo-html:  default
   computo-pdf: default
+  pdf:
+    header-includes:
+      - |
+        \newcommand{\bbR}{\mathbb{R}}
+        \newcommand{\bbE}{\mathbb{E}}
+        \newcommand{\bbP}{\mathbb{P}}
+        \newcommand\wt{\widetilde}
+        \newcommand\wh{\widehat}
+        \newcommand{\ve}{\varepsilon}
+        \renewcommand{\epsilon}{\varepsilon}
+        \renewcommand\leq{\leqslant}
+        \renewcommand\geq{\geqslant}
+        \newcommand{\mand}{\quad\text{and}\quad}
+        \newcommand{\where}{\quad\text{where}\quad}
+        \newcommand{\with}{\quad\text{with}\quad}
+        \newcommand{\Var}{\mathrm{Var}}
+        \renewcommand{\(}{$}
+        \renewcommand{\)}{$}
+        \newcommand*\diff{\mathop{}\!\mathrm{d}}
+        \newcommand\cF{\mathcal{F}}
+        \newcommand\cX{\mathcal{X}}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+      # - \usepackage{multirow}
+      # - \usepackage{float}
+      
+  # html:
+  #     - "_dollar.tex"
+  #     - "_macros.tex"
+  #     - "_dollar.tex"
+    # mathjax:
+    #   commands:
+    #     \bbR: "\\mathbb{R}"
+    #     \bbE: "\\mathbb{E}"
+    #     \bbP: "\\mathbb{P}"
+    #     \wt: "\\widetilde"
+    #     \wh: "\\widehat"
+    #     \Var: "\\mathrm{Var}"
+    #     \cF: "\\mathcal{F}"
+    #     \cX: "\\mathcal{X}"
+    #     \mand: "\\quad\\text{and}\\quad"
+    #     \where: "\\quad\\text{where}\\quad"
+    #     \with: "\\quad\\text{with}\\quad"
+        
 editor:  
   markdown:  
-    wrap:  72
-
-header-includes:
-  - |
-    \newcommand{\bbR}{\mathbb{R}}
-    \newcommand{\bbE}{\mathbb{E}}
-    \newcommand{\bbP}{\mathbb{P}}
-    \newcommand\wt{\widetilde}
-    \newcommand\wh{\widehat}
-    \newcommand{\ve}{\varepsilon}
-    \renewcommand{\epsilon}{\varepsilon}
-    \renewcommand\leq{\leqslant}
-    \renewcommand\geq{\geqslant}
-    \newcommand{\mand}{\quad\text{and}\quad}
-    \newcommand{\where}{\quad\text{where}\quad}
-    \newcommand{\with}{\quad\text{with}\quad}
-    \newcommand{\Var}{\mathrm{Var}}
-    \renewcommand{\(}{$}
-    \renewcommand{\)}{$}
-    \newcommand*\diff{\mathop{}\!\mathrm{d}}
-    \newcommand\cF{\mathcal{F}}
-    \newcommand\cX{\mathcal{X}}
-  - \usepackage{amsmath}
-  - \usepackage{amssymb}
-  - \usepackage{multirow}
-  - \usepackage{float}
+    wrap:  7
     
-#    \newtheorem{asu}{Assumption}
-#crossref:
-#  custom:
-#    - kind: float
-#      reference-prefix: Assumption
-#      key: asu
-#      latex-env: asu
 
-#to add to avoid the graph generation
-#execute:
-#  echo: true
-#  eval: false
 ---
 
+::: {.content-hidden}
+$$
+{{< include _macro.tex >}}
+$$
+:::
 
 # Introduction {#sec-intro}
 
@@ -113,15 +127,12 @@ header-includes:
 
 Causal survival analysis is a growing field that integrates causal inference [@rubin_estimating_1974; @hernan2010causal] with survival analysis [@kalbfleisch2002statistical] to evaluate the impact of treatments on time-to-event outcomes, while accounting for censoring situations where only partial information about an event's occurrence is available. 
 
-
 Being a relatively new domain, the existing literature, though vast, remains fragmented. As a result, a clear understanding of the theoretical properties of various estimators is challenging to obtain. Moreover, the implementation of proposed methods is limited, leaving researchers confronted with a range of available estimators and the need to make numerous methodological decisions. There is a pressing need for a comprehensive survey that organizes the available methods, outlines the underlying assumptions, and provides an evaluation of estimator performance --- particularly in finite sample settings. Such a survey also has the potential to help identify remaining methodological challenges that need to be addressed.
 This need becomes increasingly urgent as causal survival analysis gains traction in both theoretical and applied domains. For instance, its applications to external control arm analyses are particularly relevant in the context of single-arm clinical trials, where traditional comparator arms are unavailable. Regulatory guidelines have begun to acknowledge and support such semi-experimental approaches, reflecting the broader evolution of trial design and therapeutic innovation in precision medicine, see for instance [@EMA_RWD].
 
 By synthesizing the theoretical foundations, assumptions, and performance of various estimators, a survey on existing causal survival analysis methods would provide researchers and practitioners with the necessary tools to make informed methodological choices. This is crucial for fostering robust and reliable applications of causal survival analysis in both academic research and practical settings, where precise and valid results are paramount.
 
 In this paper, we focus our attention to the estimation of the Restricted Mean Survival Time (RMST), a popular causal measure in survival analysis which offers an intuitive interpretation of the average survival time over a specified period. In particular, we decided to not cover the estimation of Hazard Ratio (HR), which has been prominently used but often questioned due to its potential non-causal nature [@HR_Martinussen]. Additionally, unlike the Hazard Ratio, the RMST has the desirable property of being a collapsible measure, meaning that the population effect can be expressed as a weighted average of subgroup effects, with positive weights that sum to one [@huitfeldt2019collapsibility].
-
-<!-- The most common form of censoring is right-censoring, which occurs when the event of interest has not taken place by the end of the observation period, indicating that it may have occurred later if the observation had continued. -->
 
 
 ## Definition of the estimand: the RMST {#sec-notations} 
@@ -141,21 +152,16 @@ Due to potential censoring, the outcome $T$ is not completely observed. The most
 
 We also assume that we know whether an outcome is censored or not. In other words, we observe the censoring status variable $\Delta = \mathbb{I}\{T \leq C\}$, where $\mathbb{I}\{\cdot\}$ is the indicator function. $\Delta$ is $1$ if the true outcome is observed, and $0$ if it is censored.
 
-We will assume observing a $n$-sample of variables $(X,A,\wt T,\Delta)$ stemming from an $n$-sample of the partially unobservable variables $(X,A,T(0),T(1),C)$. A toy exemple of such data is given in @tbl-exemple_data. 
+We assume observing a $n$-sample of variables $(X,A,\wt T,\Delta)$ stemming from an $n$-sample of the partially unobservable variables $(X,A,T(0),T(1),C)$. A toy exemple of such data is given in @tbl-exemple_data. 
 
-\begin{table}
-    \centering
-    \begin{tabular}{|p{0.4cm}|p{0.4cm}|p{0.4cm}|p{0.4cm}|p{1.7cm}|p{1.7cm}|p{1cm}|p{0.7cm}|p{0.7cm}|p{1.5cm}|p{1.5cm}|}
-    \hline
-        ID & \multicolumn{3}{c|}{Covariates} & Treatment & Censoring & Status & \multicolumn{2}{c|}{Potential outcome} & True outcome & Observed outcome \\ \hline
-        ~ & $X_{1}$ & $X_{2}$ & $X_{3}$ & $A$ & $C$ & $\Delta$ & $T(0)$ & $T(1)$ & $T$ & $\tilde{T}$ \\ \hline
-        1 & 1 & 1.5 & 4 & 1 & ? & 1 & ? & 200 & 200 & 200 \\ \hline
-        2 & 5 & 1 & 2 & 0 & ? & 1 & 100 & ? & 100 & 100 \\ \hline
-        3 & 9 & 0.5 & 3 & 1 & 200 & 0 & ? & ? & ? & 200 \\ \hline
-    \end{tabular}
-    \caption{Example of a survival dataset. In practice, only $X,A,\wt T$ and $\Delta$ are observed.}
-    \label{tbl-exemple_data}
-\end{table}
+
+| ID | Covariates | | | Treatment | Censoring | Status | Potential outcomes | |  True outcome | Observed outcome |
+|--|--|--|--|--|--|--|--|--|--|--|
+| i | $X_{1}$ | $X_{2}$ | $X_{3}$ | $A$ | $C$ | $\Delta$ | $T(0)$ | $T(1)$ | $T$ | $\tilde{T}$ |
+| 1 | 1 | 1.5 | 4 | 1 | ? | 1 | ? | 200 | 200 | 200 |
+| 2 | 5 | 1 | 2 | 0 | ? | 1 | 100 | ? | 100 | 100 |
+| 3 | 9 | 0.5 | 3 | 1 | 200 | 0 | ? | ? | ? | 200 |
+: Example of a survival dataset. In practice, only $X,A,\wt T$ and $\Delta$ are observed. {#tbl-exemple_data}
 
 
 Our aim is to estimate the Average Treatment Effect (ATE) defined as the difference between the Restricted Mean Survival Time of the treated and controls [@royston2013restricted].
@@ -191,14 +197,11 @@ days at 200 days. We give a visual interpretation of RMST in @fig-RMST.
  $\theta_{\mathrm{RMST}}$ at $\tau=50$ corresponds to the yellow shaded area between the two survival curves. The curves have been estimated using Kaplan-Meier estimator, see @sec-theoryRCT_indc.](KM_RMST.pdf){#fig-RMST}
 
 
-<!-- In causal inference, the goal is to estimate the parameter of interest here $\theta_{RMST}$. To achieve this, it could be necessary to estimate intermediate quantities, such as the conditional survival function (see for instance @sec-Gformula). These intermediate quantities are  referred to as nuisance parameters. -->
-
-
 Although the present work focuses on the estimation of the difference in RMST, we would like to stress that the causal effect can be assessed through other measures, such as for instance the difference of the survival functions
 $$
 \theta_{\mathrm{SP}} := S^{(1)}(\tau) - S^{(0)}(\tau) 
 $$
-for some time $\tau$, see for instance [@Ozenne20_AIPTW_AIPCW]. As mentionned in @sec-context, another widely used causal measure is the hazards ratio, defined as 
+for some time $\tau$, see for instance [@Ozenne20_AIPTW_AIPCW]. As mentionned in @sec-context, another widely used measure (though not necessarily causal) is the hazards ratio, defined as 
 $$
 \theta_{\mathrm{HR}} := \frac{\lambda^{(1)}(\tau)}{\lambda^{(0)}(\tau)},
 $$
@@ -264,7 +267,7 @@ random assignment of the treatment [@rubin_estimating_1974].
 **Assumption.**
 (Random treatment assignment) There holds:
 $$ 
-A \perp\mkern-9.5mu\perp(T(0),T(1),X)
+A \perp\mkern-9.5mu\perp T(0),T(1),X
 $$ {#eq-rta}
 :::
 
@@ -324,9 +327,8 @@ can help satisfy the positivity assumption. For instance, in a clinical study, i
 
 The two Assumptions [-@eq-independantcensoring] and [-@eq-poscen] together allow the distributions of $T(a)$ to be identifiable, in the sense that there exists an identity that expresses $S^{(a)}$ as a function of the joint distribution of $(\wt T,\Delta,A=a)$, see for instance @ebrahimi2003identifiability for such a formula in a non-causal framework. This enables several estimation strategies, the most well-known being the Kaplan-Meier product-limit estimator.
 
-<!-- ### Estimation with Kaplan-Meier {#sec-unadjustedKM} -->
 
-To motivate the definition of the latter and explicit the identifiability identity,we set the analysis in the discrete case. We let $\{t_k\}_{k \geq 1}$ be a set of positive and increasing times and assume that $T \in \{t_k\}_{k \geq 1}$ almost surely. Then for any $t \in [0,\tau]$, it holds, letting $t_0 = 0$ by convention, thanks to @eq-lambdadisc,
+To motivate the definition of the latter and explicit the identifiability identity, we set the analysis in the discrete case. We let $\{t_k\}_{k \geq 1}$ be a set of positive and increasing times and assume that $T \in \{t_k\}_{k \geq 1}$ almost surely. Then for any $t \in [0,\tau]$, it holds, letting $t_0 = 0$ by convention, thanks to @eq-lambdadisc,
 
 \begin{align*}
 S(t| A=a) &= \bbP(T > t|A=a) = \prod_{t_k \leq t} \left(1 - \bbP(T = t_k | T > t_{k-1}, A=a)\right) \\
@@ -341,7 +343,7 @@ yielding the final identity
 $$ 
 S(t|A=a) = \prod_{t_k \leq t} \left(1-\frac{\bbP(\wt T = t_{k}, \Delta = 1,A=a)}{\bbP( \wt T \geq t_{k},A=a)}\right).
 $${#eq-kmi}
-Notice that the RHS only depends on the distribution of the observed tuple $(A,\wt T,\Delta)$. This last equation suggests in turn to introduce the quantities
+Notice that the right hand side only depends on the distribution of the observed tuple $(A,\wt T,\Delta)$. This last equation suggests in turn to introduce the quantities
 $$
 D_k(a) := \sum_{i=1}^n \mathbb{I}(\wt T_i = t_k, \Delta_i = 1, A=a) \mand N_k(a) := \sum_{i=1}^n \mathbb{I}(\wt T_i \geq t_k, A=a),
 $$ {#eq-dknk}
@@ -379,15 +381,17 @@ $$
 where $s_k(a) = S^{(a)}(t_k)/S^{(a)}(t_{k-1})$ and $r_k(a) = \bbP(\wt T \geq t_k, A=a)$.
 :::
 The proof of @prp-varkm can be found in @sec-proof21. Because $D_k(a)/N_k(a)$ is a natural estimator of $1-s_k(a)$ and, $\frac{1}{n} N_k(a)$ a natural estimator for $r_k(a)$, the asymptotic variance of the Kaplan-Meier estimator can be estimated with the so-called Greenwood formula, as already derived heuristically in @kaplan:
+
 $$
-\wh \Var \left(\wh{S}_{\mathrm{KM}}(t|A=a)\right) := \wh{S}_{\mathrm{KM}}(t|A=a)^2 \sum_{t_k \leq t} \frac{D_k(a)}{N_k(a)(N_k(a)-D_k(a))}.
+\wh{\Var} \left(\wh{S}_{\mathrm{KM}}(t|A=a)\right) := \wh{S}_{\mathrm{KM}}(t|A=a)^2 \sum_{t_k \leq t} \frac{D_k(a)}{N_k(a)(N_k(a)-D_k(a))}.
 $$ {#eq-varkm}
+
 We finally mention that the KM estimator as defined in @def-km still makes sense in a non-discrete setting, and one only needs to replace the fixed grid  $\{t_k\}$ by the values at which we observed an event $(\wt T_i = t_k, \Delta_i =1)$. We refer to @Kaplan_consistency_breslow74 for a study of this estimator in the continuous case and to @Aalen2008, Sec 3.2 for a general study of the KM estimator through the prism of point processes.
 
 
 ## Conditionally independent censoring {#sec-condcens}
 
-An alternative hypothesis in survival analysis that relaxes the assumption of independent censoring is conditionally independent censoring, also refered sometimes as _non-informative censoring_. It allows to ;odel more realistic censoring processes, in particular in situations where there are reasons to believe that $C$ may be dependent from $A$ and $X$ (for instance,  if patient is more like to leave the study when treated because of side-effects of the treatment).
+An alternative hypothesis in survival analysis that relaxes the assumption of independent censoring is conditionally independent censoring, also refered sometimes as _informative censoring_. It allows to model more realistic censoring processes, in particular in situations where there are reasons to believe that $C$ may be dependent from $A$ and $X$ (for instance,  if patient is more like to leave the study when treated because of side-effects of the treatment).
 
 ::: {.assumption}
 **Assumption.** (Conditionally independent censoring)
@@ -429,11 +433,11 @@ Building on @eq-RMSTkm, one can express the RMST as a function of $\mu$:
  \theta_{\mathrm{RMST}} = \mathbb{E}\left[\mathbb{E}[T \wedge \tau |X, A = 1]\right] - \mathbb{E}\left[ T \wedge \tau|X, A= 0]\right] = \bbE[\mu(X,1)-\mu(X,0)].
 \end{align*}
 
-An estimator $\wh \mu$ of $\mu$ would then straightforwardly yield an estimator of the difference in RMST through the so-called _G-formula_:
+An estimator $\wh \mu$ of $\mu$ would then straightforwardly yield an estimator of the difference in RMST through the so-called _G-formula_ plug-in estimator:
 
 $$ \widehat{\theta}_{\mathrm{G-formula}} = \frac{1}{n} \sum_{i=1}^n \wh \mu\left(X_i, 1\right)-\wh \mu\left(X_i, 0\right). $${#eq-gformula}
 
-We would like to stress that a G-formula approach works also in a observational context as the one introduced in @sec-obscondcens. However, because the estimation strategies presented in the next sections relies on estimating nuisance parameters, and that this latter task is often done in the same way as we estimate the conditional response $\mu$, we decided to not delay the introduction of the G-formula any further, and we present below a few estimation methods for $\mu$. These methods are sub-divised in two categories: _$T$-learners_, where $\mu(\cdot,0)$ is estimated separately from $\mu(\cdot,0)$, and _$S$-learners, where $\wh\mu$ is obtained by fitting a single model based on covariates $(X,A)$. 
+We would like to stress that a G-formula approach works also in a observational context as the one introduced in @sec-obscondcens. However, because the estimation strategies presented in the next sections relies on estimating nuisance parameters, and that this latter task is often done in the same way as we estimate the conditional response $\mu$, we decided to not delay the introduction of the G-formula any further, and we present below a few estimation methods for $\mu$. These methods are sub-divised in two categories: _$T$-learners_, where $\mu(\cdot,1)$ is estimated separately from $\mu(\cdot,0)$, and _$S$-learners, where $\wh\mu$ is obtained by fitting a single model based on covariates $(X,A)$. 
 
 **Cox's Model**. There are many ways to model $\mu$ in a survival context, the most notorious of which being the Cox proportional hazards model [@Cox_1972]. It relies on a semi-parametric modelling the conditional hazard functions $\lambda^{(a)}(t|X)$ as 
 $$
@@ -461,7 +465,7 @@ When using a $T$-learner approach, one simply finds $(\wh\beta^{(a)},\wh \Lambda
 $$
 \lambda(t|X,A) = \lambda_0(t) \exp(X^\top\beta+\alpha A).
 $$ {#eq-coxslearner}
-for some $\alpha \in \mathbb{R}$. One main advantage of Cox's model is that it makes it very easy to interpret the effect of the treatment or of a covariate on the survival time. If indeed $\alpha > 0$, then the treatment has a negative effect of the survival times. Likewise, if $\beta_i >0$, then the $i$-th coordinate of $X$ has a negative effect as well. We finally mention that the hazard ratio takes a particularly simple form under the later model since
+for some $\alpha \in \mathbb{R}$. One main advantage of Cox's model is that it makes it very easy to interpret the effect of  a covariate on the survival time. If indeed $\alpha > 0$, then the treatment has a negative effect of the survival times. Likewise, if $\beta_i >0$, then the $i$-th coordinate of $X$ has a negative effect as well. We finally mention that the hazard ratio takes a particularly simple form under the later model since
 $$
 \theta_{\mathrm{HR}} = e^{\alpha}.
 $$
@@ -516,7 +520,7 @@ Square integrability will be ensured any time the transformnation is bounded, wh
 $$
 \wh\theta = \frac1{n_1}\sum_{A_i = 1}  T^*_i - \frac1{n_0}\sum_{A_i = 0}  T^*_i.
 $$ {#eq-cutestnopi}
-Note however that this estimator is slighlty biased due to the estimation of $\pi$ (see for instance @colnet2022reweighting, Lem 2), but it is still strongly consistent and asymptotically normal, and its biased is exponentially small in $n$.
+Note however that this estimator is slighlty biased due to the estimation of $\pi$ (see for instance @colnet2022reweighting, Lemma 2), but it is still strongly consistent and asymptotically normal, and its biased is exponentially small in $n$.
 
 ::: {#prp-cutestnopi}
 Under Assumptions [-@eq-rta] and [-@eq-postrial], the estimator $\wh\theta$ derived as in @eq-cutestnopi from a square integrable censoring unbiased transformations satisfying @eq-cut is a strongly consistent, and asymptotically normal estimator of the difference in RMST.
@@ -658,7 +662,7 @@ effect, additional standard assumptions are needed.
 ::: {.assumption}
 **Assumption.** (Conditional exchangeability / Unconfoundedness) It holds
 $$ 
- A \perp\mkern-9.5mu\perp(T(0),T(1)) | X
+ A \perp\mkern-9.5mu\perp T(0),T(1) | X
 $$ {#eq-unconf} 
 
 :::
@@ -822,7 +826,7 @@ Under Assumptions [-@eq-sutva;-@eq-unconf;-@eq-positivitytreat;-@eq-condindepcen
 The proof of @prp-iptwipcwkm can be found in @sec-proof32. Under consistency of the estimators of the nuisance parameters, the previous proposition implies that this reweighted Kaplan-Meier is a consistent estimator of the survival curve, which in turn implies consistency of $\wh{\theta}_{\mathrm{IPTW-IPCW-KM}}$.
 
 ::: {#cor-consiptwipcwkm}
-Under Assumptions [-@eq-sutva;-@eq-unconf;-@eq-positivitytreat;-@eq-condindepcensoring] and [-@eq-positivitycensoring], and for all $t \in [0,\tau]$, if the nuisance estimators $\wh G(\cdot|A,X)$ and $\wh e$ are weakly (resp. strongly) uniformly consistent, then $\wh{S}_{\mathrm{IPTW-IPCW}}(t | A=a)$ is a weakly (resp. strongly) consistent estimator of $S^{(a)}(t)$ .
+Under Assumptions [-@eq-sutva;-@eq-unconf;-@eq-positivitytreat;-@eq-condindepcensoring] and [-@eq-positivitycensoring], and for all $t \in [0,\tau]$, if the nuisance estimators $\wh G(\cdot|A,X)$ and $\wh e$ are weakly (resp. strongly) uniformly consistent, then $\wh{S}_{\mathrm{IPTW-IPCW}}(t | A=a)$ is a weakly (resp. strongly) consistent estimator of $S^{(a)}(t)$.
 :::
 
 We are not aware of general formula for the asymptotic variances in this context. We mention nonetheless that @Schaubel2011 have been able to derive asymptotic laws in this framework in the particular case of Cox-models.
@@ -853,7 +857,7 @@ The proof of @prp-consiptwbj can be found in @sec-proof32.
 
 ### Double augmented corrections {#sec-AIPTW_AIPCW}
 
-Building on the classical doubly-robust AIPTW estimator from causal inference [@robins1994estimation], we could incorporate the doubly-robust transformations of @sec-tdr to obtain a _quadruply robuts_ tranformation
+Building on the classical doubly-robust AIPTW estimator from causal inference [@robins1994estimation], we could incorporate the doubly-robust transformations of @sec-tdr to obtain a _quadruply robust_ tranformation
 $$
 \Delta^*_{\mathrm{QR}} = \Delta^*_{\mathrm{QR}}(G,S,\mu,e)  := \left(\frac{A}{e(X)}-\frac{1-A}{1-e(X)}\right)(T^*_{\mathrm{DR}}(G,S)-\mu(X,A))+\mu(X,1)-\mu(X,0),
 $$
@@ -887,49 +891,43 @@ In this section, we first summarize the various estimators and their properties.
 
 @tbl-nuisance provides an overview of the estimators introduced in this paper, along with the corresponding nuisance parameters needed for their estimation and an overview of their statistical properties in particular regarding their sensitivity to misspecification of the nuisance parameters.
 
-\begin{table}
-    \centering
-    \begin{tabular}{|p{2.9cm}|p{2.9cm}|p{1.7cm}|p{1.7cm}|p{1.7cm}|p{2cm}|}
-    \hline
-        Estimator & Context & Outcome model & Censoring model & Treatment model & Robustness \\ \hline
-        \emph{Unadjusted KM} & RCT + Indep. cens. & ~ & ~ & ~ & ~ \\ \hline
-        IPCW-KM & \multirow{2}{4.5cm}{RCT + Dep. cens.}  & ~ & $G$ & ~ & No  \\ \cline{1-1} \cline{3-6}
-        BJ &  & $S$ & ~ & ~ & No \\ \hline
-        \emph{IPTW-KM} & Obs + Indep. cens.  & ~ & ~ & $e$ & No \\ \hline
-        IPCW-IPTW-KM & \multirow{4}{4.5cm}{Obs + Dep. cens.} & ~ & $G$ & $e$ & No \\ \cline{1-1} \cline{3-6}
-        \emph{G-formula} &  & $\mu$ & ~ & ~ &  No \\ \cline{1-1} \cline{3-6}
-        IPTW-BJ &  &  $S$ & ~ &  $e$ &  No \\ \cline{1-1} \cline{3-6}
-        AIPTW-AIPCW &  & $S$, $\mu$ & $G$ & $e$ &  Yes (Prp \ref{prp-tqr})\\ \hline
-    \end{tabular}
-    \caption{Estimators of the difference in RMST and nuisance parameters needed to compute each estimator. Empty boxes indicate that the nuisance parameter is not needed in the estimator thus misspecification has no impact. Estimators in italic are those that are already implemented in available packages.}
-    \label{tbl-nuisance}
-\end{table}
+| Estimator | RCT | Obs | Ind Cens | Dep Cens | Outcome model | Censoring model | Treatment model | Robustness |
+|--------|--|--|--|--|----|----|----|----|
+| _Unadjusted KM_ | $\color{green}X$ | | $\color{green}X$ | |   |  |  |  |
+| IPCW-KM | $\color{green}X$ | | $\color{green}X$ | $\color{green}X$ |  | $G$ |  |  |
+| BJ | $\color{green}X$ | | $\color{green}X$ | $\color{green}X$ | $S$  |  |  |  |
+| _IPTW-KM_ | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ |  |   |  | $e$  |  |
+| IPCW-IPTW-KM | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ |   | $G$ | $e$  |  |
+| IPTW-BJ | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ | $S$  | | $e$  |  |
+| _G-formula_ | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ | $\mu$  | |  |  |
+| AIPTW-AIPCW | $\color{green}X$ | $\color{green}X$ | $\color{green}X$ |${\color{green}X}$ | $S,\mu$  | $G$ | $e$  |  $\color{green}X$ (Prp [-@prp-tqr]) |
+: Estimators of the difference in RMST and nuisance parameters needed to compute each estimator. Empty boxes indicate that the nuisance parameter is not needed in the estimator thus misspecification has no impact. Estimators in italic are those that are already implemented in available packages. {#tbl-nuisance}
 
 
 ## Implementation of the estimators
 
-Across different implementations, we use the following shared functions provided in the \texttt{utilitary.R} file.
+Across different implementations, we use the following shared functions provided in the $\texttt{utilitary.R}$ file.
 
-- \texttt{estimate\_propensity\_score}: function to estimate propensity scores  $e(X)$ using either parametric (i.e. logistic regression with the argument \texttt{type\_of\_model = "glm"}) or non-parametric methods (i.e. probability forest with the argument \texttt{type\_of\_model ="probability forest"} based on the \texttt{probability\_forest} function from the [grf  ](https:%20//cran.r-project.org/web/packages/grf/index.html) [@Tibshirani_Athey_Sverdrup_Wager_2017] package. This latter can include cross-fitting (\texttt{n.folds\>1}). 
+- $\texttt{estimate\_propensity\_score}$: function to estimate propensity scores  $e(X)$ using either parametric (i.e. logistic regression with the argument $\texttt{type\_of\_model = "glm"}$) or non-parametric methods (i.e. probability forest with the argument $\texttt{type\_of\_model ="probability forest"}$ based on the $\texttt{probability\_forest}$ function from the [grf  ](https:%20//cran.r-project.org/web/packages/grf/index.html) [@Tibshirani_Athey_Sverdrup_Wager_2017] package). This latter can include cross-fitting ($\texttt{n.folds\>1}$). 
 
-- \texttt{estimate\_survival\_function}: function to estimate the conditional survival model, which supports either Cox models (argument \texttt{type\_of\_model = "cox"}) or survival forests  (argument \texttt{type\_of\_model = "survival forest"})  which uses the function \texttt{survival\_forest} from the [grf    ](https:%20//cran.r-project.org/web/packages/grf/index.html) [@Tibshirani_Athey_Sverdrup_Wager_2017] package. This latter can include cross-fitting (\texttt{n.folds\>1}). The estimation can be done with a single learner (argument \texttt{learner = "S-learner"}) or two learners (argument \texttt{learner = "T-learner"}). 
+- $\texttt{estimate\_survival\_function}$: function to estimate the conditional survival model, which supports either Cox models (argument $\texttt{type\_of\_model = "cox"}$) or survival forests  (argument $\texttt{type\_of\_model = "survival forest"}$)  which uses the function $\texttt{survival\_forest}$ from the [grf    ](https:%20//cran.r-project.org/web/packages/grf/index.html) [@Tibshirani_Athey_Sverdrup_Wager_2017] package. This latter can include cross-fitting ($\texttt{n.folds\>1}$). The estimation can be done with a single learner (argument $\texttt{learner = "S-learner"}$) or two learners (argument $\texttt{learner = "T-learner"}$). 
 
-- \texttt{estimate\_hazard\_function}: function to estimate the instantaneous hazard function by deriving the cumulative hazard function at each time point. This cumulative hazard function is estimated from the negative logarithm of the survival function. 
+- $\texttt{estimate\_hazard\_function}$: function to estimate the instantaneous hazard function by deriving the cumulative hazard function at each time point. This cumulative hazard function is estimated from the negative logarithm of the survival function. 
 
-- \texttt{Q\_t\_hat}: function to estimate the remaining survival function at all time points and for all individuals which uses the previous \texttt{estimate\_survival\_function}. 
+- $\texttt{Q\_t\_hat}$: function to estimate the remaining survival function at all time points and for all individuals which uses the former $\texttt{estimate\_survival\_function}$. 
 
-- \texttt{Q\_Y}: function to select the value of the remaining survival function from \texttt{Q\_t\_hat} at the specific time-to-event.
+- $\texttt{Q\_Y}$: function to select the value of the remaining survival function from $\texttt{Q\_t\_hat}$ at the specific time-to-event.
 
-- \texttt{integral\_rectangles}: function to estimate the integral of a decreasing step function using the rectangle method.
+- $\texttt{integral\_rectangles}$: function to estimate the integral of a decreasing step function using the rectangle method.
 
-- \texttt{expected\_survival}: function to estimate the integral with $x,y$ coordinate (estimated survival function) using the trapezoidal method.
+- $\texttt{expected\_survival}$: function to estimate the integral with $x,y$ coordinate (estimated survival function) using the trapezoidal method.
 
-- \texttt{integrate}: function to estimate the integral at specific time points \texttt{Y.grid} of a given \texttt{integrand} function which takes initially its values on \texttt{times} using the trapezoidal method. 
+- $\texttt{integrate}$: function to estimate the integral at specific time points $\texttt{Y.grid}$ of a given $\texttt{integrand}$ function which takes initially its values on $\texttt{times}$ using the trapezoidal method. 
 
 
 **Unadjusted Kaplan-Meier** 
 
-Although Kaplan-Meier is implemented in the \texttt{survival} package [@Therneau_2001], we provide a custom implementation, \texttt{Kaplan\_meier\_handmade}, for completeness. The difference in Restricted Mean Survival Time, estimated using Kaplan-Meier as in @eq-thetaunadjKM can then be calculated with the \texttt{RMST\_1} function. 
+Although Kaplan-Meier is implemented in the $\texttt{survival}$ package [@Therneau_2001], we provide a custom implementation, $\texttt{Kaplan\_meier\_handmade}$, for completeness. The difference in Restricted Mean Survival Time, estimated using Kaplan-Meier as in @eq-thetaunadjKM can then be calculated with the $\texttt{RMST\_1}$ function. 
 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -1018,7 +1016,7 @@ RMST_1 <- function(data = NULL, A1 = 1, A0 = 0, tau, S_A1 = NULL, S_A0 = NULL) {
 
 ```
 
-As an alternative, one can also use the \texttt{survfit} function in the survival package [@Therneau_2001] for Kaplan-Meier and specify the \texttt{rmean} argument equal to $\tau$ in the corresponding summary function:
+As an alternative, one can also use the $\texttt{survfit}$ function in the survival package [@Therneau_2001] for Kaplan-Meier and specify the $\texttt{rmean}$ argument equal to $\tau$ in the corresponding summary function:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Alternative code to estimate Kaplan-Meier estimator with survival package
@@ -1047,7 +1045,7 @@ return(difference_rmst)
 
 **IPCW Kaplan-Meier**
 
-We first provide an  \texttt{adjusted.KM} function which is then used in the \texttt{IPCW\_Kaplan\_meier} function to estimate the difference in RMST $\hat{\theta}_{\mathrm{IPCW}}$ as in @eq-thetaIPCWKM. The survival censoring function $G(t|X)$ is computed with the \texttt{estimate\_survival\_function} utility function from the \texttt{utilitary.R} file.
+We first provide an  $\texttt{adjusted.KM}$ function which is then used in the $\texttt{IPCW\_Kaplan\_meier}$ function to estimate the difference in RMST $\hat{\theta}_{\mathrm{IPCW}}$ as in @eq-thetaIPCWKM. The survival censoring function $G(t|X)$ is computed with the $\texttt{estimate\_survival\_function}$ utility function from the $\texttt{utilitary.R}$ file.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Kaplan-Meier adjusted
@@ -1154,7 +1152,7 @@ IPCW_Kaplan_meier <- function(data, tau,
 
 ```
 
-One could also use the \texttt{survfit} function in the survival package [@Therneau_2001] in adding IPCW weights for treated and control group and specify the \texttt{rmean} argument equal to $\tau$ in the corresponding summary function:
+One could also use the $\texttt{survfit}$ function in the survival package [@Therneau_2001] in adding IPCW weights for treated and control group and specify the $\texttt{rmean}$ argument equal to $\tau$ in the corresponding summary function:
 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -1187,7 +1185,7 @@ This alternative approach for IPCW Kaplan-Meier would also be valid for IPTW and
 
 **Buckley-James based estimator **
 
-The function \texttt{BJ} estimates $\theta_{\mathrm{RMST}}$ by implementing the Buckley-James estimator as in @eq-BJ. It uses two functions available in the \texttt{utilitary.R} file, namely \texttt{Q\_t\_hat} and \texttt{Q\_Y}.
+The function $\texttt{BJ}$ estimates $\theta_{\mathrm{RMST}}$ by implementing the Buckley-James estimator as in @eq-BJ. It uses two functions available in the $\texttt{utilitary.R}$ file, namely $\texttt{Q\_t\_hat}$ and $\texttt{Q\_Y}$.
 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -1231,7 +1229,7 @@ BJ <- function(data, tau, X.names.outcome = c("X1", "X2", "X3", "X4"),
 
 **IPTW Kaplan-Meier**
 
-The function \texttt{IPTW\_Kaplan\_meier} implements the IPTW-KM estimator in @eq-RMST_IPTWKM. It uses the \texttt{estimate\_propensity\_score} function from the \texttt{utilitary.R}. 
+The function $\texttt{IPTW\_Kaplan\_meier}$ implements the IPTW-KM estimator in @eq-RMST_IPTWKM. It uses the $\texttt{estimate\_propensity\_score}$ function from the $\texttt{utilitary.R}$. 
 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -1274,7 +1272,7 @@ IPTW_Kaplan_meier <- function(data, tau, X.names.propensity,
 
 **G-formula**
 
-We implement two versions of the G-formula: \texttt{g\_formula\_T\_learner} and \texttt{g\_formula\_S\_learner}. In \texttt{g\_formula\_T\_learner}, separate models estimate survival curves for treated and control groups, whereas \texttt{g\_formula\_S\_learner} uses a single model incorporating both covariates and treatment status to estimate survival time. The latter approach is also available in the RISCA package but is limited to Cox models.
+We implement two versions of the G-formula: $\texttt{g\_formula\_T\_learner}$ and $\texttt{g\_formula\_S\_learner}$. In $\texttt{g\_formula\_T\_learner}$, separate models estimate survival curves for treated and control groups, whereas $\texttt{g\_formula\_S\_learner}$ uses a single model incorporating both covariates and treatment status to estimate survival time. The latter approach is also available in the RISCA package but is limited to Cox models.
 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -1343,7 +1341,7 @@ g_formula_S_learner <- function(data,
 
 **IPTW-IPCW Kaplan-Meier**
 
-The \texttt{IPTW\_IPCW\_Kaplan\_meier} function implements the IPTW-IPCW Kaplan Meier estimator from @eq-RMST_IPTW_IPCWKM. It uses the  utilitary functions from the \texttt{utilitary.R} file \texttt{estimate\_propensity\_score} and \texttt{estimate\_survival\_function} to estimate the nuisance parameters, and the function \texttt{adjusted.KM} which computes an adjusted Kaplan Meier estimator using the appropriate weight.
+The $\texttt{IPTW\_IPCW\_Kaplan\_meier}$ function implements the IPTW-IPCW Kaplan Meier estimator from @eq-RMST_IPTW_IPCWKM. It uses the  utilitary functions from the $\texttt{utilitary.R}$ file $\texttt{estimate\_propensity\_score}$ and $\texttt{estimate\_survival\_function}$ to estimate the nuisance parameters, and the function $\texttt{adjusted.KM}$ which computes an adjusted Kaplan Meier estimator using the appropriate weight.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 IPTW_IPCW_Kaplan_meier <- function(data, 
@@ -1407,7 +1405,7 @@ IPTW_IPCW_Kaplan_meier <- function(data,
 
 **IPTW-BJ estimator**
 
-The \texttt{IPTW\_BJ} implements the IPTW-BJ estimator in @eq-iptwbj. It uses the  utilitary functions, from the \texttt{utilitary.R} file, \texttt{estimate\_propensity\_score}, \texttt{Q\_t\_hat} and \texttt{Q\_Y} to estimate the nuisance parameters. 
+The $\texttt{IPTW\_BJ}$ implements the IPTW-BJ estimator in @eq-iptwbj. It uses the  utilitary functions, from the $\texttt{utilitary.R}$ file, $\texttt{estimate\_propensity\_score}$, $\texttt{Q\_t\_hat}$ and $\texttt{Q\_Y}$ to estimate the nuisance parameters. 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 IPTW_BJ <- function(data, 
@@ -1455,7 +1453,7 @@ IPTW_BJ <- function(data,
 
 **AIPTW-AIPCW**
 
-The \texttt{AIPTW\_AIPCW} function implements the AIPTW_AIPCW estimator in @eq-AIPTW_AIPCW using the utilitary function from the \texttt{utilitary.R} file \texttt{estimate\_propensity\_score}, \texttt{Q\_t\_hat}, \texttt{Q\_Y}, and \texttt{estimate\_survival\_function} to estimate the nuisance parameters. 
+The $\texttt{AIPTW\_AIPCW}$ function implements the AIPTW_AIPCW estimator in @eq-AIPTW_AIPCW using the utilitary function from the $\texttt{utilitary.R}$ file $\texttt{estimate\_propensity\_score}$, $\texttt{Q\_t\_hat}$, $\texttt{Q\_Y}$, and $\texttt{estimate\_survival\_function}$ to estimate the nuisance parameters. 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # DR censoring transformation
@@ -1613,26 +1611,26 @@ AIPTW_AIPCW <- function(data,
 ## Available packages {#sec-package}
 
 Currently, there are few sustained implementations available for estimating RMST in the presence of right censoring. Notable exceptions include the packages [survRM2](https:%20//cran.r-project.org/web/packages/survRM2/index.html)
-[@SurvRM2_2015], [grf](https:%20//cran.r-project.org/web/packages/grf/index.html) [@Tibshirani_Athey_Sverdrup_Wager_2017] and [RISCA](https://cran.r-project.org/web/packages/RISCA/index.html) [@Foucher_Le_Borgne_Chatton_2019]. Those packages are implemented in the \texttt{utilitary.R} files. 
+[@SurvRM2_2015], [grf](https:%20//cran.r-project.org/web/packages/grf/index.html) [@Tibshirani_Athey_Sverdrup_Wager_2017] and [RISCA](https://cran.r-project.org/web/packages/RISCA/index.html) [@Foucher_Le_Borgne_Chatton_2019]. Those packages are implemented in the $\texttt{utilitary.R}$ files. 
 
 **SurvRM2**
 
-The difference in RMST with Unadjusted Kaplan-Meier $\hat \theta_{KM}$ (@eq-thetaunadjKM) can be obtained using the function \texttt{rmst2} which takes as arguments the observed time-to-event, the status, the arm which corresponds to the treatment and $\tau$. 
+The difference in RMST with Unadjusted Kaplan-Meier $\hat \theta_{KM}$ (@eq-thetaunadjKM) can be obtained using the function $\texttt{rmst2}$ which takes as arguments the observed time-to-event, the status, the arm which corresponds to the treatment and $\tau$. 
 
 
 **RISCA**
 
-The RISCA package provides several methods for estimating $\theta_{\mathrm{RMST}}$. The difference in RMST with Unadjusted Kaplan-Meier $\hat \theta_{KM}$ (@eq-thetaunadjKM) can be derived using  the \texttt{survfit} function from the the survival package [@Therneau_2001] which  estimates Kaplan-Meier survival curves for treated and control groups, and then the \texttt{rmst} function calculates the RMST by integrating these curves, applying the rectangle method (type="s"), which is well-suited for step functions.
+The RISCA package provides several methods for estimating $\theta_{\mathrm{RMST}}$. The difference in RMST with Unadjusted Kaplan-Meier $\hat \theta_{KM}$ (@eq-thetaunadjKM) can be derived using  the $\texttt{survfit}$ function from the the survival package [@Therneau_2001] which  estimates Kaplan-Meier survival curves for treated and control groups, and then the $\texttt{rmst}$ function calculates the RMST by integrating these curves, applying the rectangle method (type="s"), which is well-suited for step functions.
 
-The IPTW Kaplan-Meier (@eq-IPTWKM) can be applied using the \texttt{ipw.survival} and \texttt{rmst} functions. The ipw.survival function requires user-specified weights (i.e. propensity scores). To streamline this process, we define the \texttt{RISCA\_iptw} function, which combines these steps and utilizes the \texttt{estimate\_propensity\_score} from the \texttt{utilitary.R} file.
+The IPTW Kaplan-Meier (@eq-IPTWKM) can be applied using the $\texttt{ipw.survival}$ and $\texttt{rmst}$ functions. The ipw.survival function requires user-specified weights (i.e. propensity scores). To streamline this process, we define the $\texttt{RISCA\_iptw}$ function, which combines these steps and utilizes the $\texttt{estimate\_propensity\_score}$ from the $\texttt{utilitary.R}$ file.
     
-A single-learner version of the G-formula, as introduced in @sec-Gformula, can be implemented using the \texttt{gc.survival} function. This function requires as input the conditional survival function which should be estimated beforehand with a Cox model via the \texttt{coxph} function from the \texttt{survival} package [@Therneau_2001]. Specifically, the single-learner approach applies a single Cox model incorporating both covariates and treatment, rather than separate models for each treatment arm. We provide a function \texttt{RISCA\_gf} that consolidates these steps.
+A single-learner version of the G-formula, as introduced in @sec-Gformula, can be implemented using the $\texttt{gc.survival}$ function. This function requires as input the conditional survival function which should be estimated beforehand with a Cox model via the $\texttt{coxph}$ function from the $\texttt{survival}$ package [@Therneau_2001]. Specifically, the single-learner approach applies a single Cox model incorporating both covariates and treatment, rather than separate models for each treatment arm. We provide a function $\texttt{RISCA\_gf}$ that consolidates these steps.
 
 
 **grf**
 
-The \texttt{grf} package [@Tibshirani_Athey_Sverdrup_Wager_2017] enables estimation of the difference between RMST using the Causal Survival Forest approach [@HTE_causal_survival_forests], which extends the non-parametric causal forest framework to survival data.
-The RMST can be estimated with the \texttt{causal\_survival\_forest} function, requiring covariates $X$, observed event times, event status, treatment assignment, and the time horizon $\tau$ as inputs. The \texttt{average\_treatment\_effect} function then evaluates the treatment effect based on predictions from the fitted forest.
+The $\texttt{grf}$ package [@Tibshirani_Athey_Sverdrup_Wager_2017] enables estimation of the difference between RMST using the Causal Survival Forest approach [@HTE_causal_survival_forests], which extends the non-parametric causal forest framework to survival data.
+The RMST can be estimated with the $\texttt{causal\_survival\_forest}$ function, requiring covariates $X$, observed event times, event status, treatment assignment, and the time horizon $\tau$ as inputs. The $\texttt{average\_treatment\_effect}$ function then evaluates the treatment effect based on predictions from the fitted forest.
 
 
 # Simulations {#sec-simulation}
@@ -1661,7 +1659,7 @@ $$
 -   The hazard function of the censoring time $C$ is simply taken as $\lambda_C(t|X)=0.03$ in Scenario 1, and in Scenario 2 as
         $$\lambda_C(t|X)=0.03 \cdot \exp \left\{\beta_C^\top X\right\} \quad \text{where} \quad \beta_C = (0.7,0.7,-0.25,-0.1).$$
 
--   The treatment allocation is independant of $X$: $e(X)=0.5$.
+-   The treatment allocation is independent of $X$: $e(X)=0.5$.
 
 <!-- -   the survival time is $T=A T(1)+(1-A) T(0)$. -->
 
@@ -1809,7 +1807,7 @@ truth_tau2 <- truth_tau1
 
 **Estimation of the RMST**
 
-For each Scenario, we estimate the difference in RMST using the methods summarized in @sec-summary. The methods used to estimate the nuisance components are indicated in brackets: either logistic regression or random forests for propensity scores and either cox models or survival random forests for survival and censoring models.  A naive estimator removing where censored observations are simply removed and the survival time is averaged for treated and controls is also provided for a naive baseline.
+For each Scenario, we estimate the difference in RMST using the methods summarized in @sec-summary. The methods used to estimate the nuisance components are indicated in brackets: either logistic regression or random forests for propensity scores and either cox models or survival random forests for survival and censoring models.  A naive estimator where censored observations are simply removed and the survival time is averaged for treated and controls is also provided for a naive baseline.
 
 @fig-rct1 shows the distribution of the difference in RMST for 100 simulations in Scenario 1 and different sample sizes: 500, 1000, 2000, 4000. The  true value of $\theta_{\mathrm{RMST}}$ is indicated by red dotted line.
 
@@ -2313,8 +2311,8 @@ desired_order <- c(
 
 # Convert sample size to a factor with levels sorted in decreasing order
 simulation_rct1$sample.size <- factor(
-  as.numeric(simulation_rct1$sample.size), 
-  levels = sort(unique(simulation_rct1$sample.size), decreasing = TRUE)
+  simulation_rct1$sample.size, 
+  levels = sort(unique(simulation_rct1$sample.size), decreasing = FALSE)
 )
 
 # Convert estimator column to a factor with the specified order
@@ -2434,7 +2432,7 @@ $$
 \operatorname{logit}(e(X))= \beta_A^\top X \quad \text{where} \quad \beta_A = (-1,-1,-2.5,-1),
 $$    
 where we recall that $\operatorname{logit}(p) = \log(p/(1-p))$.
-The descriptive statistics for the two observational data with independent (\texttt{Obs1}) and conditionally independent censoring (\texttt{Obs2})  are displayed in Appendix (@sec-stat_obs). Note that we did not modify the survival distribution, the target difference in RMST is thus the same.
+The descriptive statistics for the two observational data with independent ($\texttt{Obs1}$) and conditionally independent censoring ($\texttt{Obs2}$)  are displayed in Appendix (@sec-stat_obs). Note that we did not modify the survival distribution, the target difference in RMST is thus the same.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Obs1:  Treatment assignment dependent on X + independent censoring
@@ -2524,7 +2522,7 @@ data_Obs1 <- simulate_data_obs(n = 100000, tau = 25, scenario = "Obs1")
 #                  "True difference in RMST for Obs #scenario 1")
 
 truth_tau3 <-  ground_truth(data_Obs1, tau = 25)
-#print(paste0("The ground truth for Obs scenario 1 at time 25 is ", round(truth_tau3, 1)))
+print(paste0("The ground truth for Obs scenario 1 at time 25 is ", round(truth_tau3, 1)))
 
 # Simulation for scenario Obs2 with specific coefficients and parameters
 data_Obs2 <- simulate_data_obs(
@@ -2538,7 +2536,7 @@ data_Obs2 <- simulate_data_obs(
 #                  "True difference in RMST for Obs #scenario 2")
 
 truth_tau4 <- ground_truth(data_Obs2, tau = 25)
-#print(paste0("The ground truth for Obs scenario 2 at #time 25 is ", round(truth_tau4, 1)))
+print(paste0("The ground truth for Obs scenario 2 at #time 25 is ", round(truth_tau4, 1)))
 ```
 
 
@@ -2623,7 +2621,8 @@ simulation_graph_obs1 <- simulation_obs1 %>%
   theme(
     legend.title = element_blank(), legend.position = "bottom",
     legend.box = "vertical", legend.text = element_text(size = 18),
-    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1), 
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  
+    # Adjust text angle for better visibility
     axis.text = element_text(size = 15, face = "bold"),
     axis.title.x = element_text(size = 16, face = "bold"),
     plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
@@ -2689,10 +2688,11 @@ simulation_graph_obs2 <- simulation_obs2 %>%
     legend.title = element_blank(), legend.position = "bottom",
     legend.box = "vertical", legend.text = element_text(size = 18),
     axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),  
-    axis.text = element_text(size = 14, face = "bold"),
+    # Adjust text angle for better visibility
+    axis.text = element_text(size = 15, face = "bold"),
     axis.title.x = element_text(size = 16, face = "bold"),
-    plot.margin = unit(c(0, 0, 0, 2.1), "cm") 
-  )+  
+    plot.margin = margin(t = 10, r = 10, b = 50, l = 10)  # Add margin
+  ) + 
   coord_cartesian(ylim = c(0, 15))
 
 ```
@@ -2991,11 +2991,11 @@ tau_mis <- 0.5
 vec_tau_complex <- seq(0, 10, by = 0.05)
 data_mis <- simulate_data_mis(n = 150000, tau = tau_mis)
 
-plot_ground_truth(data_mis,
-                  vec_tau_complex, 
-                  tau_mis, 
-                  c(0, 1), 
-                  "True difference in RMST for Mis scenario")
+#plot_ground_truth(data_mis,
+#                  vec_tau_complex, 
+#                  tau_mis, 
+#                  c(0, 1), 
+#                  "True difference in RMST for Mis scenario")
 
 truth_complex_mis <- ground_truth(data_mis, tau = tau_mis)
 
@@ -3511,7 +3511,7 @@ It was anticipated that AIPTW-AIPCW would converge solely when both the censorin
 
 # Conclusion {#sec-conclusion}
 
-Based on the simulations and theoretical results, it might be advisable to stay away from the IPCW and IPTW-IPCW estimators, as they often exhibit excessive variability. Instead, we recommend implementing BJ which seems like a more stable transformation as IPCW, as well as Causal Survival Forest, G-formula (T-learners), IPTW-BJ, and AIPTW-AIPCW in both their Cox and forest versions. By qualitatively combining the results from these more robust estimators, we can expect to gain a fairly accurate understanding of the treatment effect. 
+Based on the simulations and theoretical results, it might be advisable to stay away from the IPCW and IPTW-IPCW estimators, as they often exhibit excessive variability. Instead, we recommend implementing BJ which seems like a more stable transformation as IPCW, as well as Causal Survival Forest, G-formula (T-learners), IPTW-BJ, and AIPTW-AIPCW in both their Cox, Logistic Regression and forest versions. By qualitatively combining the results from these more robust estimators, we can expect to gain a fairly accurate understanding of the treatment effect. 
 
 It is important to note that our simulations utilize large sample sizes with relatively simple relationships, which may not fully capture the complexity of real-world scenarios. In practice, most survival analysis datasets tend to be smaller and more intricate, meaning the stability of certain estimators observed in our simulations may not generalize to real-world applications. Testing these methods on real-world datasets would provide a more comprehensive evaluation of their performance in practical settings.
 
@@ -3657,7 +3657,7 @@ The first term is non negative and is zero for the BJ transformation. Since $\ph
 &= \bbE\left[ \bbP(T\wedge \tau > C|C,A,X) \phi_0^2 - 2 \bbE[T\wedge \tau \mathbb{I}\{T\wedge \tau > C\}|C,A,X] \phi_0 \right] + R \\
 &= \bbE\left[\bbP(T\wedge \tau > C|C,A,X) \left(\phi_0- \frac{\bbE[T\wedge \tau \mathbb{I}\{T\wedge \tau > C\}|C,A,X]}{\bbP(T\wedge \tau > C|C,A,X) }\right)^2\right] + R.
 \end{align*}
-Now the first term in the RHS is always non-negative, and is zero for the BJ tranformation.
+Now the first term in the right hand side is always non-negative, and is zero for the BJ tranformation.
 :::
 
 
@@ -3759,14 +3759,14 @@ $$
 \bbE[ T^*_{\mathrm{IPTW-BJ}}|X,A=1] &= \bbE\left[\frac{A}{e(X)} \Delta^\tau \times \wt T \wedge \tau\middle|X\right] + \bbE\left[\frac{A}{e(X)} (1-\Delta^\tau) Q_S(\wt T \wedge \tau|A,X) \middle| X\right]. 
 \end{aligned}
 $$
-On the event $\{\Delta^\tau=1, A=1\}$, there holds $\wt T \wedge \tau = T \wedge \tau = T(1) \wedge \tau$, whence we find that the first term on the the RHS is equal to
+On the event $\{\Delta^\tau=1, A=1\}$, there holds $\wt T \wedge \tau = T \wedge \tau = T(1) \wedge \tau$, whence we find that the first term on the the right hand side is equal to
 $$
 \begin{aligned}
 \bbE\left[\frac{A}{e(X)} \Delta^\tau \times \wt T \wedge \tau\middle|X\right] &= \bbE\left[\frac{A}{e(X)} \Delta^\tau \times T(1) \wedge \tau\middle|X\right] \\
 &= \bbE\left[\Delta^\tau \times T(1) \wedge \tau\middle|X\right].
 \end{aligned}
 $$
-For the second term in the RHS, notice that on the event $\{\Delta^\tau=0, A=1\}$, there holds $\wt T = C < T(1) \wedge \tau$, so that
+For the second term in the right hand side, notice that on the event $\{\Delta^\tau=0, A=1\}$, there holds $\wt T = C < T(1) \wedge \tau$, so that
 $$
 \begin{aligned}
 \bbE&\left[\frac{A}{e(X)} \mathbb{I}\{C < T(1) \wedge \tau\} \frac{\bbE[T(1) \wedge \tau \times \mathbb{I}\{C < T(1) \wedge \tau\}|X,A,C]}{\bbP(C < T(1) \wedge \tau | C,X,A)} \middle| X\right] \\
