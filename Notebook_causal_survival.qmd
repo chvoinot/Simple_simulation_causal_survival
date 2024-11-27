@@ -87,26 +87,6 @@ format:
         \newcommand\cX{\mathcal{X}}
         \usepackage{amsmath}
         \usepackage{amssymb}
-      # - \usepackage{multirow}
-      # - \usepackage{float}
-      
-  # html:
-  #     - "_dollar.tex"
-  #     - "_macros.tex"
-  #     - "_dollar.tex"
-    # mathjax:
-    #   commands:
-    #     \bbR: "\\mathbb{R}"
-    #     \bbE: "\\mathbb{E}"
-    #     \bbP: "\\mathbb{P}"
-    #     \wt: "\\widetilde"
-    #     \wh: "\\widehat"
-    #     \Var: "\\mathrm{Var}"
-    #     \cF: "\\mathcal{F}"
-    #     \cX: "\\mathcal{X}"
-    #     \mand: "\\quad\\text{and}\\quad"
-    #     \where: "\\quad\\text{where}\\quad"
-    #     \with: "\\quad\\text{with}\\quad"
         
 editor:  
   markdown:  
