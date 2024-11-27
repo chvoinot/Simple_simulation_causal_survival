@@ -1144,8 +1144,10 @@ One could also use the $\texttt{survfit}$ function in the survival package [@The
 Adjusted_Kaplan_meier_alternative <- function(data, A1 = 1, A0 = 0, tau, 
                                           weights0, weights1){
   # Estimate Kaplan-Meier estimator with survfit function on data subset 
-  fit0 <- survfit(Surv(T_obs, status) ~ 1, data = data[data$A == A0,], weights = weights0)  # Groupe A = 0
-  fit1 <- survfit(Surv(T_obs, status) ~ 1, data = data[data$A == A1,], weights = weights1)  # Groupe A = 1
+  # Groupe A = 0
+  fit0 <- survfit(Surv(T_obs, status) ~ 1, data = data[data$A == A0,], weights = weights0)  
+  # Groupe A = 1
+  fit1 <- survfit(Surv(T_obs, status) ~ 1, data = data[data$A == A1,], weights = weights1)  
 
   # Estimate the RMST with rmean
   summary_fit0 <- summary(fit0, rmean = tau)  # RMST for A = 0
