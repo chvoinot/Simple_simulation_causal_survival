@@ -2,6 +2,8 @@ project:
   type: website
 
 publish:
-  output-dir: _site  # ou un autre dossier spécifique
+  output-dir: _site 
 
-
+output:
+  pdf:
+    pdf-engine: lualatex

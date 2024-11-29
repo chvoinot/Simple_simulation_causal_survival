@@ -1,17 +1,17 @@
-title: Charlotte Template
-author: Charlotte Voinot
-version: 0.1.1
+title: Computo Format Template
+author: Computorg Team
+version: 0.2.6
 contributes:
   formats:
     common:
       # define below YAML configuration common to all formats
       filters:
         # You can include here Lua filters from your extension format
+        - abstract-section
         - diagram
         - pseudocode
-        - abstract-section
+        - list-table
         - color-text.lua
-        - list-table.lua
       shortcodes:
         # You can include here Lua filters defining shortcodes from your extension
         - shortcodes.lua
@@ -26,46 +26,6 @@ contributes:
       toc-title: Contents
       code-copy: true
       code-block-background: true
-    html:
-      theme: [code-block-all.scss, custom.scss]
-      title-block-banner: "#6e2c2c"
-      title-block-banner-color: "#ffffff"
-      reference-section-title: Bibliography
-      date-format: long
-      hover-citations: true
-      hover-footnotes: true
-
-      code-block-background: true
-      code-tools:
-        source: true
-        toggle: false
-        caption: "source"
-      code-copy: true
-      code-summary: "Hide/Show the code"
-      code-fold: hide
-      anchor-sections: true
-      link-external-icon: false
-      link-external-newwindow: true
-      crossref:
-      sec-prefix: Section
-      eq-prefix: Equation
-      fig-prefix: Figure
-      tbl-prefix: Table
-      html-math-method: mathjax
-      template-partials:
-        - "partials/html/title-block.html"
-        - "partials/html/title-metadata.html"
-      # number-sections: true
-      # code-blocks:
-      #   theorem: 
-      #     label: "Theorem"
-      #     auto-number: true
-      #   definition:
-      #     label: "Definition"
-      #     auto-number: true
-      #   assumption:
-      #     label: "Assumption"
-      #     auto-number: true
     pdf:
       echo: false
       pdf-engine: lualatex
@@ -86,14 +46,34 @@ contributes:
         - "partials/pdf/before-body.tex"
       format-resources:
         - logo_text_white.pdf
-      # number-sections: true
-      # code-blocks:
-      #   theorem: 
-      #     label: "Theorem"
-      #     auto-number: true
-      #   definition:
-      #     label: "Definition"
-      #     auto-number: true
-      #   assumption:
-      #     label: "Assumption"
-      #     auto-number: true
+    html:
+      theme: [code-block-all.scss, custom.scss]
+      title-block-banner: "#034E79"
+      title-block-banner-color: "#FFFFFF"
+      license: "CC BY"
+      reference-section-title: Bibliography
+      date-format: long
+      hover-citations: true
+      hover-footnotes: true
+      fig-format: svg
+      highlight-style: github
+      code-block-background: true
+      code-tools:
+        source: true
+        toggle: false
+        caption: "source"
+      code-copy: true
+      code-summary: "Hide/Show the code"
+      code-fold: hide
+      anchor-sections: true
+      link-external-icon: false
+      link-external-newwindow: true
+      crossref:
+      sec-prefix: Section
+      eq-prefix: Equation
+      fig-prefix: Figure
+      tbl-prefix: Table
+      html-math-method: katex
+      template-partials:
+        - "partials/html/title-block.html"
+        - "partials/html/title-metadata.html"

@@ -1,8 +1,6 @@
 /*-- scss:defaults --*/
 @import url('https://fonts.googleapis.com/css2?family=Oswald');
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans');
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond');
-@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 /*******************************************************************************
  * Variables used throughout the theme.
@@ -10,18 +8,18 @@
  ******************************************************************************/
 
 // Colors
-$grey-color:          #394a53 !default;
+$grey-color:          #828282 !default;
 $grey-color-light:    lighten($grey-color, 40%);
 $grey-color-dark:     darken($grey-color, 25%);
-$white-color: #ffffff85 !default;
+$white-color: #ffffff !default;
 $black-color: #000000 !default;
-$computo-color:         #c04e4e !default;
-$computo-color-dark:    darken($computo-color, 15%);
-$computo-color-light:   lighten($computo-color, 50%);
+$computo-color:         #034E79 !default;
+$computo-color-dark:    darken($computo-color, 10%);
+$computo-color-light:   lighten($computo-color, 60%);
 $computo-color-lighter: rgba($computo-color, 0.04);
 
-$computo-color-yellow:         #326937 !default;
-$computo-color-red:         #693232 !default;
+$computo-color-yellow:         #797903 !default;
+$computo-color-red:         #790303 !default;
 
 
 // Theme colors
@@ -31,8 +29,8 @@ $link-color: $computo-color;
 // Font
 $headings-font-weight: 500 !default;
 $h2-font-size: 1.6rem !default;
-$font-family-sans-serif: 'Lato';
-$ff-title: 'Open Sans', sans-serif;
+$font-family-sans-serif: 'Open Sans', sans-serif;
+$ff-title: 'Oswald', sans-serif;
 $ff-main: 'Open Sans', sans-serif;
 
 // Callout
@@ -48,7 +46,7 @@ $callout-border-width: 5px ;
     color: $computo-color-dark ;
 }
 
-.theorem, .proposition, .lemma, .corrolary, .assumption {
+.theorem, .proposition, .lemma, .corrolary {
     background-color: $computo-color-lighter ;
     border-radius: 4px;
     border: 1px solid $computo-color-light;
@@ -63,7 +61,9 @@ $callout-border-width: 5px ;
   color: $computo-color-dark !important;
 }
 
-.pseudocode {}
+.pseudocode {
+  /* avoid parser error in quarto */
+}
 
 // Bad inclusion of TOC if color specified in CSS for title-block-banner
 // Works when using .yml
@@ -91,6 +91,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 body {
-  font-size: 1.1rem;
-  font-weight: 400;
+  font-size: 1rem;
+  font-weight: 300;
 }
