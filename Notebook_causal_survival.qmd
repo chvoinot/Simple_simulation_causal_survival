@@ -63,8 +63,7 @@ draft:  false # set to false once the build is running
 published:  false # will be set to true once accepted
 format:  
   computo-html:  default
-  computo-pdf: default
-  pdf:
+  computo-pdf: 
     header-includes:
       - |
         \newcommand{\bbR}{\mathbb{R}}
