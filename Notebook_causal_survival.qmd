@@ -63,8 +63,7 @@ draft:  false # set to false once the build is running
 published:  false # will be set to true once accepted
 format:  
   computo-html:  default
-  computo-pdf: default
-  pdf:
+  computo-pdf: 
     header-includes:
       - |
         \newcommand{\bbR}{\mathbb{R}}
@@ -3500,6 +3499,12 @@ It is important to note that our simulations utilize large sample sizes with rel
 An interesting direction for future work would be to focus on variable selection. Indeed, there is no reason to assume that the variables related to censoring should be the same as those linked to survival or treatment allocation. We could explore differentiating these sets of variables and study the impact on the estimators' variance. Similarly to causal inference settings without survival data, we might expect, for instance, that adding precision variables—-those solely related to the outcome—-could reduce the variance of the estimators.
 
 Additionally, the estimators of the Restricted Mean Survival Time (RMST) provide a valuable alternative to the Hazard Ratio. The analysis and code provided with this article enables further exploration of the advantages of the estimators of RMST for causal analysis in survival studies. This could lead to a deeper understanding of how these estimators can offer more stable and interpretable estimates of treatment effects, particularly in complex real-world datasets.
+
+# Disclosure
+
+This study was funded by Sanofi.
+Charlotte Voinot and Bernard Sebastien are Sanofi employees and may hold shares and/or stock options in the company.
+Clément Berenfeld, Imke Mayer and Julie Josse have nothing to disclose.
 
 
 # References {.unnumbered}
